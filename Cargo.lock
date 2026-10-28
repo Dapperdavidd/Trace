@@ -2461,6 +2461,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "trace-accounting"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rust_decimal",
+ "serde",
+ "trace-domain",
+]
+
+[[package]]
 name = "trace-api"
 version = "0.1.0"
 dependencies = [

@@ -4,6 +4,7 @@ members = [
   "crates/domain",
   "crates/database",
   "crates/chain-adapters",
+  "crates/accounting",
   "services/api",
 ]
 
@@ -34,3 +35,4 @@ uuid = { version = "1", features = ["v4", "v7", "serde"] }
 trace-domain = { path = "crates/domain" }
 trace-database = { path = "crates/database" }
 trace-chain-adapters = { path = "crates/chain-adapters" }
+trace-accounting = { path = "crates/accounting" }
