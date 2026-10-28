@@ -1,0 +1,36 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/domain",
+  "crates/database",
+  "crates/chain-adapters",
+  "services/api",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[workspace.dependencies]
+actix-web = "4"
+actix-cors = "0.7"
+anyhow = "1"
+bs58 = "0.5"
+chrono = { version = "0.4", features = ["serde"] }
+rust_decimal = { version = "1", features = ["serde-with-str", "db-postgres"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "migrate", "chrono", "uuid", "rust_decimal", "json", "macros"] }
+sha3 = "0.10"
+hex = "0.4"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "time"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+
+trace-domain = { path = "crates/domain" }
+trace-database = { path = "crates/database" }
+trace-chain-adapters = { path = "crates/chain-adapters" }

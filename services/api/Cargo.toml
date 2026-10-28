@@ -1,0 +1,33 @@
+[package]
+name = "trace-api"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "trace-api"
+path = "src/main.rs"
+
+[lib]
+name = "trace_api"
+path = "src/lib.rs"
+
+[dependencies]
+trace-domain.workspace = true
+trace-database.workspace = true
+trace-chain-adapters.workspace = true
+actix-web.workspace = true
+actix-cors.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+actix-rt = "2"

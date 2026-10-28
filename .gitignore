@@ -1,0 +1,8 @@
+/target
+.env
+*.log
+node_modules/
+.next/
+.dart_tool/
+build/
+.DS_Store
