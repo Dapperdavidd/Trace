@@ -162,16 +162,18 @@ async fn cursors_resume_where_they_left_off(pool: PgPool) {
 async fn raw_events_are_idempotent(pool: PgPool) {
     let payload = serde_json::json!({"fixture": "synthetic"});
     let t = Utc.timestamp_opt(1_793_190_000, 0).unwrap();
-    let a = store_raw_event(
-        &pool, "ethereum", "0xaa", 1, "fixture", &payload, "abc", true, t,
-    )
-    .await
-    .unwrap();
-    let b = store_raw_event(
-        &pool, "ethereum", "0xaa", 1, "fixture", &payload, "abc", true, t,
-    )
-    .await
-    .unwrap();
+    let ev = RawEvent {
+        chain: "ethereum",
+        tx_id: "0xaa",
+        event_index: 1,
+        source: "fixture",
+        payload: &payload,
+        payload_sha256: "abc",
+        fixture: true,
+        observed_at: t,
+    };
+    let a = store_raw_event(&pool, &ev).await.unwrap();
+    let b = store_raw_event(&pool, &ev).await.unwrap();
     assert_eq!((a, b), (InsertOutcome::Inserted, InsertOutcome::Duplicate));
 }
 

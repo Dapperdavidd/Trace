@@ -11,29 +11,32 @@ pub enum InsertOutcome {
     Duplicate,
 }
 
-pub async fn store_raw_event(
-    pool: &PgPool,
-    chain: &str,
-    tx_id: &str,
-    event_index: i32,
-    source: &str,
-    payload: &serde_json::Value,
-    payload_sha256: &str,
-    fixture: bool,
-    observed_at: chrono::DateTime<chrono::Utc>,
-) -> Result<InsertOutcome, DbError> {
+/// Raw provider payload kept so any parser can be replayed.
+pub struct RawEvent<'a> {
+    pub chain: &'a str,
+    pub tx_id: &'a str,
+    pub event_index: i32,
+    pub source: &'a str,
+    pub payload: &'a serde_json::Value,
+    pub payload_sha256: &'a str,
+    /// True for fixtures and seeded data, never for live captures.
+    pub fixture: bool,
+    pub observed_at: chrono::DateTime<chrono::Utc>,
+}
+
+pub async fn store_raw_event(pool: &PgPool, e: &RawEvent<'_>) -> Result<InsertOutcome, DbError> {
     let r = sqlx::query(
         r#"INSERT INTO raw_chain_events (chain, tx_id, event_index, source, payload, payload_sha256, fixture, observed_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING"#,
     )
-    .bind(chain)
-    .bind(tx_id)
-    .bind(event_index)
-    .bind(source)
-    .bind(payload)
-    .bind(payload_sha256)
-    .bind(fixture)
-    .bind(observed_at)
+    .bind(e.chain)
+    .bind(e.tx_id)
+    .bind(e.event_index)
+    .bind(e.source)
+    .bind(e.payload)
+    .bind(e.payload_sha256)
+    .bind(e.fixture)
+    .bind(e.observed_at)
     .execute(pool)
     .await?;
     Ok(if r.rows_affected() == 1 {
