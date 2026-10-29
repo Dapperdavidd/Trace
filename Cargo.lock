@@ -2910,6 +2910,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "trace-fixture-capture"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "hex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+ "trace-chain-adapters",
+ "trace-domain",
+]
+
+[[package]]
 name = "trace-intelligence"
 version = "0.1.0"
 dependencies = [

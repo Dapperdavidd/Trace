@@ -13,6 +13,7 @@ members = [
   "crates/jobs",
   "services/api",
   "services/worker",
+  "tools/fixture-capture",
 ]
 
 [workspace.package]
