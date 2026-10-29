@@ -10,7 +10,9 @@ members = [
   "crates/signals",
   "crates/shadow",
   "crates/discovery",
+  "crates/jobs",
   "services/api",
+  "services/worker",
 ]
 
 [workspace.package]
@@ -50,3 +52,4 @@ trace-risk = { path = "crates/risk" }
 trace-signals = { path = "crates/signals" }
 trace-shadow = { path = "crates/shadow" }
 trace-discovery = { path = "crates/discovery" }
+trace-jobs = { path = "crates/jobs" }

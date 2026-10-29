@@ -20,3 +20,7 @@
 - Request ids now appear in errors raised inside handlers.
 - Demo seeder, all rows flagged demo.
 - Shadow rules settled: unsupported rules are refused rather than approximated. Web and mobile option lists updated.
+
+## Milestone 6 (2026-10-29)
+- `trace-jobs`: durable PostgreSQL job queue (idempotent enqueue, SKIP LOCKED leasing, crash recovery, transient and permanent failures, capped backoff, dead jobs kept).
+- `trace-worker`: signal outcome evaluation using the first available price at or after each horizon, append-only outcomes, lifecycle events, tamper detection. Periodic scheduling and a drain loop.

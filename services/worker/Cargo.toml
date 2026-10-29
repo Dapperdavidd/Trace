@@ -1,0 +1,31 @@
+[package]
+name = "trace-worker"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "trace-worker"
+path = "src/main.rs"
+
+[lib]
+name = "trace_worker"
+path = "src/lib.rs"
+
+[dependencies]
+trace-domain.workspace = true
+trace-database.workspace = true
+trace-jobs.workspace = true
+trace-signals.workspace = true
+trace-risk.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+rust_decimal.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]

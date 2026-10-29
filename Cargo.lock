@@ -2922,6 +2922,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "trace-jobs"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "trace-database",
+ "uuid",
+]
+
+[[package]]
 name = "trace-risk"
 version = "0.1.0"
 dependencies = [
@@ -2950,6 +2963,26 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "thiserror",
+]
+
+[[package]]
+name = "trace-worker"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "rust_decimal",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "trace-database",
+ "trace-domain",
+ "trace-jobs",
+ "trace-risk",
+ "trace-signals",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
