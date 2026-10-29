@@ -1,0 +1,8 @@
+import type { Metadata } from "next";
+import { ComingLater } from "@/components/ComingLater";
+
+export const metadata: Metadata = { title: "Receive (coming later)" };
+
+export default function Page() {
+  return <ComingLater title="Receive" why="Receiving crypto needs a TRACE wallet address, and TRACE does not create wallets yet. You can still watch any public address." />;
+}
