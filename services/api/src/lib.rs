@@ -1,4 +1,7 @@
+pub mod analysis;
+pub mod auth;
 pub mod config;
+pub mod demo;
 pub mod error;
 pub mod request_id;
 pub mod routes;
@@ -15,6 +18,15 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         web::scope("/v1")
             .configure(routes::health::configure)
             .configure(routes::chains::configure)
+            .configure(routes::account::configure)
+            .configure(routes::watchlists::configure)
+            .configure(routes::alerts::configure)
+            .configure(routes::discovery::configure)
+            .configure(routes::wallets::configure)
+            .configure(routes::tokens::configure)
+            .configure(routes::signals::configure)
+            .configure(routes::shadow::configure)
+            .configure(routes::briefings::configure)
             .configure(routes::openapi::configure),
     );
 }

@@ -1,3 +1,13 @@
+pub mod account;
+pub mod alerts;
+pub mod briefings;
 pub mod chains;
+pub mod common;
+pub mod discovery;
 pub mod health;
 pub mod openapi;
+pub mod shadow;
+pub mod signals;
+pub mod tokens;
+pub mod wallets;
+pub mod watchlists;

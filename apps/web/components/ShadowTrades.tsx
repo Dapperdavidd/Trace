@@ -13,14 +13,13 @@ import { ShadowResultView } from "./ShadowResultView";
 import { EmptyState, HonestyNote, PageHead, Panel, Remote } from "./ui";
 
 const SIZE_RULES = [
-  { id: "proportional", label: "Match their size, scaled to my budget" },
   { id: "fixed_pct", label: "Fixed 5% of my budget per trade" },
-  { id: "fixed_usd", label: "Equal dollar amount per trade" },
+  { id: "fixed_usd", label: "Equal dollar amount per trade (5% of budget)" },
 ];
 const EXIT_RULES = [
   { id: "mirror_sells", label: "Sell when they sell" },
   { id: "time_24h", label: "Sell after 24 hours" },
-  { id: "stop_loss_20", label: "Sell if down 20%" },
+  { id: "time_exit_7d", label: "Sell after 7 days" },
 ];
 const DELAYS = [
   { v: 0, label: "No delay (best case, rarely realistic)" },

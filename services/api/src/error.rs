@@ -14,6 +14,10 @@ pub enum ApiError {
     NotFound,
     #[error("unauthorized")]
     Unauthorized,
+    #[error("{0}")]
+    Conflict(String),
+    #[error("{0}")]
+    LimitReached(String),
     #[error("dependency unavailable: {0}")]
     Unavailable(String),
     #[error("internal error")]
@@ -28,6 +32,8 @@ impl ApiError {
             ApiError::BadRequest(_) => "bad_request",
             ApiError::NotFound => "not_found",
             ApiError::Unauthorized => "unauthorized",
+            ApiError::Conflict(_) => "conflict",
+            ApiError::LimitReached(_) => "limit_reached",
             ApiError::Unavailable(_) => "dependency_unavailable",
             ApiError::Internal(_) => "internal_error",
             ApiError::Domain(DomainError::UnknownChain(_)) => "unknown_chain",
@@ -43,6 +49,8 @@ impl ResponseError for ApiError {
             ApiError::BadRequest(_) | ApiError::Domain(_) => StatusCode::BAD_REQUEST,
             ApiError::NotFound => StatusCode::NOT_FOUND,
             ApiError::Unauthorized => StatusCode::UNAUTHORIZED,
+            ApiError::Conflict(_) => StatusCode::CONFLICT,
+            ApiError::LimitReached(_) => StatusCode::UNPROCESSABLE_ENTITY,
             ApiError::Unavailable(_) => StatusCode::SERVICE_UNAVAILABLE,
             ApiError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
@@ -58,12 +66,15 @@ impl ResponseError for ApiError {
         };
         // request_id is attached by `envelope` where the request is available;
         // handlers returning ApiError directly get an empty id filled in below.
-        HttpResponse::build(self.status_code()).json(ApiErrorBody {
+        let mut resp = HttpResponse::build(self.status_code()).json(ApiErrorBody {
             code: self.code().to_string(),
             message,
             details: None,
             request_id: String::new(),
-        })
+        });
+        resp.extensions_mut()
+            .insert(crate::request_id::NeedsRequestId);
+        resp
     }
 }
 

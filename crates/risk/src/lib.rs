@@ -8,7 +8,7 @@
 
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub const RISK_POLICY_VERSION: &str = "risk/1";
 
@@ -69,7 +69,8 @@ pub struct RiskReport {
 }
 
 /// Everything is optional on purpose: missing data is a first-class state.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct RiskInputs {
     pub honeypot: Option<bool>,
     pub sell_tax_bps: Option<u32>,

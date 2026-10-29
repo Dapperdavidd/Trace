@@ -316,7 +316,7 @@ class _ShadowSetupScreenState extends ConsumerState<ShadowSetupScreen> {
           ),
         _choices<String>('Trade size', 'How big each paper trade is.', const [
           ('fixed_usd', 'Same amount each time'),
-          ('proportional', 'Proportional to the wallet'),
+          ('fixed_pct', 'A fixed 5% of the budget'),
         ], _size, (v) => _size = v),
         _choices<int>('Entry delay', 'Followers always get in after the wallet. A longer delay is more realistic.', const [
           (0, 'None'),
@@ -331,6 +331,7 @@ class _ShadowSetupScreenState extends ConsumerState<ShadowSetupScreen> {
         ], _slippage, (v) => _slippage = v),
         _choices<String>('Exit rule', 'When the paper position is sold.', const [
           ('mirror_sells', 'When the wallet sells'),
+          ('time_24h', 'After 24 hours'),
           ('time_exit_7d', 'After 7 days'),
         ], _exit, (v) => _exit = v),
         const SizedBox(height: 16),

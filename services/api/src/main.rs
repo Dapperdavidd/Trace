@@ -19,7 +19,26 @@ async fn main() -> anyhow::Result<()> {
 
     let listener = TcpListener::bind(&cfg.bind_addr)?;
     tracing::info!(addr = %cfg.bind_addr, "trace-api listening");
-    run(listener, AppState { pool }, cfg.cors_origins)?.await?;
+    let verifier: std::sync::Arc<dyn trace_api::auth::IdTokenVerifier> = match (
+        &cfg.google_client_id,
+        cfg.dev_auth,
+    ) {
+        (_, true) => {
+            tracing::warn!("TRACE_DEV_AUTH is on: dev tokens are accepted. Never use this outside local development.");
+            std::sync::Arc::new(trace_api::auth::DevVerifier)
+        }
+        (Some(id), false) => std::sync::Arc::new(trace_api::auth::GoogleVerifier::new(id.clone())),
+        (None, false) => {
+            tracing::warn!("GOOGLE_CLIENT_ID is not set: sign-in is disabled");
+            std::sync::Arc::new(trace_api::auth::Disabled)
+        }
+    };
+    run(
+        listener,
+        AppState::with_verifier(pool, verifier),
+        cfg.cors_origins,
+    )?
+    .await?;
     Ok(())
 }
 

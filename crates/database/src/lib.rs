@@ -6,6 +6,7 @@ use std::time::Duration;
 
 pub mod coverage;
 pub mod ingestion;
+pub mod reads;
 
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("../../migrations");
 
@@ -15,6 +16,8 @@ pub enum DbError {
     Sqlx(#[from] sqlx::Error),
     #[error("migration error: {0}")]
     Migrate(#[from] sqlx::migrate::MigrateError),
+    #[error("stored data could not be read: {0}")]
+    Corrupt(String),
 }
 
 pub async fn connect(database_url: &str, max_connections: u32) -> Result<PgPool, DbError> {

@@ -128,8 +128,8 @@ test/          unit tests
 - `POST /watchlists` response body is unspecified. The client ignores it and
   refetches `GET /watchlists`.
 - Shadow request wire values are unspecified. The client sends `budget_usd` as a
-  decimal string, `size_rule` as `fixed_usd` or `proportional`, `exit_rule` as
-  `mirror_sells` or `time_exit_7d`.
+  decimal string, `size_rule` as `fixed_usd` or `fixed_pct`, `exit_rule` as
+  `mirror_sells`, `time_24h` or `time_exit_7d` (the API refuses other values).
 - `baseline` and `assumptions` in shadow results are free-form. The client shows
   `baseline.label` and `baseline.return_pct` when present and lists assumptions as
   key and value pairs. There is no equity-curve series, so no chart is drawn.

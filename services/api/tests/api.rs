@@ -7,7 +7,7 @@ macro_rules! app {
     ($pool:expr) => {
         test::init_service(
             App::new()
-                .app_data(web::Data::new(AppState { pool: $pool }))
+                .app_data(web::Data::new(AppState::new($pool)))
                 .app_data(error::json_config())
                 .wrap(RequestId)
                 .configure(configure)
@@ -115,5 +115,35 @@ async fn openapi_documents_every_route(pool: PgPool) {
     let paths = body["paths"].as_object().unwrap();
     for p in ["/v1/health/live", "/v1/health/ready", "/v1/chains"] {
         assert!(paths.contains_key(p), "missing {p}");
+    }
+}
+
+/// Every documented route must exist: a request must never fall through to the
+/// "No such route." default, whatever the method and auth state.
+#[sqlx::test(migrator = "trace_database::MIGRATOR")]
+async fn every_documented_route_is_registered(pool: PgPool) {
+    let app = app!(pool);
+    for (method, path, _, _) in trace_api::routes::openapi::ROUTES {
+        let uri = path
+            .replace("{chain}", "ethereum")
+            .replace("{address}", "0x1111111111111111111111111111111111111111")
+            .replace("{id}", "00000000-0000-0000-0000-000000000001");
+        let req = match *method {
+            "get" => test::TestRequest::get(),
+            "post" => test::TestRequest::post(),
+            "patch" => test::TestRequest::patch(),
+            "delete" => test::TestRequest::delete(),
+            m => panic!("unexpected method {m}"),
+        }
+        .uri(&uri)
+        .set_json(serde_json::json!({}))
+        .to_request();
+        let res = test::call_service(&app, req).await;
+        let status = res.status();
+        let body: Value = test::try_read_body_json(res).await.unwrap_or(Value::Null);
+        assert!(
+            body["message"] != "No such route.",
+            "{method} {path} is documented but not registered (status {status})"
+        );
     }
 }

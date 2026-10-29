@@ -64,9 +64,9 @@ covers wallet watchlists), push notifications.
 
 * `TokenSummary` (compare) is not defined in the contract. Assumed: token, price, 24h change, market cap,
   volume, liquidity, overall risk state and an optional `note`.
-* `size_rule` and `exit_rule` for `POST /shadow-strategies` are free-form strings. The UI sends
-  `proportional | fixed_pct | fixed_usd` and `mirror_sells | time_24h | stop_loss_20`. `budget_usd` is sent
-  as a decimal string.
+* `size_rule` and `exit_rule` for `POST /shadow-strategies` are now defined by the API (see
+  `docs/api-contract.md`): `fixed_pct | fixed_usd` and `mirror_sells | time_24h | time_exit_7d`. Other values are
+  refused with 400. `budget_usd` is sent as a decimal string.
 * `GET|PATCH /alert-preferences` shape is not defined. Assumed booleans per alert type.
 * `PATCH /watchlists/{id}` body is not defined. Assumed `{ alias?, status?: "active" | "paused" }`.
 * No endpoint lists a user's shadow strategies, so Paper Positions remembers strategy ids in this browser

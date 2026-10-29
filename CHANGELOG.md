@@ -12,3 +12,11 @@
 - Added `risk` (token risk policy), `intelligence` (WQS, WCS, TCQ, Trading DNA), `signals` (lifecycle, sealed receipts, outcomes), `shadow` (paper simulation) and `discovery` (candidates, independent buyers, Top Movers).
 - Added `docs/api-contract.md` and ADR 0003.
 - All score defaults are unvalidated. Parsers remain disabled until real fixtures exist.
+
+## Milestone 5 (2026-10-29)
+- Product schema migration: users, sessions, watchlists, alerts, price points, market snapshots, signals, outcomes, paper strategies.
+- Auth: Google ID token verification (RS256 only, audience, issuer, expiry, verified email), opaque hashed sessions, account deletion.
+- API routes for account, watchlist, alerts, discovery, wallet research, tokens, signals, paper strategies and briefings.
+- Request ids now appear in errors raised inside handlers.
+- Demo seeder, all rows flagged demo.
+- Shadow rules settled: unsupported rules are refused rather than approximated. Web and mobile option lists updated.

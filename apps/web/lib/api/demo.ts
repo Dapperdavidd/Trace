@@ -530,7 +530,7 @@ export function demoResponse(
       assumptions: {
         delay_seconds: strat?.delay_seconds ?? 30,
         slippage_bps: strat?.slippage_bps ?? 50,
-        size_rule: strat?.size_rule ?? "proportional",
+        size_rule: strat?.size_rule ?? "fixed_pct",
         exit_rule: strat?.exit_rule ?? "mirror_sells",
         price_source: "Follower-available price after detection",
       },

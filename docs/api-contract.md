@@ -54,3 +54,37 @@ type RiskState = "pass" | "warn" | "block" | "unknown";
 
 ## Out of scope for MVP (UI must show "Coming later", never fake it)
 Spendable wallet creation, send, receive, buy, swap, live copy trading, natural-language "Ask TRACE".
+
+
+## Settled in milestone 5 (previously ambiguous)
+
+- **Auth:** `Authorization: Bearer <access_token>`. Sessions last 30 days and only a hash is stored. Sign-in answers 503
+  `dependency_unavailable` when `GOOGLE_CLIENT_ID` is not configured. `DELETE /me` removes the account, sessions,
+  watchlist, alerts and paper strategies.
+- **Errors:** every error carries `request_id`, including those raised inside handlers. 409 `conflict`, 422 `limit_reached`.
+- **Watchlist:** up to 200 wallets. `POST` returns 201 for a new wallet and 200 with the same `id` when it already exists.
+  `PATCH` body `{ alias?, paused? }`; an empty alias clears it. Status is derived from real coverage and activity:
+  `paused`, `unsupported_protocol` (no enabled protocol on that chain), `waiting_for_activity` (no swaps yet),
+  `partial_monitoring`, `active`.
+- **Alert preferences:** `{ wallet_buy, wallet_sell, risk_event, signal }`, all booleans, default true. Alerts of a switched-off
+  type are not returned by `GET /alerts`. `GET /alerts?limit=` accepts 1 to 50.
+- **Pagination:** `cursor` is opaque. Discovery wallets and wallet trades use an offset cursor, alerts and signals a keyset cursor.
+- **TokenSummary** (compare): `{ token, price_usd, change_pct_24h, market_cap_usd|null, volume_24h_usd, liquidity_usd, risk, note|null }`.
+  Compare takes `a`, `b`, optional `c`, `d` as `chain:address`. A token with no market data makes the request 404.
+- **Token risk checks** may also include `quote_freshness`. `risk.policy_version` is returned.
+- **Top Movers:** `coverage_note` states what was excluded (stale, thin liquidity, invalid price, blocked by risk checks).
+  A token with no explainable reason is not listed.
+- **Discovery wallets:** `top` ranks only wallets that could be scored. `new` and `most_followed` also list wallets with
+  `decision: insufficient_evidence`. A wallet that looks like a bot is tagged `possible_bot` and capped at `watch_only`.
+- **Wallet `wcs`** is `null` until follower quotes exist. Wallet endpoints for an address with no history return 200 with
+  `data_status: unavailable`, never zeros.
+- **Shadow strategies:** `size_rule` is `fixed_pct` (5% of budget per trade) or `fixed_usd` (5% of budget as dollars).
+  `exit_rule` is `mirror_sells`, `time_24h` or `time_exit_7d`. `budget_usd` is a decimal string or number in (0, 1,000,000].
+  `delay_seconds` 0 to 3600, `slippage_bps` 0 to 2000. Other values are 400. `GET /shadow-strategies` lists your strategies.
+  Results add `skipped` (with reasons), `open_positions`, `unmarked_open_positions`, and `baseline = { label, return_pct,
+  ideal_leader_execution_return_pct, note }` which is a comparison only. Only final trades are replayed.
+- **Signals:** `GET /signals/{id}` returns the receipt, `receipt_hash` and events. A receipt whose hash no longer matches is
+  withheld: the detail call fails with 500 and the list marks the item `integrity: "failed"`. Outcomes list all four
+  horizons with `status` `recorded | pending | awaiting_evaluation` and a `summary` that counts losses, unpriced and untradeable.
+- **Demo mode:** with `TRACE_SEED_DEMO=true` the API seeds synthetic tokens, wallets, swaps, prices, snapshots, signals and
+  starter alerts, all flagged `demo`. Responses built from them have `data_status: "demo"` and `demo: true`.
