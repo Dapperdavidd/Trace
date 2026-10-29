@@ -2522,6 +2522,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "trace-discovery"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rust_decimal",
+ "serde",
+ "trace-domain",
+ "trace-risk",
+]
+
+[[package]]
 name = "trace-domain"
 version = "0.1.0"
 dependencies = [
@@ -2530,6 +2541,49 @@ dependencies = [
  "rust_decimal",
  "serde",
  "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "trace-intelligence"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rust_decimal",
+ "serde",
+ "trace-accounting",
+ "trace-domain",
+ "trace-risk",
+]
+
+[[package]]
+name = "trace-risk"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rust_decimal",
+ "serde",
+]
+
+[[package]]
+name = "trace-shadow"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rust_decimal",
+ "serde",
+]
+
+[[package]]
+name = "trace-signals"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hex",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
  "thiserror",
 ]
 

@@ -15,3 +15,7 @@ Nothing below is enabled. This file changes in the same commit as the fixtures t
 Watch-only monitoring accepts any syntactically valid address on all four chains. When a wallet's
 activity cannot be parsed the API will report `partial_monitoring`, `unsupported_protocol` or
 `waiting_for_activity`, never a fake alert.
+
+
+## Update 2026-10-28
+No protocol was enabled in milestone 3. Pure-logic crates were added and tested on synthetic data only.
