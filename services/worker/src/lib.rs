@@ -1,3 +1,4 @@
+pub mod ingest;
 pub mod outcomes;
 
 use chrono::{DateTime, Duration, Utc};

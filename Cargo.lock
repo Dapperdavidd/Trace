@@ -2986,11 +2986,16 @@ name = "trace-worker"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "chrono",
+ "hex",
  "rust_decimal",
  "serde_json",
+ "sha2 0.10.9",
  "sqlx",
+ "thiserror",
  "tokio",
+ "trace-chain-adapters",
  "trace-database",
  "trace-domain",
  "trace-jobs",

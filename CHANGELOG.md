@@ -31,3 +31,11 @@
 - Fixtures carry provenance and a payload hash. The tool never fills `expected`; a human verifies against a block explorer.
 - Gate tests: reviewed fixtures must reproduce `expected`, tampering fails, and no protocol may be Partial or Enabled without 3 distinct reviewed real transactions.
 - `docs/fixtures.md` documents capture and review. No real fixtures exist yet, so every protocol stays Disabled.
+
+## Milestone 8: ingestion engine
+
+- `trace_worker::ingest::step`: bounded range reads, idempotent inserts, cursor advances only after success.
+- Reorg handling: hash mismatch at the cursor marks tentative rows in the window `reorged` (history kept, audited), rolls back and re-reads. Re-included transactions get a new revision. Finalized rows are never touched.
+- Finality is judged from the chain head, never from the source. Out-of-range rows from a source are dropped and counted.
+- Refuses any protocol the registry has not marked Enabled or Partial.
+- Tested against a scripted in-memory chain (synthetic). No real RPC source exists yet.

@@ -145,6 +145,41 @@ pub async fn finalize_up_to(
     Ok(r.rows_affected())
 }
 
+/// What to do with a freshly parsed swap given what is already stored.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RevisionPlan {
+    /// A non-reorged row already exists for this event. Do not insert.
+    Live,
+    /// No live row. Insert with this revision (history of reorged rows is kept).
+    Next(u32),
+}
+
+pub async fn revision_plan(
+    pool: &PgPool,
+    chain: &str,
+    tx_id: &str,
+    event_index: i32,
+) -> Result<RevisionPlan, DbError> {
+    let rows = sqlx::query(
+        "SELECT finality_revision, finality FROM normalized_swaps
+         WHERE chain=$1 AND tx_id=$2 AND event_index=$3 ORDER BY finality_revision DESC",
+    )
+    .bind(chain)
+    .bind(tx_id)
+    .bind(event_index)
+    .fetch_all(pool)
+    .await?;
+    if rows
+        .iter()
+        .any(|r| r.get::<String, _>("finality") != "reorged")
+    {
+        return Ok(RevisionPlan::Live);
+    }
+    Ok(RevisionPlan::Next(rows.first().map_or(0, |r| {
+        r.get::<i32, _>("finality_revision") as u32 + 1
+    })))
+}
+
 pub async fn get_cursor(
     pool: &PgPool,
     chain: &str,
