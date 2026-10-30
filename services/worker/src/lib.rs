@@ -1,5 +1,6 @@
 pub mod ingest;
 pub mod outcomes;
+pub mod rpc_source;
 
 use chrono::{DateTime, Duration, Utc};
 use sqlx::PgPool;

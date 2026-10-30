@@ -39,3 +39,11 @@
 - Finality is judged from the chain head, never from the source. Out-of-range rows from a source are dropped and counted.
 - Refuses any protocol the registry has not marked Enabled or Partial.
 - Tested against a scripted in-memory chain (synthetic). No real RPC source exists yet.
+
+## Milestone 9: RPC-backed EVM source
+
+- `EvmRpcSource`: eth_getLogs plus full receipts, block time, finalized tag (absent means not proven final).
+- A pair counts only if its `factory()` matches the configured factory. Forks with the same Swap event are left out and reported as skipped, never mislabelled. Verdicts are cached.
+- A block hash mismatch between log, receipt and block is an error (chain moved), not a guess.
+- Errors never contain the RPC URL or key.
+- Tested against a local scripted JSON-RPC server (synthetic). Not yet exercised against a real node.
