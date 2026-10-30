@@ -1,4 +1,5 @@
 pub mod ingest;
+pub mod ingest_job;
 pub mod outcomes;
 pub mod rpc_source;
 
@@ -29,7 +30,19 @@ pub async fn schedule_periodic(
 }
 
 pub async fn run_job(pool: &PgPool, job: &Job, now: DateTime<Utc>) -> Result<(), Failure> {
+    run_job_with(pool, job, now, &ingest_job::Ctx::empty()).await
+}
+
+pub async fn run_job_with(
+    pool: &PgPool,
+    job: &Job,
+    now: DateTime<Utc>,
+    ctx: &ingest_job::Ctx,
+) -> Result<(), Failure> {
     match job.kind.as_str() {
+        ingest_job::INGEST_EVM => ingest_job::run_ingest(pool, ctx, job)
+            .await
+            .map(|r| tracing::info!(?r, "ingest step")),
         EVALUATE_OUTCOMES => outcomes::evaluate_due(pool, now)
             .await
             .map(|r| tracing::info!(?r, "signal outcomes evaluated"))
@@ -40,10 +53,23 @@ pub async fn run_job(pool: &PgPool, job: &Job, now: DateTime<Utc>) -> Result<(),
 
 /// Lease and run due jobs until none remain. Returns how many ran.
 pub async fn drain(pool: &PgPool, now: DateTime<Utc>) -> Result<usize, trace_jobs::JobError> {
+    drain_with(pool, now, &ingest_job::Ctx::empty()).await
+}
+
+pub async fn drain_with(
+    pool: &PgPool,
+    now: DateTime<Utc>,
+    ctx: &ingest_job::Ctx,
+) -> Result<usize, trace_jobs::JobError> {
+    // Ingest jobs are leased only by a worker that can run them.
+    let mut kinds: Vec<&str> = KINDS.to_vec();
+    if ctx.source.is_some() {
+        kinds.push(ingest_job::INGEST_EVM);
+    }
     let mut n = 0;
-    while let Some(job) = trace_jobs::lease(pool, now, Duration::minutes(5), KINDS).await? {
+    while let Some(job) = trace_jobs::lease(pool, now, Duration::minutes(5), &kinds).await? {
         n += 1;
-        match run_job(pool, &job, now).await {
+        match run_job_with(pool, &job, now, ctx).await {
             Ok(()) => trace_jobs::succeed(pool, &job, now).await?,
             Err(f) => {
                 tracing::warn!(job = %job.id, kind = %job.kind, failure = ?f, "job failed");

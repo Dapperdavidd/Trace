@@ -12,6 +12,14 @@ async fn main() -> anyhow::Result<()> {
     let url = std::env::var("DATABASE_URL")?;
     let pool = trace_database::connect(&url, 5).await?;
     trace_database::migrate(&pool).await?;
+    let ctx = trace_worker::ingest_job::Ctx::from_env();
+    let targets = ctx.targets();
+    if targets.is_empty() {
+        tracing::info!("no protocol is enabled with an RPC URL configured; ingestion is idle");
+    }
+    for d in targets {
+        tracing::info!(chain = %d.chain, protocol = d.protocol, "ingestion active");
+    }
     tracing::info!("trace-worker started");
     let mut tick = tokio::time::interval(Duration::from_secs(30));
     let mut stop = Box::pin(tokio::signal::ctrl_c());
@@ -22,7 +30,10 @@ async fn main() -> anyhow::Result<()> {
                 if let Err(e) = trace_worker::schedule_periodic(&pool, now).await {
                     tracing::warn!(error = %e, "could not schedule jobs");
                 }
-                match trace_worker::drain(&pool, now).await {
+                if let Err(e) = trace_worker::ingest_job::schedule_ingest(&pool, &ctx, now).await {
+                    tracing::warn!(error = %e, "could not schedule ingestion");
+                }
+                match trace_worker::drain_with(&pool, now, &ctx).await {
                     Ok(n) if n > 0 => tracing::info!(ran = n, "jobs run"),
                     Ok(_) => {}
                     Err(e) => tracing::warn!(error = %e, "job loop error"),

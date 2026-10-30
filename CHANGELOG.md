@@ -47,3 +47,10 @@
 - A block hash mismatch between log, receipt and block is an error (chain moved), not a guess.
 - Errors never contain the RPC URL or key.
 - Tested against a local scripted JSON-RPC server (synthetic). Not yet exercised against a real node.
+
+## Milestone 10: ingestion jobs and CI
+
+- `ingest_evm` queue job: scheduled once per minute per protocol, only when the registry says Enabled or Partial and `TRACE_RPC_<CHAIN>` is set. The gate is re-checked at run time, so a job queued before a protocol was disabled does not run.
+- One worker per protocol at a time (Postgres advisory lock, released on failure). Source outages retry with backoff.
+- Worker logs "ingestion is idle" at start while nothing is enabled. Today that is always.
+- `infra/ci/ci.yml`: copy to `.github/workflows/ci.yml` (fmt, clippy, tests with Postgres, OpenAPI drift, web, mobile).
