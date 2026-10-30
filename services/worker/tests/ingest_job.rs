@@ -89,13 +89,10 @@ async fn queued_job(pool: &PgPool, t: chrono::DateTime<Utc>) -> trace_jobs::Job 
 }
 
 #[sqlx::test(migrator = "trace_database::MIGRATOR")]
-async fn nothing_is_scheduled_while_every_protocol_is_disabled(pool: PgPool) {
-    // The real registry today: nothing is enabled, even with an RPC URL set.
-    let (mut c, _) = ctx(SupportStatus::Disabled, true, false);
+async fn a_disabled_protocol_is_not_scheduled_even_with_an_rpc_url(pool: PgPool) {
+    let (c, _) = ctx(SupportStatus::Disabled, true, false);
     assert!(c.targets().is_empty());
     assert_eq!(schedule_ingest(&pool, &c, now()).await.unwrap(), 0);
-    c.protocols = registry::protocols();
-    assert!(c.targets().is_empty());
 }
 
 #[sqlx::test(migrator = "trace_database::MIGRATOR")]

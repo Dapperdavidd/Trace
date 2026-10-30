@@ -1,8 +1,7 @@
 //! Scheduling and running ingestion as queue jobs.
 //!
 //! Nothing is scheduled unless the registry marks the protocol Enabled or
-//! Partial AND an RPC URL is configured. Today no protocol is enabled, so the
-//! worker ingests nothing. That is correct until reviewed real fixtures exist.
+//! Partial and an RPC URL is configured.
 
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;

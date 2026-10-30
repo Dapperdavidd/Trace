@@ -16,6 +16,10 @@ async fn main() -> anyhow::Result<()> {
     let pool = trace_database::connect(&cfg.database_url, cfg.db_max_connections).await?;
     trace_database::migrate(&pool).await?;
     sync_registry(&pool).await?;
+    if cfg.seed_demo {
+        let created = trace_api::demo::seed(&pool, chrono::Utc::now()).await?;
+        tracing::info!(created, "demo data ready");
+    }
 
     let listener = TcpListener::bind(&cfg.bind_addr)?;
     tracing::info!(addr = %cfg.bind_addr, "trace-api listening");
