@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "kind": "evm_v2_tx",
+  "chain": "ethereum",
+  "protocol": "uniswap_v2",
+  "tx_id": "0xd28da944d7322ed0c52d12cceb43f33fbfe0e13ee21d31fee16e5ed4c2717e1f",
+  "captured_at": "2026-10-30T10:56:08.054583Z",
+  "rpc_host": "eth-mainnet.g.alchemy.com",
+  "tool_version": "0.1.0",
+  "payload_sha256": "3667e1f1e42af1051aa460c6d38b41891091c603a895b9fcc9b8caa0c93e74ed",
+  "payload": {
+    "block_hash": "0xc2e57a7991e2396486bb2e0ef0e00dd6674c5207d95435dc3d5d2e03b2054613",
+    "block_number": 26305085,
+    "block_time": "2026-10-30T10:50:35Z",
+    "finalized": false,
+    "from": "0x72742a7323fde43240f1a80617cdd888a0a90db6",
+    "logs": [
+      {
+        "address": "0x5137937863d88b17ea9b66afa2a7c82fb526181f",
+        "data": "0x0000000000000000000000000000000000000000000000000000005d51794461",
+        "logIndex": 964,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x00000000000000000000000072742a7323fde43240f1a80617cdd888a0a90db6",
+          "0x0000000000000000000000005137937863d88b17ea9b66afa2a7c82fb526181f"
+        ]
+      },
+      {
+        "address": "0x5137937863d88b17ea9b66afa2a7c82fb526181f",
+        "data": "0x00000000000000000000000000000000000000000000000000000009d7fda1e5",
+        "logIndex": 965,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x000000000000000000000000f38521f130fccf29db1961597bc5d2b60f995f85"
+        ]
+      },
+      {
+        "address": "0x5137937863d88b17ea9b66afa2a7c82fb526181f",
+        "data": "0x0000000000000000000000000000000000000000000000000000005d51794461",
+        "logIndex": 966,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000005137937863d88b17ea9b66afa2a7c82fb526181f",
+          "0x0000000000000000000000000000000000000000000000000000000000000000"
+        ]
+      },
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "data": "0x00000000000000000000000000000000000000000000000000266ef0dfcd5d80",
+        "logIndex": 967,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000005137937863d88b17ea9b66afa2a7c82fb526181f",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d"
+        ]
+      },
+      {
+        "address": "0xee2c47c36f5cbc93c2b69e970aec477db7d9d2b4",
+        "data": "0x000000000000000000000000000000000000000000000000000000000170bcd6",
+        "logIndex": 968,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000005137937863d88b17ea9b66afa2a7c82fb526181f",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d"
+        ]
+      },
+      {
+        "address": "0x5137937863d88b17ea9b66afa2a7c82fb526181f",
+        "data": "0x0000000000000000000000000000000000000000000000001eb0a57453b31d2f0000000000000000000000000000000000000000000000000000000126724b4b",
+        "logIndex": 969,
+        "topics": [
+          "0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1"
+        ]
+      },
+      {
+        "address": "0x5137937863d88b17ea9b66afa2a7c82fb526181f",
+        "data": "0x00000000000000000000000000000000000000000000000000266ef0dfcd5d80000000000000000000000000000000000000000000000000000000000170bcd6",
+        "logIndex": 970,
+        "topics": [
+          "0xdccd412f0b1252819cb1fd330b93224ca42612892bb3f4f789976e6d81936496",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d"
+        ]
+      },
+      {
+        "address": "0xee2c47c36f5cbc93c2b69e970aec477db7d9d2b4",
+        "data": "0x000000000000000000000000000000000000000000000000000000000170bcd6",
+        "logIndex": 971,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d",
+          "0x00000000000000000000000072742a7323fde43240f1a80617cdd888a0a90db6"
+        ]
+      },
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "data": "0x00000000000000000000000000000000000000000000000000266ef0dfcd5d80",
+        "logIndex": 972,
+        "topics": [
+          "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d"
+        ]
+      }
+    ],
+    "to": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+    "tx_hash": "0xd28da944d7322ed0c52d12cceb43f33fbfe0e13ee21d31fee16e5ed4c2717e1f"
+  },
+  "routers": [
+    "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
+  ],
+  "review": {
+    "status": "reviewed",
+    "instructions": "Open this transaction in a block explorer. Check wallet, tokens and amounts by hand. Copy the draft into 'expected' only for values you verified, then set status to 'reviewed'.",
+    "draft": {
+      "skipped": 0,
+      "swaps": []
+    },
+    "expected": {
+      "skipped": 0,
+      "swaps": []
+    }
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "kind": "evm_v2_tx",
+  "chain": "ethereum",
+  "protocol": "uniswap_v2",
+  "tx_id": "0x8faee6e7d783c0acc5f0a415ff260ee588c4a8ff51d56b117d49c4d08fc12677",
+  "captured_at": "2026-10-30T10:56:06.022834Z",
+  "rpc_host": "eth-mainnet.g.alchemy.com",
+  "tool_version": "0.1.0",
+  "payload_sha256": "6bdaf35dcbf2e32e12b8abe1424014cdbef6a92db9d153901905043d66d4e230",
+  "payload": {
+    "block_hash": "0x5765fe01c089a30d9c38d3bedeef5225fc52bef0318cacba10351f7a552d54d4",
+    "block_number": 26305097,
+    "block_time": "2026-10-30T10:52:59Z",
+    "finalized": false,
+    "from": "0x92276a17b64d756e44c09a2206afffc43b5f2bfc",
+    "logs": [
+      {
+        "address": "0x768488c988cf2493f0e7ccb3d56547f2384e2c27",
+        "data": "0x000000000000000000000000000000000000000000000000000048f57a9a3ff9",
+        "logIndex": 535,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x00000000000000000000000092276a17b64d756e44c09a2206afffc43b5f2bfc",
+          "0x0000000000000000000000003027d452fb89034649aca6f324aeba8596c75c2c"
+        ]
+      },
+      {
+        "address": "0x768488c988cf2493f0e7ccb3d56547f2384e2c27",
+        "data": "0xffffffffffffffffffffffffffffffffffffffffffffffffff91eb23733eebe0",
+        "logIndex": 536,
+        "topics": [
+          "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
+          "0x00000000000000000000000092276a17b64d756e44c09a2206afffc43b5f2bfc",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d"
+        ]
+      },
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "data": "0x00000000000000000000000000000000000000000000000000163cec584c0a10",
+        "logIndex": 537,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000003027d452fb89034649aca6f324aeba8596c75c2c",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d"
+        ]
+      },
+      {
+        "address": "0x3027d452fb89034649aca6f324aeba8596c75c2c",
+        "data": "0x0000000000000000000000000000000000000000000000000204d7c649a4ad910000000000000000000000000000000000000000000000009debded137d08713",
+        "logIndex": 538,
+        "topics": [
+          "0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1"
+        ]
+      },
+      {
+        "address": "0x3027d452fb89034649aca6f324aeba8596c75c2c",
+        "data": "0x000000000000000000000000000000000000000000000000000048f57a9a3ff90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000163cec584c0a10",
+        "logIndex": 539,
+        "topics": [
+          "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d"
+        ]
+      },
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "data": "0x00000000000000000000000000000000000000000000000000163cec584c0a10",
+        "logIndex": 540,
+        "topics": [
+          "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d"
+        ]
+      }
+    ],
+    "to": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+    "tx_hash": "0x8faee6e7d783c0acc5f0a415ff260ee588c4a8ff51d56b117d49c4d08fc12677"
+  },
+  "pairs": {
+    "0x3027d452fb89034649aca6f324aeba8596c75c2c": {
+      "protocol": "uniswap_v2",
+      "token0": "0x768488c988cf2493f0e7ccb3d56547f2384e2c27",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    }
+  },
+  "routers": [
+    "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
+  ],
+  "review": {
+    "status": "reviewed",
+    "instructions": "Open this transaction in a block explorer. Check wallet, tokens and amounts by hand. Copy the draft into 'expected' only for values you verified, then set status to 'reviewed'.",
+    "draft": {
+      "skipped": 0,
+      "swaps": [
+        {
+          "amount_in": "80219161116665",
+          "amount_out": "6259435278961168",
+          "attribution": "routed",
+          "token_in": "0x768488c988cf2493f0e7ccb3d56547f2384e2c27",
+          "token_out": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "wallet": "0x92276a17b64d756e44c09a2206afffc43b5f2bfc"
+        }
+      ]
+    },
+    "expected": {
+      "skipped": 0,
+      "swaps": [
+        {
+          "amount_in": "80219161116665",
+          "amount_out": "6259435278961168",
+          "attribution": "routed",
+          "token_in": "0x768488c988cf2493f0e7ccb3d56547f2384e2c27",
+          "token_out": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "wallet": "0x92276a17b64d756e44c09a2206afffc43b5f2bfc"
+        }
+      ]
+    }
+  }
+}

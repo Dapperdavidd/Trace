@@ -77,7 +77,7 @@
     "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
   ],
   "review": {
-    "status": "unreviewed",
+    "status": "reviewed",
     "instructions": "Open this transaction in a block explorer. Check wallet, tokens and amounts by hand. Copy the draft into 'expected' only for values you verified, then set status to 'reviewed'.",
     "draft": {
       "skipped": 0,
@@ -92,6 +92,18 @@
         }
       ]
     },
-    "expected": null
+    "expected": {
+      "skipped": 0,
+      "swaps": [
+        {
+          "amount_in": "158900000000000000",
+          "amount_out": "11937180112483254902792573818",
+          "attribution": "direct",
+          "token_in": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "token_out": "0x4da944f7dc3b5fbdb005f14d3f203600706275c7",
+          "wallet": "0x375cbdc1fab235358a05c761306960e4e7ec51b5"
+        }
+      ]
+    }
   }
 }

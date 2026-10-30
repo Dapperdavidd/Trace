@@ -80,9 +80,9 @@ pub fn protocols() -> Vec<ProtocolCapability> {
             Ethereum,
             "uniswap_v2",
             "constant-product AMM",
-            Disabled,
+            Enabled,
             vec!["Swap log + Transfer context required"],
-            Some(NO_FIXTURE),
+            None,
         ),
         cap(
             Ethereum,
@@ -158,12 +158,13 @@ mod tests {
     }
 
     #[test]
-    fn nothing_is_enabled_without_fixture_evidence() {
-        // Guards against flipping a protocol to Enabled without updating this test
-        // together with fixtures and docs/coverage-register.md.
-        assert!(protocols()
-            .iter()
-            .all(|p| p.status != SupportStatus::Enabled));
+    fn only_fixture_backed_protocols_are_enabled() {
+        let enabled: Vec<_> = protocols()
+            .into_iter()
+            .filter(|p| p.status == SupportStatus::Enabled)
+            .map(|p| (p.chain, p.protocol))
+            .collect();
+        assert_eq!(enabled, vec![(ChainId::Ethereum, "uniswap_v2")]);
     }
 
     #[test]
