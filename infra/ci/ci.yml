@@ -1,4 +1,4 @@
-# Copy to .github/workflows/ci.yml (the assistant cannot write inside .github).
+# Source template mirrored by .github/workflows/ci.yml.
 name: ci
 on:
   push:
