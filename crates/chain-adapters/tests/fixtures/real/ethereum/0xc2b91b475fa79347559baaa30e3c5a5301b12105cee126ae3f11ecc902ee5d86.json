@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "kind": "evm_v2_tx",
+  "chain": "ethereum",
+  "protocol": "uniswap_v2",
+  "tx_id": "0xc2b91b475fa79347559baaa30e3c5a5301b12105cee126ae3f11ecc902ee5d86",
+  "captured_at": "2026-10-30T10:49:02.267020Z",
+  "rpc_host": "eth-mainnet.g.alchemy.com",
+  "tool_version": "0.1.0",
+  "payload_sha256": "515ea8d17d1874522631aab19002aa1761fb642ec0187a28f000a9c04bd95518",
+  "payload": {
+    "block_hash": "0xe5be9f4adf222fe8ba96c7a9e5d37ea8fdcc8eb82e5607249b71a009138f7b7f",
+    "block_number": 25272224,
+    "block_time": "2026-06-08T10:53:47Z",
+    "finalized": true,
+    "from": "0x375cbdc1fab235358a05c761306960e4e7ec51b5",
+    "logs": [
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "data": "0x000000000000000000000000000000000000000000000000023486b546cf4000",
+        "logIndex": 296,
+        "topics": [
+          "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d"
+        ]
+      },
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "data": "0x000000000000000000000000000000000000000000000000023486b546cf4000",
+        "logIndex": 297,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d",
+          "0x000000000000000000000000ea81a24f75b099b225a8d987557edda593ef3ae3"
+        ]
+      },
+      {
+        "address": "0x4da944f7dc3b5fbdb005f14d3f203600706275c7",
+        "data": "0x00000000000000000000000000000000000000002692343690b48fe0162ad37a",
+        "logIndex": 298,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x000000000000000000000000ea81a24f75b099b225a8d987557edda593ef3ae3",
+          "0x000000000000000000000000375cbdc1fab235358a05c761306960e4e7ec51b5"
+        ]
+      },
+      {
+        "address": "0xea81a24f75b099b225a8d987557edda593ef3ae3",
+        "data": "0x0000000000000000000000000000000000000000d0b9c689ee8b1262ed4f252b0000000000000000000000000000000000000000000000000e1a448414c08000",
+        "logIndex": 299,
+        "topics": [
+          "0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1"
+        ]
+      },
+      {
+        "address": "0xea81a24f75b099b225a8d987557edda593ef3ae3",
+        "data": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000023486b546cf400000000000000000000000000000000000000000002692343690b48fe0162ad37a0000000000000000000000000000000000000000000000000000000000000000",
+        "logIndex": 300,
+        "topics": [
+          "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822",
+          "0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d",
+          "0x000000000000000000000000375cbdc1fab235358a05c761306960e4e7ec51b5"
+        ]
+      }
+    ],
+    "to": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+    "tx_hash": "0xc2b91b475fa79347559baaa30e3c5a5301b12105cee126ae3f11ecc902ee5d86"
+  },
+  "pairs": {
+    "0xea81a24f75b099b225a8d987557edda593ef3ae3": {
+      "protocol": "uniswap_v2",
+      "token0": "0x4da944f7dc3b5fbdb005f14d3f203600706275c7",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    }
+  },
+  "routers": [
+    "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
+  ],
+  "review": {
+    "status": "unreviewed",
+    "instructions": "Open this transaction in a block explorer. Check wallet, tokens and amounts by hand. Copy the draft into 'expected' only for values you verified, then set status to 'reviewed'.",
+    "draft": {
+      "skipped": 0,
+      "swaps": [
+        {
+          "amount_in": "158900000000000000",
+          "amount_out": "11937180112483254902792573818",
+          "attribution": "direct",
+          "token_in": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "token_out": "0x4da944f7dc3b5fbdb005f14d3f203600706275c7",
+          "wallet": "0x375cbdc1fab235358a05c761306960e4e7ec51b5"
+        }
+      ]
+    },
+    "expected": null
+  }
+}
