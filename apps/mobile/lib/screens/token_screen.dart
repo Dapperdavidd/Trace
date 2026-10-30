@@ -72,7 +72,8 @@ class _Header extends StatelessWidget {
                 Text(t.token.name ?? t.token.displayName, style: const TextStyle(color: TraceColors.textMuted)),
                 Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
                   Text(compactUsdString(t.priceUsd), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-                  Text(signedPercent(change), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: changeColor(change))),
+                  Text(signedPercent(change),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: changeColor(change))),
                   const Muted('24h', size: 12),
                 ]),
               ]),
@@ -117,11 +118,11 @@ class _Overview extends StatelessWidget {
       TraceCard(
         onTap: () => context.push('/risk/${t.token.chain.wire}/${t.token.address}'),
         semanticsLabel: 'Open Risk Radar',
-        child: Row(children: [
-          const Icon(Icons.shield_outlined, color: TraceColors.emerald),
-          const SizedBox(width: 12),
-          const Expanded(child: Text('See the full Risk Radar')),
-          const Icon(Icons.chevron_right),
+        child: const Row(children: [
+          Icon(Icons.shield_outlined, color: TraceColors.emerald),
+          SizedBox(width: 12),
+          Expanded(child: Text('See the full Risk Radar')),
+          Icon(Icons.chevron_right),
         ]),
       ),
       Row(children: [
@@ -132,7 +133,8 @@ class _Overview extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        const Expanded(child: OutlinedButton(onPressed: null, child: Text('Buy (Coming later)', textAlign: TextAlign.center))),
+        const Expanded(
+            child: OutlinedButton(onPressed: null, child: Text('Buy (Coming later)', textAlign: TextAlign.center))),
       ]),
       const Disclaimer(),
     ]);
@@ -165,7 +167,8 @@ class _Analysis extends StatelessWidget {
       EnvelopeBar(t.env),
       link(Icons.timeline, 'Opportunity Timeline', 'What happened, in order', '/timeline/$p'),
       link(Icons.shield_outlined, 'Risk Radar', 'Checks for scams and thin liquidity', '/risk/$p'),
-      link(Icons.compare_arrows, 'Compare coins', 'Put two coins side by side', '/compare?a=${t.token.chain.wire}:${t.token.address}'),
+      link(Icons.compare_arrows, 'Compare coins', 'Put two coins side by side',
+          '/compare?a=${t.token.chain.wire}:${t.token.address}'),
       const Disclaimer(),
     ]);
   }
@@ -182,7 +185,8 @@ class _Buyers extends StatelessWidget {
       const Muted('Tracked wallets that bought this token recently (observed).'),
       const SizedBox(height: 8),
       if (t.buyers.isEmpty)
-        const EmptyState(title: 'No tracked buyers', message: 'No tracked wallet bought this token in the recent window.'),
+        const EmptyState(
+            title: 'No tracked buyers', message: 'No tracked wallet bought this token in the recent window.'),
       for (final w in t.buyers)
         TraceCard(
           onTap: () => context.push(w.path),
@@ -209,7 +213,8 @@ class _News extends StatelessWidget {
   Widget build(BuildContext context) => ListView(padding: _pad, children: const [
         ComingLaterPanel(
           title: 'News and social',
-          explanation: 'News and social feeds are not part of this version. TRACE only shows what it can verify on-chain.',
+          explanation:
+              'News and social feeds are not part of this version. TRACE only shows what it can verify on-chain.',
           icon: Icons.newspaper,
         ),
       ]);

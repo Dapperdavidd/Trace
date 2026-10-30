@@ -37,7 +37,9 @@ class WelcomeScreen extends ConsumerWidget {
                       child: const ExcludeSemantics(
                         child: Text.rich(TextSpan(children: [
                           TextSpan(text: 'trace', style: TextStyle(fontSize: 56, fontWeight: FontWeight.w900)),
-                          TextSpan(text: '.', style: TextStyle(fontSize: 56, fontWeight: FontWeight.w900, color: TraceColors.emerald)),
+                          TextSpan(
+                              text: '.',
+                              style: TextStyle(fontSize: 56, fontWeight: FontWeight.w900, color: TraceColors.emerald)),
                         ])),
                       ),
                     ),
@@ -45,7 +47,9 @@ class WelcomeScreen extends ConsumerWidget {
                     const Text('Find smart wallets and moving coins, and understand why.',
                         style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
                     const SizedBox(height: 12),
-                    const Muted('Discover opportunities. Watch any wallet. Practice with paper trades before you risk real money.', size: 16),
+                    const Muted(
+                        'Discover opportunities. Watch any wallet. Practice with paper trades before you risk real money.',
+                        size: 16),
                     const SizedBox(height: 24),
                     const TraceCard(
                       child: Row(
@@ -89,7 +93,7 @@ class WelcomeScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
+                    const SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: null,
@@ -97,7 +101,9 @@ class WelcomeScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Muted('Creating or connecting a spendable wallet is not available yet. Signing in never gives TRACE access to funds.', size: 12),
+                    const Muted(
+                        'Creating or connecting a spendable wallet is not available yet. Signing in never gives TRACE access to funds.',
+                        size: 12),
                     const Disclaimer(),
                   ],
                 ),

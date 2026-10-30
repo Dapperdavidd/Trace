@@ -33,10 +33,12 @@ class TimelineScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(timelineProvider(key)),
         builder: (r) => ListView(padding: const EdgeInsets.all(TraceSpacing.gutter), children: [
           EnvelopeBar(r.env),
-          const Muted('Facts are things TRACE observed. Hypotheses are possible causes and are not confirmed.', size: 12),
+          const Muted('Facts are things TRACE observed. Hypotheses are possible causes and are not confirmed.',
+              size: 12),
           const SizedBox(height: 12),
           if (r.items.isEmpty)
-            const EmptyState(title: 'No events yet', message: 'TRACE has not recorded events for this token in this window.'),
+            const EmptyState(
+                title: 'No events yet', message: 'TRACE has not recorded events for this token in this window.'),
           for (var i = 0; i < r.items.length; i++) _Step(r.items[i], last: i == r.items.length - 1),
           const Disclaimer(),
         ]),
@@ -88,8 +90,10 @@ class _Step extends StatelessWidget {
                   Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700)),
                   if (item.detail.isNotEmpty) Muted(item.detail),
                   if (item.possibleImpact != null) Muted('Possible impact: ${item.possibleImpact}', size: 12),
-                  if (item.evidenceIds.isNotEmpty) Muted('Evidence items: ${item.evidenceIds.length}', size: 12)
-                  else if (fact) const Muted('No evidence id attached', size: 12),
+                  if (item.evidenceIds.isNotEmpty)
+                    Muted('Evidence items: ${item.evidenceIds.length}', size: 12)
+                  else if (fact)
+                    const Muted('No evidence id attached', size: 12),
                 ]),
               ),
             ),
@@ -160,7 +164,8 @@ class RiskRadarScreen extends ConsumerWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Pill(Copy.riskLabel, color: TraceColors.warning),
               SizedBox(height: 8),
-              Text('A passing check is not a safety guarantee. Checks can miss new scams, and low liquidity can make prices swing even when every check passes.'),
+              Text(
+                  'A passing check is not a safety guarantee. Checks can miss new scams, and low liquidity can make prices swing even when every check passes.'),
             ]),
           ),
           const Disclaimer(),
@@ -245,13 +250,18 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
         data: (m) {
           final tokens = m.items.map((e) => e.token).toList();
           if (tokens.length < 2) {
-            return const EmptyState(title: 'Not enough coins', message: 'Compare needs at least two coins from Top Movers.');
+            return const EmptyState(
+                title: 'Not enough coins', message: 'Compare needs at least two coins from Top Movers.');
           }
           _a ??= tokens[0];
           _b ??= tokens.firstWhere((t) => t.address != _a!.address, orElse: () => tokens[1]);
           final options = <TokenRef>[...tokens];
           for (final x in [_a!, _b!]) {
-            if (!options.any((t) => t.address == x.address && t.chain == x.chain)) options.insert(0, x);
+            if (!options.any(
+              (t) => t.address == x.address && t.chain == x.chain,
+            )) {
+              options.insert(0, x);
+            }
           }
           return ListView(padding: const EdgeInsets.all(TraceSpacing.gutter), children: [
             _Picker('First coin', options, _a!, (t) => setState(() => _a = t)),
@@ -281,7 +291,7 @@ class _Picker extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: DropdownButtonFormField<TokenRef>(
-        value: selected,
+        initialValue: selected,
         isExpanded: true,
         decoration: InputDecoration(labelText: label),
         items: [
@@ -306,7 +316,8 @@ class _CompareResult extends ConsumerWidget {
     final v = ref.watch(compareProvider(key));
     return v.when(
       loading: () => const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),
-      error: (e, _) => SizedBox(height: 280, child: ErrorState(error: e, onRetry: () => ref.invalidate(compareProvider(key)))),
+      error: (e, _) =>
+          SizedBox(height: 280, child: ErrorState(error: e, onRetry: () => ref.invalidate(compareProvider(key)))),
       data: (r) {
         final items = r.items;
         Widget row(String label, String Function(TokenSummary) f, {Color? Function(TokenSummary)? color}) {
@@ -336,10 +347,14 @@ class _CompareResult extends ConsumerWidget {
               Row(children: [
                 const Expanded(flex: 3, child: SizedBox.shrink()),
                 for (final t in items)
-                  Expanded(flex: 3, child: Text(t.token.displayName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+                  Expanded(
+                      flex: 3,
+                      child:
+                          Text(t.token.displayName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
               ]),
               const Divider(),
-              row('Price change (24h)', (t) => signedPercentString(t.changePct24h), color: (t) => changeColor(parseDecimal(t.changePct24h))),
+              row('Price change (24h)', (t) => signedPercentString(t.changePct24h),
+                  color: (t) => changeColor(parseDecimal(t.changePct24h))),
               row('Price', (t) => compactUsdString(t.priceUsd)),
               row('Market cap', (t) => compactUsdString(t.marketCapUsd)),
               row('Volume (24h)', (t) => compactUsdString(t.volume24hUsd)),

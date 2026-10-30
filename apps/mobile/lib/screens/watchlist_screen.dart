@@ -48,7 +48,8 @@ class WatchlistScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(watchlistProvider),
         builder: (items) => RefreshIndicator(
           onRefresh: () async {
-            await ref.refresh(watchlistProvider.future);
+            final refreshed = ref.refresh(watchlistProvider.future);
+            await refreshed;
           },
           child: ListView(
             padding: const EdgeInsets.fromLTRB(TraceSpacing.gutter, TraceSpacing.gutter, TraceSpacing.gutter, 96),
@@ -58,7 +59,8 @@ class WatchlistScreen extends ConsumerWidget {
               if (items.isEmpty)
                 const EmptyState(
                   title: 'No wallets yet',
-                  message: 'Add a public wallet address to follow its trades. You do not need keys or a connected wallet.',
+                  message:
+                      'Add a public wallet address to follow its trades. You do not need keys or a connected wallet.',
                 ),
               for (final i in items) _WatchTile(i),
             ],
@@ -192,7 +194,9 @@ class _AddWatchFormState extends ConsumerState<_AddWatchForm> {
               selected: _chain == c,
               onSelected: (_) => setState(() {
                 _chain = c;
-                if (_error != null) _error = validateAddress(_chain, _addr.text);
+                if (_error != null) {
+                  _error = validateAddress(_chain, _addr.text);
+                }
               }),
             ),
         ]),
@@ -207,7 +211,9 @@ class _AddWatchFormState extends ConsumerState<_AddWatchForm> {
             errorMaxLines: 3,
           ),
           onChanged: (_) {
-            if (_error != null) setState(() => _error = validateAddress(_chain, _addr.text));
+            if (_error != null) {
+              setState(() => _error = validateAddress(_chain, _addr.text));
+            }
           },
         ),
         const SizedBox(height: 12),
@@ -215,7 +221,8 @@ class _AddWatchFormState extends ConsumerState<_AddWatchForm> {
         if (_submitError != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Semantics(liveRegion: true, child: Text(_submitError!, style: const TextStyle(color: TraceColors.negative))),
+            child: Semantics(
+                liveRegion: true, child: Text(_submitError!, style: const TextStyle(color: TraceColors.negative))),
           ),
         const SizedBox(height: 16),
         SizedBox(

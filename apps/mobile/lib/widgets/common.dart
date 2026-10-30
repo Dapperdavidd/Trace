@@ -37,8 +37,7 @@ class TraceScaffold extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Semantics(header: true, child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700))),
-            if (subtitle != null)
-              Text(subtitle!, style: const TextStyle(fontSize: 12, color: TraceColors.textMuted)),
+            if (subtitle != null) Text(subtitle!, style: const TextStyle(fontSize: 12, color: TraceColors.textMuted)),
           ],
         ),
         actions: actions,
@@ -76,10 +75,8 @@ class DemoBanner extends StatelessWidget {
             spacing: 8,
             children: [
               Text(Copy.demoBanner,
-                  style: TextStyle(
-                      color: Color(0xFF241A00), fontWeight: FontWeight.w900, letterSpacing: 1)),
-              Text('Fictional example data. Not live.',
-                  style: TextStyle(color: Color(0xFF241A00), fontSize: 13)),
+                  style: TextStyle(color: Color(0xFF241A00), fontWeight: FontWeight.w900, letterSpacing: 1)),
+              Text('Fictional example data. Not live.', style: TextStyle(color: Color(0xFF241A00), fontSize: 13)),
             ],
           ),
         ),
@@ -198,8 +195,7 @@ class KindLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fact = kind == EvidenceKind.fact;
-    return Pill(fact ? Copy.factLabel : Copy.hypothesisLabel,
-        color: fact ? TraceColors.positive : TraceColors.info);
+    return Pill(fact ? Copy.factLabel : Copy.hypothesisLabel, color: fact ? TraceColors.positive : TraceColors.info);
   }
 }
 
@@ -234,7 +230,12 @@ class TraceCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: semanticsLabel == null
           ? box
-          : Semantics(label: semanticsLabel, button: onTap != null, container: true, onTap: onTap, child: ExcludeSemantics(child: box)),
+          : Semantics(
+              label: semanticsLabel,
+              button: onTap != null,
+              container: true,
+              onTap: onTap,
+              child: ExcludeSemantics(child: box)),
     );
   }
 }
@@ -266,8 +267,7 @@ class Muted extends StatelessWidget {
   final String text;
   final double size;
   @override
-  Widget build(BuildContext context) =>
-      Text(text, style: TextStyle(color: TraceColors.textMuted, fontSize: size));
+  Widget build(BuildContext context) => Text(text, style: TextStyle(color: TraceColors.textMuted, fontSize: size));
 }
 
 class Disclaimer extends StatelessWidget {
@@ -326,7 +326,10 @@ class StatGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final wide = MediaQuery.textScalerOf(context).scale(1) <= 1.3;
     if (!wide) {
-      return Column(children: [for (final t in tiles) Padding(padding: const EdgeInsets.only(bottom: 8), child: SizedBox(width: double.infinity, child: t))]);
+      return Column(children: [
+        for (final t in tiles)
+          Padding(padding: const EdgeInsets.only(bottom: 8), child: SizedBox(width: double.infinity, child: t))
+      ]);
     }
     final rows = <Widget>[];
     for (var i = 0; i < tiles.length; i += 2) {
@@ -374,7 +377,12 @@ Color changeColor(double? v) =>
 
 /// "Coming later" badge and explanation for features outside the MVP.
 class ComingLaterPanel extends StatelessWidget {
-  const ComingLaterPanel({super.key, required this.title, required this.explanation, this.icon = Icons.lock_clock, this.children = const []});
+  const ComingLaterPanel(
+      {super.key,
+      required this.title,
+      required this.explanation,
+      this.icon = Icons.lock_clock,
+      this.children = const []});
   final String title;
   final String explanation;
   final IconData icon;
@@ -485,8 +493,11 @@ class AsyncBody<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) => value.when(
         data: builder,
-        loading: () => const Center(
-          child: Semantics(label: 'Loading', child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: Semantics(
+            label: 'Loading',
+            child: const CircularProgressIndicator(),
+          ),
         ),
         error: (e, _) => ErrorState(error: e, onRetry: onRetry),
       );
