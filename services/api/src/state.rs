@@ -8,6 +8,8 @@ pub struct AppState {
     pub verifier: Arc<dyn IdTokenVerifier>,
     /// True when demo data is enabled. New accounts then receive starter demo alerts.
     pub demo: bool,
+    /// Bearer token for the ops endpoints. `None` disables them.
+    pub ops_token: Option<Arc<str>>,
 }
 
 impl AppState {
@@ -18,6 +20,7 @@ impl AppState {
             pool,
             verifier: Arc::new(Disabled),
             demo: false,
+            ops_token: None,
         }
     }
 
@@ -26,11 +29,17 @@ impl AppState {
         self
     }
 
+    pub fn with_ops_token(mut self, token: Option<String>) -> Self {
+        self.ops_token = token.map(Into::into);
+        self
+    }
+
     pub fn with_verifier(pool: PgPool, verifier: Arc<dyn IdTokenVerifier>) -> Self {
         Self {
             pool,
             verifier,
             demo: false,
+            ops_token: None,
         }
     }
 }

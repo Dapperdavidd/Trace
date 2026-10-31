@@ -13,6 +13,16 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let cfg = Config::from_env()?;
+    let problems = cfg.production_problems();
+    if !problems.is_empty() {
+        for p in &problems {
+            tracing::error!("unsafe production configuration: {p}");
+        }
+        anyhow::bail!(
+            "refusing to start: {} unsafe production setting(s)",
+            problems.len()
+        );
+    }
     let pool = trace_database::connect(&cfg.database_url, cfg.db_max_connections).await?;
     trace_database::migrate(&pool).await?;
     sync_registry(&pool).await?;
@@ -39,7 +49,7 @@ async fn main() -> anyhow::Result<()> {
     };
     run(
         listener,
-        AppState::with_verifier(pool, verifier),
+        AppState::with_verifier(pool, verifier).with_ops_token(cfg.ops_token.clone()),
         cfg.cors_origins,
     )?
     .await?;

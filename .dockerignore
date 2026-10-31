@@ -1,0 +1,11 @@
+target
+.git
+.env
+.env.*
+apps
+node_modules
+**/node_modules
+**/.next
+**/.dart_tool
+docs
+*.md

@@ -6,6 +6,7 @@ pub mod common;
 pub mod discovery;
 pub mod health;
 pub mod openapi;
+pub mod ops;
 pub mod shadow;
 pub mod signals;
 pub mod tokens;

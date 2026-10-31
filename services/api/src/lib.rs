@@ -27,6 +27,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(routes::signals::configure)
             .configure(routes::shadow::configure)
             .configure(routes::briefings::configure)
+            .configure(routes::ops::configure)
             .configure(routes::openapi::configure),
     );
 }
