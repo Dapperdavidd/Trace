@@ -20,6 +20,9 @@ async fn main() -> anyhow::Result<()> {
     for d in targets {
         tracing::info!(chain = %d.chain, protocol = d.protocol, "ingestion active");
     }
+    if ctx.prices.is_none() {
+        tracing::info!("TRACE_PRICE_PROVIDER is not set; price polling is off");
+    }
     tracing::info!("trace-worker started");
     let mut tick = tokio::time::interval(Duration::from_secs(30));
     let mut stop = Box::pin(tokio::signal::ctrl_c());
@@ -32,6 +35,9 @@ async fn main() -> anyhow::Result<()> {
                 }
                 if let Err(e) = trace_worker::ingest_job::schedule_ingest(&pool, &ctx, now).await {
                     tracing::warn!(error = %e, "could not schedule ingestion");
+                }
+                if let Err(e) = trace_worker::price_job::schedule_prices(&pool, ctx.prices.is_some(), now).await {
+                    tracing::warn!(error = %e, "could not schedule price poll");
                 }
                 match trace_worker::drain_with(&pool, now, &ctx).await {
                     Ok(n) if n > 0 => tracing::info!(ran = n, "jobs run"),

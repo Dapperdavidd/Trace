@@ -16,6 +16,7 @@ path = "src/lib.rs"
 trace-domain.workspace = true
 trace-database.workspace = true
 trace-jobs.workspace = true
+trace-pricing.workspace = true
 trace-signals.workspace = true
 trace-risk.workspace = true
 trace-chain-adapters.workspace = true

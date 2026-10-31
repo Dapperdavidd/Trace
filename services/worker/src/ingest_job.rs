@@ -42,6 +42,8 @@ pub struct Ctx {
     pub rpc_urls: HashMap<String, String>,
     /// `None` disables ingest jobs entirely (they are not even leased).
     pub source: Option<SourceFactory>,
+    /// `None` disables the price poll job (it is not even leased).
+    pub prices: Option<crate::price_job::PriceCtx>,
 }
 
 impl Ctx {
@@ -50,6 +52,7 @@ impl Ctx {
             protocols: registry::protocols(),
             rpc_urls: HashMap::new(),
             source: None,
+            prices: None,
         }
     }
 
@@ -78,6 +81,7 @@ impl Ctx {
             protocols: registry::protocols(),
             rpc_urls,
             source: Some(source),
+            prices: prices_from_env(),
         }
     }
 
@@ -192,5 +196,32 @@ pub async fn run_ingest(pool: &PgPool, ctx: &Ctx, job: &Job) -> Result<IngestRun
             Err(Failure::Permanent("protocol not enabled".into()))
         }
         Err(e) => Err(Failure::Transient(e.to_string())),
+    }
+}
+
+/// `TRACE_PRICE_PROVIDER=defillama` turns price polling on. `TRACE_PRICE_API_BASE` overrides the host.
+fn prices_from_env() -> Option<crate::price_job::PriceCtx> {
+    match std::env::var("TRACE_PRICE_PROVIDER").ok().as_deref() {
+        Some("defillama") => {
+            let base = std::env::var("TRACE_PRICE_API_BASE")
+                .unwrap_or_else(|_| trace_pricing::defillama::DEFAULT_BASE.to_string());
+            match trace_pricing::defillama::DefiLlama::new(&base) {
+                Ok(p) => Some(crate::price_job::PriceCtx {
+                    provider: std::sync::Arc::new(p),
+                }),
+                Err(e) => {
+                    tracing::error!(error = %e, "price provider could not start");
+                    None
+                }
+            }
+        }
+        Some(other) if !other.is_empty() => {
+            tracing::error!(
+                provider = other,
+                "unknown TRACE_PRICE_PROVIDER; price polling is off"
+            );
+            None
+        }
+        _ => None,
     }
 }

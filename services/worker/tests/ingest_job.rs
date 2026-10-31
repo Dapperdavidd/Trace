@@ -62,6 +62,7 @@ fn ctx(status: SupportStatus, with_url: bool, fail: bool) -> (Ctx, Arc<AtomicUsi
             protocols,
             rpc_urls,
             source: Some(source),
+            prices: None,
         },
         calls,
     )

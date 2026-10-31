@@ -1,6 +1,7 @@
 pub mod ingest;
 pub mod ingest_job;
 pub mod outcomes;
+pub mod price_job;
 pub mod rpc_source;
 
 use chrono::{DateTime, Duration, Utc};
@@ -40,6 +41,14 @@ pub async fn run_job_with(
     ctx: &ingest_job::Ctx,
 ) -> Result<(), Failure> {
     match job.kind.as_str() {
+        price_job::POLL_PRICES => match &ctx.prices {
+            Some(p) => price_job::poll(pool, p.provider.as_ref(), now)
+                .await
+                .map(|r| tracing::info!(?r, "prices polled")),
+            None => Err(Failure::Permanent(
+                "price provider is not configured".into(),
+            )),
+        },
         ingest_job::INGEST_EVM => ingest_job::run_ingest(pool, ctx, job)
             .await
             .map(|r| tracing::info!(?r, "ingest step")),
@@ -65,6 +74,9 @@ pub async fn drain_with(
     let mut kinds: Vec<&str> = KINDS.to_vec();
     if ctx.source.is_some() {
         kinds.push(ingest_job::INGEST_EVM);
+    }
+    if ctx.prices.is_some() {
+        kinds.push(price_job::POLL_PRICES);
     }
     let mut n = 0;
     while let Some(job) = trace_jobs::lease(pool, now, Duration::minutes(5), &kinds).await? {

@@ -54,3 +54,9 @@
 - One worker per protocol at a time (Postgres advisory lock, released on failure). Source outages retry with backoff.
 - Worker logs "ingestion is idle" at start while nothing is enabled. Today that is always.
 - `infra/ci/ci.yml`: copy to `.github/workflows/ci.yml` (fmt, clippy, tests with Postgres, OpenAPI drift, web, mobile).
+
+## Milestone 11: price source
+
+- `trace-pricing`: provider trait, DefiLlama adapter, and `accept()` (staleness, confidence, decimals cross-check, underflow).
+- `poll_prices` job (off unless `TRACE_PRICE_PROVIDER` is set): requests real recent tokens, stores accepted quotes at the quote's own time, counts rejections by reason.
+- See `docs/pricing.md`. Provider response shape not yet checked against a live call.
