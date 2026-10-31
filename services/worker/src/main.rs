@@ -14,11 +14,14 @@ async fn main() -> anyhow::Result<()> {
     trace_database::migrate(&pool).await?;
     let ctx = trace_worker::ingest_job::Ctx::from_env();
     let targets = ctx.targets();
-    if targets.is_empty() {
+    if targets.is_empty() && trace_worker::solana_job::targets(&ctx).is_empty() {
         tracing::info!("no protocol is enabled with an RPC URL configured; ingestion is idle");
     }
     for d in targets {
         tracing::info!(chain = %d.chain, protocol = d.protocol, "ingestion active");
+    }
+    for d in trace_worker::solana_job::targets(&ctx) {
+        tracing::info!(chain = "solana", protocol = d.protocol, "ingestion active");
     }
     if ctx.prices.is_none() {
         tracing::info!("TRACE_PRICE_PROVIDER is not set; price polling is off");
@@ -35,6 +38,9 @@ async fn main() -> anyhow::Result<()> {
                 }
                 if let Err(e) = trace_worker::ingest_job::schedule_ingest(&pool, &ctx, now).await {
                     tracing::warn!(error = %e, "could not schedule ingestion");
+                }
+                if let Err(e) = trace_worker::solana_job::schedule_solana(&pool, &ctx, now).await {
+                    tracing::warn!(error = %e, "could not schedule solana ingestion");
                 }
                 if let Err(e) = trace_worker::price_job::schedule_prices(&pool, ctx.prices.is_some(), now).await {
                     tracing::warn!(error = %e, "could not schedule price poll");

@@ -3,6 +3,9 @@ pub mod ingest_job;
 pub mod outcomes;
 pub mod price_job;
 pub mod rpc_source;
+pub mod solana_ingest;
+pub mod solana_job;
+pub mod solana_rpc;
 
 use chrono::{DateTime, Duration, Utc};
 use sqlx::PgPool;
@@ -41,6 +44,9 @@ pub async fn run_job_with(
     ctx: &ingest_job::Ctx,
 ) -> Result<(), Failure> {
     match job.kind.as_str() {
+        solana_job::INGEST_SOLANA => solana_job::run_solana(pool, ctx, job)
+            .await
+            .map(|r| tracing::info!(?r, "solana ingest step")),
         price_job::POLL_PRICES => match &ctx.prices {
             Some(p) => price_job::poll(pool, p.provider.as_ref(), now)
                 .await
@@ -74,6 +80,9 @@ pub async fn drain_with(
     let mut kinds: Vec<&str> = KINDS.to_vec();
     if ctx.source.is_some() {
         kinds.push(ingest_job::INGEST_EVM);
+    }
+    if ctx.solana_source.is_some() {
+        kinds.push(solana_job::INGEST_SOLANA);
     }
     if ctx.prices.is_some() {
         kinds.push(price_job::POLL_PRICES);

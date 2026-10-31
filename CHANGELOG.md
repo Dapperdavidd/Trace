@@ -60,3 +60,10 @@
 - `trace-pricing`: provider trait, DefiLlama adapter, and `accept()` (staleness, confidence, decimals cross-check, underflow).
 - `poll_prices` job (off unless `TRACE_PRICE_PROVIDER` is set): requests real recent tokens, stores accepted quotes at the quote's own time, counts rejections by reason.
 - See `docs/pricing.md`. Provider response shape not yet checked against a live call.
+
+## Milestone 12: Solana ingestion
+
+- `solana_ingest::step`: finalized-only, newest-to-cursor read, oldest-first processing, failed transactions skipped unfetched, unavailable finalized transactions are errors, backlog gaps are audited.
+- `SolanaRpcSource` and the `ingest_solana` job, gated on registry status and `TRACE_RPC_SOLANA`, one worker per protocol.
+- `with_advisory_lock` shared by EVM and Solana jobs.
+- Raydium AMM v4 stays Disabled: no reviewed real fixtures yet. See `docs/solana-ingestion.md`.

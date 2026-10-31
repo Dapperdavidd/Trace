@@ -44,6 +44,8 @@ pub struct Ctx {
     pub source: Option<SourceFactory>,
     /// `None` disables the price poll job (it is not even leased).
     pub prices: Option<crate::price_job::PriceCtx>,
+    /// `None` disables Solana ingest jobs (they are not even leased).
+    pub solana_source: Option<crate::solana_job::SolanaSourceFactory>,
 }
 
 impl Ctx {
@@ -53,12 +55,13 @@ impl Ctx {
             rpc_urls: HashMap::new(),
             source: None,
             prices: None,
+            solana_source: None,
         }
     }
 
     /// RPC URLs come from `TRACE_RPC_<CHAIN>` (for example `TRACE_RPC_ETHEREUM`).
     pub fn from_env() -> Self {
-        let rpc_urls: HashMap<String, String> = deployments()
+        let mut rpc_urls: HashMap<String, String> = deployments()
             .iter()
             .filter_map(|d| {
                 let key = format!("TRACE_RPC_{}", d.chain.as_str().to_uppercase());
@@ -68,6 +71,13 @@ impl Ctx {
                     .map(|v| (d.chain.as_str().to_string(), v))
             })
             .collect();
+        if let Some(u) = std::env::var("TRACE_RPC_SOLANA")
+            .ok()
+            .filter(|v| !v.is_empty())
+        {
+            rpc_urls.insert("solana".into(), u);
+        }
+        let solana_url = rpc_urls.get("solana").cloned();
         let urls = rpc_urls.clone();
         let source: SourceFactory = Box::new(move |d| {
             let url = urls.get(d.chain.as_str()).cloned().ok_or_else(|| {
@@ -82,6 +92,12 @@ impl Ctx {
             rpc_urls,
             source: Some(source),
             prices: prices_from_env(),
+            solana_source: Some(Box::new(move || {
+                let url = solana_url.clone().ok_or_else(|| {
+                    IngestError::Source("no RPC URL configured for solana".into())
+                })?;
+                Ok(Box::new(crate::solana_rpc::SolanaRpcSource::new(url)?))
+            })),
         }
     }
 
@@ -173,23 +189,10 @@ pub async fn run_ingest(pool: &PgPool, ctx: &Ctx, job: &Job) -> Result<IngestRun
 
     // One worker per protocol at a time. The lock is released even if the step fails.
     let lock = format!("ingest:{chain}:{protocol}");
-    let mut conn = pool
-        .acquire()
-        .await
-        .map_err(|e| Failure::Transient(e.to_string()))?;
-    let got: bool = sqlx::query_scalar("SELECT pg_try_advisory_lock(hashtextextended($1, 0))")
-        .bind(&lock)
-        .fetch_one(&mut *conn)
-        .await
-        .map_err(|e| Failure::Transient(e.to_string()))?;
-    if !got {
+    let Some(result) = with_advisory_lock(pool, &lock, step(pool, src.as_ref(), &cfg)).await?
+    else {
         return Ok(IngestRun::AlreadyRunning);
-    }
-    let result = step(pool, src.as_ref(), &cfg).await;
-    let _ = sqlx::query("SELECT pg_advisory_unlock(hashtextextended($1, 0))")
-        .bind(&lock)
-        .fetch_one(&mut *conn)
-        .await;
+    };
     match result {
         Ok(r) => Ok(IngestRun::Stepped(r)),
         Err(IngestError::NotEnabled { .. }) => {
@@ -224,4 +227,32 @@ fn prices_from_env() -> Option<crate::price_job::PriceCtx> {
         }
         _ => None,
     }
+}
+
+/// Run `f` while holding a Postgres advisory lock named `key`. `Ok(None)` means
+/// another worker holds it and `f` was not run. The lock is released afterwards
+/// whether or not `f` succeeded.
+pub async fn with_advisory_lock<T>(
+    pool: &PgPool,
+    key: &str,
+    f: impl std::future::Future<Output = T>,
+) -> Result<Option<T>, Failure> {
+    let mut conn = pool
+        .acquire()
+        .await
+        .map_err(|e| Failure::Transient(e.to_string()))?;
+    let got: bool = sqlx::query_scalar("SELECT pg_try_advisory_lock(hashtextextended($1, 0))")
+        .bind(key)
+        .fetch_one(&mut *conn)
+        .await
+        .map_err(|e| Failure::Transient(e.to_string()))?;
+    if !got {
+        return Ok(None);
+    }
+    let out = f.await;
+    let _ = sqlx::query("SELECT pg_advisory_unlock(hashtextextended($1, 0))")
+        .bind(key)
+        .fetch_one(&mut *conn)
+        .await;
+    Ok(Some(out))
 }
