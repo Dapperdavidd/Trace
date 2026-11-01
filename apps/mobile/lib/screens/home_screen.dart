@@ -24,7 +24,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return TraceScaffold(
-      title: 'GiFTED!',
+      title: 'TRACE',
       actions: [
         IconButton(
           tooltip: 'Alerts',
@@ -40,7 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const ComingLaterPanel(
             title: 'Send, Receive, Buy, Swap',
             explanation:
-                'GiFTED! does not hold funds yet. Wallet actions arrive in a later version.',
+                'TRACE does not hold funds yet. Wallet actions arrive in a later version.',
             icon: Icons.account_balance_wallet_outlined,
           ),
           TraceCard(
@@ -162,7 +162,7 @@ class _WatchlistCard extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
             Muted(text),
             const Muted(
-                'Watch-only. No balances are shown because GiFTED! holds no funds.',
+                'Watch-only. No balances are shown because TRACE holds no funds.',
                 size: 12),
           ]),
         ),

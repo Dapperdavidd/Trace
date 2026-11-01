@@ -72,7 +72,7 @@ class MoreScreen extends ConsumerWidget {
             item(Icons.swap_horiz, 'Trade & Swap', 'Trade with real money',
                 () => context.push('/trade'),
                 later: true),
-            item(Icons.chat_bubble_outline, 'Ask GiFTED!',
+            item(Icons.chat_bubble_outline, 'Ask TRACE',
                 'Ask questions in plain words', () => context.push('/ask'),
                 later: true),
             const SectionTitle('Account'),
@@ -84,7 +84,7 @@ class MoreScreen extends ConsumerWidget {
                         ? (session.name ?? session.email ?? 'Signed in')
                         : 'Exploring without an account'),
                     const Muted(
-                        'Watch-only. GiFTED! holds no wallet or funds for you.',
+                        'Watch-only. TRACE holds no wallet or funds for you.',
                         size: 12),
                     const SizedBox(height: 8),
                     if (session.phase == SessionPhase.signedIn) ...[

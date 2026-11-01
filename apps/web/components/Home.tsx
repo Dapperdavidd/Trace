@@ -64,13 +64,13 @@ function Hero() {
       <h1 id="hero-title">
         Discover what is moving, <em>and why.</em>
       </h1>
-      <p>Follow capable wallets, research coins in plain language, and test ideas with paper money. Watch-only: GiFTED! never holds your funds.</p>
+      <p>Follow capable wallets, research coins in plain language, and test ideas with paper money. Watch-only: TRACE never holds your funds.</p>
       <div className="hero-cta">
         <Link href="/top-movers" className="btn btn-primary">Explore Top Movers</Link>
-        <button type="button" className="btn" disabled aria-disabled="true" title="Connecting a wallet is coming later. GiFTED! is watch-only for now.">
+        <button type="button" className="btn" disabled aria-disabled="true" title="Connecting a wallet is coming later. TRACE is watch-only for now.">
           Connect Wallet <ComingLaterBadge />
         </button>
-        <button type="button" className="btn" disabled aria-disabled="true" title="Creating a wallet is coming later. GiFTED! does not hold funds yet.">
+        <button type="button" className="btn" disabled aria-disabled="true" title="Creating a wallet is coming later. TRACE does not hold funds yet.">
           Create New Wallet <ComingLaterBadge />
         </button>
       </div>
@@ -343,7 +343,7 @@ function ShadowSummary({ top }: { top: WalletRef | null }) {
 function CoveragePanel() {
   const state = useApi<ChainsResponse>(() => api.chains(), []);
   return (
-    <Panel title="Coverage" sub="What GiFTED! can parse today">
+    <Panel title="Coverage" sub="What TRACE can parse today">
       <Remote state={state} skeletonRows={4} skeletonH={34}>
         {(data) => (
           <ul>
@@ -381,7 +381,7 @@ function WalletRail() {
       <p className="panel-sub">Balance</p>
       <div className="soon-balance">Not available</div>
       <p className="muted" style={{ fontSize: 12.5 }}>
-        GiFTED! is watch-only for now. It does not hold funds, so there is no balance to show. Sending, receiving, buying and swapping are coming later.
+        TRACE is watch-only for now. It does not hold funds, so there is no balance to show. Sending, receiving, buying and swapping are coming later.
       </p>
       <div className="rail-actions">
         {actions.map((a) => (
@@ -490,7 +490,7 @@ export function Home() {
               state={movers}
               skeletonRows={5}
               isEmpty={(d) => d.items.length === 0}
-              empty={<EmptyState title="No movers in this view">Try another tab. GiFTED! only lists coins with enough liquidity and data.</EmptyState>}
+              empty={<EmptyState title="No movers in this view">Try another tab. TRACE only lists coins with enough liquidity and data.</EmptyState>}
             >
               {(d) => (
                 <MoversTable items={d.items} windowLabel="24h" compact selectedKey={selected ? tokenKey(selected.token) : null} onSelect={(m) => setSelectedKey(tokenKey(m.token))} />

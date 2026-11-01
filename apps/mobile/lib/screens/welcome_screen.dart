@@ -34,9 +34,9 @@ class WelcomeScreen extends ConsumerWidget {
                     const SizedBox(height: 32),
                     Semantics(
                       header: true,
-                      label: 'GiFTED!',
+                      label: 'TRACE',
                       child: const ExcludeSemantics(
-                        child: Text('GiFTED!',
+                        child: Text('TRACE',
                             style: TextStyle(
                                 fontSize: 52,
                                 fontWeight: FontWeight.w900,
@@ -129,7 +129,7 @@ class WelcomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     const Muted(
-                        'Creating or connecting a spendable wallet is not available yet. Signing in never gives GiFTED! access to funds.',
+                        'Creating or connecting a spendable wallet is not available yet. Signing in never gives TRACE access to funds.',
                         size: 12),
                     const Disclaimer(),
                   ],

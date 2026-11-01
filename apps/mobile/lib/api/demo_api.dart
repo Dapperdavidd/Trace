@@ -442,7 +442,7 @@ class DemoApi implements TraceApi {
               'cohort': 'solana active traders (demo)',
               'window': '90d',
               'explanation':
-                  'Share of trades where GiFTED! could price both sides.',
+                  'Share of trades where TRACE could price both sides.',
             },
     });
   }
@@ -550,7 +550,7 @@ class DemoApi implements TraceApi {
         {
           'kind': 'hypothesis',
           'text':
-              'Rising social mentions may be adding to demand. GiFTED! cannot confirm this is the cause.',
+              'Rising social mentions may be adding to demand. TRACE cannot confirm this is the cause.',
           'evidence_ids': <String>[]
         },
       ],

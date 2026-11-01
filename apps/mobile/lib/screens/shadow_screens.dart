@@ -326,7 +326,7 @@ class _ShadowSetupScreenState extends ConsumerState<ShadowSetupScreen> {
                 SizedBox(width: 12),
                 Expanded(
                     child: Text(
-                        '${Copy.paperOnly} GiFTED! replays what the wallet did using prices you could have got after a delay.')),
+                        '${Copy.paperOnly} TRACE replays what the wallet did using prices you could have got after a delay.')),
               ]),
             ),
             const SectionTitle('Wallet to shadow'),

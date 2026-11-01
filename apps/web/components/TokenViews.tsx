@@ -73,7 +73,7 @@ export function RiskChecksList({ checks }: { checks: RiskCheck[] }) {
 
 export function WhyMovingList({ items }: { items: WhyMoving[] }) {
   if (items.length === 0) {
-    return <p className="muted">No explanation is available yet. GiFTED! shows nothing here rather than guess.</p>;
+    return <p className="muted">No explanation is available yet. TRACE shows nothing here rather than guess.</p>;
   }
   return (
     <ul>

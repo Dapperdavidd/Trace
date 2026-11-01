@@ -120,7 +120,7 @@ class _Overview extends StatelessWidget {
       if (t.whyMoving.isEmpty)
         const TraceCard(
             child: Muted(
-                'No reason found. GiFTED! only lists reasons it can back with evidence.')),
+                'No reason found. TRACE only lists reasons it can back with evidence.')),
       for (final w in t.whyMoving)
         TraceCard(
           semanticsLabel:
@@ -253,7 +253,7 @@ class _News extends StatelessWidget {
         ComingLaterPanel(
           title: 'News and social',
           explanation:
-              'News and social feeds are not part of this version. GiFTED! only shows what it can verify on-chain.',
+              'News and social feeds are not part of this version. TRACE only shows what it can verify on-chain.',
           icon: Icons.newspaper,
         ),
       ]);

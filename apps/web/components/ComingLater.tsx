@@ -9,7 +9,7 @@ export function ComingLater({ title, why, alternatives }: { title: string; why: 
       <h1>{title}</h1>
       <p className="muted">{why}</p>
       <p className="muted" style={{ marginTop: 10 }}>
-        GiFTED! is a watch-only research tool for now. It does not hold funds, sign transactions or place trades.
+        TRACE is a watch-only research tool for now. It does not hold funds, sign transactions or place trades.
       </p>
       <div className="hero-cta" style={{ justifyContent: "center" }}>
         <button type="button" className="btn btn-primary" disabled aria-disabled="true">{title} (coming later)</button>

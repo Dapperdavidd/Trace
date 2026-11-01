@@ -64,11 +64,11 @@ function MetricsPanel({ m }: { m: WalletMetricsResponse }) {
         <div className="stat"><small>Unresolved sales</small><b className="num">{m.unresolved_disposals}</b></div>
       </div>
       <p className="muted" style={{ fontSize: 12.5, margin: "8px 0 12px" }}>
-        {CONF_HELP[m.pnl_confidence] ?? "Confidence describes how complete the data behind these estimates is."} Coverage is the share of the activity from this wallet that GiFTED! could read. Sales without a known purchase price stay unresolved instead of guessed.
+        {CONF_HELP[m.pnl_confidence] ?? "Confidence describes how complete the data behind these estimates is."} Coverage is the share of the activity from this wallet that TRACE could read. Sales without a known purchase price stay unresolved instead of guessed.
       </p>
       <div className="cols-2">
         <ScoreCard title="Wallet quality score (WQS)" score={m.wqs} note="Not available." />
-        <ScoreCard title="Wallet copyability score (WCS)" score={m.wcs} note="No copyability score yet. GiFTED! only scores wallets with enough evidence." />
+        <ScoreCard title="Wallet copyability score (WCS)" score={m.wcs} note="No copyability score yet. TRACE only scores wallets with enough evidence." />
       </div>
     </>
   );
@@ -150,7 +150,7 @@ export default function WalletPage() {
             state={trades}
             skeletonRows={5}
             isEmpty={(d) => d.items.length === 0}
-            empty={<EmptyState title="No trades yet">GiFTED! has not seen supported trades from this wallet.</EmptyState>}
+            empty={<EmptyState title="No trades yet">TRACE has not seen supported trades from this wallet.</EmptyState>}
           >
             {(d) => (
               <ul>
@@ -176,7 +176,7 @@ export default function WalletPage() {
             {(d) =>
               d.state === "insufficient_history" ? (
                 <EmptyState title="Not enough history yet">
-                  GiFTED! needs more completed trades before it describes this wallet&apos;s style. Only {d.sample_size} trade{d.sample_size === 1 ? "" : "s"} could be used. It shows nothing instead of guessing.
+                  TRACE needs more completed trades before it describes this wallet&apos;s style. Only {d.sample_size} trade{d.sample_size === 1 ? "" : "s"} could be used. It shows nothing instead of guessing.
                 </EmptyState>
               ) : (
                 <>

@@ -26,7 +26,7 @@ export default function RiskRadarPage() {
     <div className="stack">
       <PageHead title="Risk Radar" sub="Spot possible problems before you trade. Coins with warnings are listed first." />
       <HonestyNote>
-        Risk checks are automated estimates from contract, liquidity and holder data. A pass is not a guarantee of safety, and an unknown means GiFTED! could not check. This is a risk warning, not advice.
+        Risk checks are automated estimates from contract, liquidity and holder data. A pass is not a guarantee of safety, and an unknown means TRACE could not check. This is a risk warning, not advice.
       </HonestyNote>
       <div className="cols-2">
         <Panel title="Coins to check" sub="Trending coins, highest risk first.">

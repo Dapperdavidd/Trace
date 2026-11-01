@@ -96,7 +96,7 @@ export function ShadowTrades() {
     <div className="stack">
       <PageHead title="Shadow Trades" sub="See what would have happened if you followed a wallet, using paper money." />
       <HonestyNote>
-        This is a simulation. Nothing is bought, signed or sent. GiFTED! uses the price a follower could have got after the delay you choose, adds fees and slippage, and skips trades a follower could not have copied. Simulated results are not a prediction or a promise.
+        This is a simulation. Nothing is bought, signed or sent. TRACE uses the price a follower could have got after the delay you choose, adds fees and slippage, and skips trades a follower could not have copied. Simulated results are not a prediction or a promise.
       </HonestyNote>
       <div className="cols-2">
         <Panel title="Set up a simulation">

@@ -526,11 +526,11 @@ class ErrorState extends StatelessWidget {
             Text(msg,
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: TraceColors.textMuted)),
-            if (unreachable && msg != 'We could not reach the GiFTED! server.')
+            if (unreachable && msg != 'We could not reach the TRACE server.')
               const Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: Text(
-                    'The GiFTED! server may be offline or unconfigured.',
+                    'The TRACE server may be offline or unconfigured.',
                     textAlign: TextAlign.center,
                     style:
                         TextStyle(color: TraceColors.textMuted, fontSize: 12)),

@@ -12,8 +12,8 @@ import { IconBell, IconClose, IconMenu, IconSearch, IconUser } from "./icons";
 
 export function Logo({ className = "logo" }: { className?: string }) {
   return (
-    <Link href="/" className={className} aria-label="GiFTED! home">
-      GiFTED<span className="dot">!</span>
+    <Link href="/" className={className} aria-label="TRACE home">
+      TRACE<span className="dot">.</span>
     </Link>
   );
 }
@@ -48,7 +48,7 @@ function Sidebar({ pathname }: { pathname: string }) {
       <NavLinks pathname={pathname} />
       <div className="side-note">
         <strong>Watch-only research</strong>
-        GiFTED! does not hold funds, sign transactions or place trades. Paper trades are simulations.
+        TRACE does not hold funds, sign transactions or place trades. Paper trades are simulations.
       </div>
     </aside>
   );
@@ -237,7 +237,7 @@ function MobileNav({ pathname }: { pathname: string }) {
             <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
             <div className="side-note" style={{ marginTop: 14 }}>
               <strong>Watch-only research</strong>
-              GiFTED! does not hold funds, sign transactions or place trades.
+              TRACE does not hold funds, sign transactions or place trades.
             </div>
           </div>
         </>

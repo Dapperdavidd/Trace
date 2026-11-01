@@ -37,14 +37,14 @@ class TimelineScreen extends ConsumerWidget {
             children: [
               EnvelopeBar(r.env),
               const Muted(
-                  'Facts are things GiFTED! observed. Hypotheses are possible causes and are not confirmed.',
+                  'Facts are things TRACE observed. Hypotheses are possible causes and are not confirmed.',
                   size: 12),
               const SizedBox(height: 12),
               if (r.items.isEmpty)
                 const EmptyState(
                     title: 'No events yet',
                     message:
-                        'GiFTED! has not recorded events for this token in this window.'),
+                        'TRACE has not recorded events for this token in this window.'),
               for (var i = 0; i < r.items.length; i++)
                 _Step(r.items[i], last: i == r.items.length - 1),
               const Disclaimer(),

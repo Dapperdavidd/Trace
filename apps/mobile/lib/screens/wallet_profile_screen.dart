@@ -120,7 +120,7 @@ class _Overview extends ConsumerWidget {
               children: [for (final t in summary!.tags) Pill(t)]),
           const SizedBox(height: 4),
           const Muted(
-              'Tags describe past behaviour that GiFTED! observed. They are not advice.',
+              'Tags describe past behaviour that TRACE observed. They are not advice.',
               size: 12),
         ],
         const SizedBox(height: 8),
@@ -159,7 +159,7 @@ class _Overview extends ConsumerWidget {
                         color: TraceColors.warning),
                     const SizedBox(height: 8),
                     Text(
-                        'GiFTED! has seen only ${r.sampleSize} completed trades, which is too few to describe a trading style.'),
+                        'TRACE has seen only ${r.sampleSize} completed trades, which is too few to describe a trading style.'),
                     const Muted('We would rather show nothing than guess.',
                         size: 12),
                   ]),
@@ -209,7 +209,7 @@ class _Trades extends ConsumerWidget {
           const EmptyState(
               title: 'No trades seen',
               message:
-                  'GiFTED! has not seen supported swaps from this wallet yet.'),
+                  'TRACE has not seen supported swaps from this wallet yet.'),
         for (final t in r.items)
           TraceCard(
             onTap: () => context.push(t.token.path),
@@ -267,7 +267,7 @@ class _Performance extends ConsumerWidget {
             const SizedBox(width: 8),
             const Expanded(
                 child: Muted(
-                    'PnL is computed by the GiFTED! server, not on your phone.',
+                    'PnL is computed by the TRACE server, not on your phone.',
                     size: 12)),
           ]),
           const SizedBox(height: 12),
@@ -288,7 +288,7 @@ class _Performance extends ConsumerWidget {
             StatTile(
                 label: 'Price coverage',
                 value: coverageText(m.coverageRatio),
-                note: 'Share of trades GiFTED! could price'),
+                note: 'Share of trades TRACE could price'),
             StatTile(
                 label: 'Unresolved sells',
                 value: compactCount(m.unresolvedDisposals),

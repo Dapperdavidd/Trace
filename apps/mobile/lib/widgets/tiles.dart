@@ -62,10 +62,10 @@ class MoverTile extends StatelessWidget {
 }
 
 String decisionText(WalletDecision d) => switch (d) {
-      WalletDecision.eligible => 'Meets GiFTED! criteria for shadowing',
+      WalletDecision.eligible => 'Meets TRACE criteria for shadowing',
       WalletDecision.watchOnly => 'Watch only',
       WalletDecision.insufficientEvidence => 'Not enough history yet',
-      WalletDecision.rejected => 'Does not meet GiFTED! criteria',
+      WalletDecision.rejected => 'Does not meet TRACE criteria',
       WalletDecision.unknown => 'Status unknown',
     };
 

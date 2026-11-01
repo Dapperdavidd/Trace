@@ -6,7 +6,7 @@ Reviewed on 2026-11-01 against the supplied desktop dashboard and mobile screen 
 
 Before this pass, the apps already used the dark emerald visual direction, but several surfaces still used the old product name, compact controls missed the 44 point target, coverage was not visible on the main surfaces, money strings could pass through floating point values, and mobile API errors did not show their request ID.
 
-After this pass, both apps use the GiFTED! name, keep the dense dark card layout from the designs, expose freshness and data status on API-backed surfaces, show protocol coverage, preserve decimal money strings, show reportable API errors, and keep Wallet, Send, Receive, Buy, Swap, copy trading, and Ask GiFTED! visibly unavailable. Shadow is paper-only everywhere.
+After this pass, both apps use the TRACE name, keep the dense dark card layout from the designs, expose freshness and data status on API-backed surfaces, show protocol coverage, preserve decimal money strings, show reportable API errors, and keep Wallet, Send, Receive, Buy, Swap, copy trading, and Ask TRACE visibly unavailable. Shadow is paper-only everywhere.
 
 The designs contain balances, real trading, auto-copy, and AI chat actions that the current product does not provide. Those areas match the designs in hierarchy and styling, but deliberately show `Coming later` or `Unavailable` instead of pretending to work.
 
@@ -33,7 +33,7 @@ The designs contain balances, real trading, auto-copy, and AI chat actions that 
 | Send | Yes | static coming-later state | No action is enabled. |
 | Receive | Yes | static coming-later state | No address is invented. |
 | Swap | Yes | static coming-later state | No transaction can be submitted. |
-| Ask GiFTED! | Yes | static coming-later state | Example questions are disabled. |
+| Ask TRACE | Yes | static coming-later state | Example questions are disabled. |
 
 Web captures are in [`docs/screens/web`](screens/web).
 
@@ -59,7 +59,7 @@ Web captures are in [`docs/screens/web`](screens/web).
 | More and coverage | Yes | loading, error, offline, demo, partial | Only Ethereum Uniswap V2 is enabled. |
 | Wallet | Yes | static coming-later state | No balance or custody action. |
 | Trade and Swap | Yes | static coming-later state | Real-money controls are disabled. |
-| Ask GiFTED! | Yes | static coming-later state | Input and examples remain disabled. |
+| Ask TRACE | Yes | static coming-later state | Input and examples remain disabled. |
 
 Mobile captures are in [`docs/screens/mobile`](screens/mobile).
 

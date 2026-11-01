@@ -21,12 +21,12 @@ String watchStatusText(WatchStatus s) => switch (s) {
     };
 
 String watchStatusHelp(WatchStatus s) => switch (s) {
-      WatchStatus.active => 'GiFTED! is checking this wallet.',
+      WatchStatus.active => 'TRACE is checking this wallet.',
       WatchStatus.paused => 'Checks are paused.',
       WatchStatus.partialMonitoring =>
-        'GiFTED! can see only part of this wallet\'s activity.',
+        'TRACE can see only part of this wallet\'s activity.',
       WatchStatus.unsupportedProtocol =>
-        'This wallet uses apps GiFTED! does not read yet.',
+        'This wallet uses apps TRACE does not read yet.',
       WatchStatus.waitingForActivity =>
         'No trades seen yet. We will tell you when one appears.',
       WatchStatus.unknown => 'Status not reported.',

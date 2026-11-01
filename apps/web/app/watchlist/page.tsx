@@ -33,7 +33,7 @@ export default function WatchlistPage() {
       await api.addWatchlist({ chain, address: address.trim(), alias: alias.trim() || undefined });
       setAddress("");
       setAlias("");
-      setMsg({ ok: true, text: "Added. GiFTED! will check this address for new trades." });
+      setMsg({ ok: true, text: "Added. TRACE will check this address for new trades." });
       list.reload();
     } catch (e2) {
       setMsg({ ok: false, text: describeError(e2).message });
@@ -84,7 +84,7 @@ export default function WatchlistPage() {
                   spellCheck={false}
                   placeholder={chain === "solana" ? "Solana address (32 to 44 characters)" : "0x followed by 40 hex characters"}
                 />
-                <span id="wl-addr-hint" className="hint">Format is checked here. GiFTED! confirms activity after you add it.</span>
+                <span id="wl-addr-hint" className="hint">Format is checked here. TRACE confirms activity after you add it.</span>
                 {err ? <span id="wl-addr-err" className="err" role="alert">{err}</span> : null}
               </div>
             </div>

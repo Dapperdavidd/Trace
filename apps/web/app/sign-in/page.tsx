@@ -8,7 +8,7 @@ export default function SignInPage() {
       <Panel>
         <GoogleSignIn />
         <p className="muted" style={{ fontSize: 12.5, marginTop: 16 }}>
-          Signing in with Google identifies your GiFTED! account. It is not a wallet. GiFTED! never asks for private keys or seed phrases, and a signed-in account has no spendable wallet.
+          Signing in with Google identifies your TRACE account. It is not a wallet. TRACE never asks for private keys or seed phrases, and a signed-in account has no spendable wallet.
         </p>
       </Panel>
     </div>

@@ -123,7 +123,7 @@ class SessionController extends Notifier<SessionState> {
     try {
       final res = await ref
           .read(apiProvider)
-          .googleSignIn('dev:mobile-local@gifted.test');
+          .googleSignIn('dev:mobile-local@trace.test');
       ref.read(apiClientProvider).accessToken = res.accessToken;
       await _write(_tokenKey, res.accessToken);
       await _write(_nameKey, res.user.name);

@@ -169,7 +169,7 @@ class TraceApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-      title: 'GiFTED!',
+      title: 'TRACE',
       debugShowCheckedModeBanner: false,
       theme: buildTraceTheme(),
       darkTheme: buildTraceTheme(),

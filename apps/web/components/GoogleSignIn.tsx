@@ -29,7 +29,7 @@ export function GoogleSignIn() {
     setDevBusy(true);
     setError(null);
     try {
-      await api.authGoogle("dev:web-local@gifted.test");
+      await api.authGoogle("dev:web-local@trace.test");
       router.push("/");
     } catch (e) {
       setError(describeError(e).message);

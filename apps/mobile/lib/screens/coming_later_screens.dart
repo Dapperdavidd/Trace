@@ -18,9 +18,9 @@ class WalletScreen extends StatelessWidget {
       subtitle: Copy.comingLater,
       body: ListView(padding: _pad, children: [
         const ComingLaterPanel(
-          title: 'Your GiFTED! wallet',
+          title: 'Your TRACE wallet',
           explanation:
-              'A wallet that holds and sends your crypto is planned for a later version. Today GiFTED! never holds funds, so there is no balance to show.',
+              'A wallet that holds and sends your crypto is planned for a later version. Today TRACE never holds funds, so there is no balance to show.',
           icon: Icons.account_balance_wallet_outlined,
           children: [
             DisabledAction(
@@ -62,7 +62,7 @@ class TradeScreen extends StatelessWidget {
         const ComingLaterPanel(
           title: 'Buy, sell and swap in the app',
           explanation:
-              'Trading with real money is not available. GiFTED! does not sign or send transactions. Nothing here can move funds.',
+              'Trading with real money is not available. TRACE does not sign or send transactions. Nothing here can move funds.',
           icon: Icons.swap_horiz,
           children: [
             SizedBox(height: 8),
@@ -100,7 +100,7 @@ class AskScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TraceScaffold(
-      title: 'Ask GiFTED!',
+      title: 'Ask TRACE',
       subtitle: Copy.comingLater,
       body: ListView(padding: _pad, children: [
         const ComingLaterPanel(
