@@ -337,6 +337,23 @@ export interface BriefingResponse extends Envelope {
 }
 
 /** ASSUMPTION: GET /chains is "implemented" but its shape is not in the contract. */
-export interface ChainsResponse {
-  chains: Array<{ chain: Chain; status: string; note?: string }>;
+export interface ProtocolCapability {
+  chain: Chain;
+  protocol: string;
+  family: string;
+  status: "enabled" | "partial" | "disabled" | "unsupported";
+  limitations: string[];
+  blocker: string | null;
+}
+
+export interface ChainsResponse extends Envelope {
+  chains: Array<{
+    chain: Chain;
+    display_name: string;
+    status: "enabled" | "partial" | "disabled" | "unsupported";
+    watch_only_supported: boolean;
+    protocols: ProtocolCapability[];
+  }>;
+  ingestion: Array<Record<string, unknown>>;
+  note: string;
 }

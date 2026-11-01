@@ -1,4 +1,5 @@
 use actix_web::{web, HttpResponse};
+use chrono::{DateTime, Utc};
 use serde::Serialize;
 use trace_chain_adapters::ChainCapability;
 use trace_database::coverage::{list_protocol_coverage, ProtocolCoverageRow};
@@ -17,6 +18,9 @@ struct ChainsResponse {
     ingestion: Vec<ProtocolCoverageRow>,
     /// `partial` until at least one protocol has been enabled with fixture evidence.
     data_status: DataStatus,
+    as_of: DateTime<Utc>,
+    demo: bool,
+    coverage_note: &'static str,
     note: &'static str,
 }
 
@@ -32,6 +36,9 @@ async fn list_chains(state: web::Data<AppState>) -> Result<HttpResponse, ApiErro
         chains,
         ingestion,
         data_status: if any_enabled { DataStatus::Partial } else { DataStatus::Unavailable },
+        as_of: Utc::now(),
+        demo: false,
+        coverage_note: "Ethereum Uniswap V2 is enabled. Other listed protocols remain disabled or unsupported.",
         note: "Any valid public address can be watched on a listed chain. Parser coverage is reported per protocol and is never assumed.",
     }))
 }

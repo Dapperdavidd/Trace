@@ -1,62 +1,97 @@
 type Num = string | number | null | undefined;
 
+type DecimalParts = { negative: boolean; coefficient: bigint; scale: number };
+
+function decimalParts(value: Num): DecimalParts | null {
+  if (value === null || value === undefined || value === "") return null;
+  const raw = String(value).trim();
+  const match = /^([+-]?)(\d+)(?:\.(\d+))?$/.exec(raw);
+  if (!match) return null;
+  const whole = match[2] ?? "0";
+  const fraction = match[3] ?? "";
+  return {
+    negative: match[1] === "-" && !/^0+$/.test(`${whole}${fraction}`),
+    coefficient: BigInt(`${whole}${fraction}`),
+    scale: fraction.length,
+  };
+}
+
+function pow10(n: number): bigint {
+  return 10n ** BigInt(n);
+}
+
+function atLeast(parts: DecimalParts, whole: bigint): boolean {
+  return parts.coefficient >= whole * pow10(parts.scale);
+}
+
+function atLeastRatio(parts: DecimalParts, numerator: bigint, denominator: bigint): boolean {
+  return parts.coefficient * denominator >= numerator * pow10(parts.scale);
+}
+
+function roundedScaled(parts: DecimalParts, divisor: bigint, decimals: number): bigint {
+  const numerator = parts.coefficient * pow10(decimals);
+  const denominator = pow10(parts.scale) * divisor;
+  return (numerator + denominator / 2n) / denominator;
+}
+
+function grouped(s: string): string {
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function renderScaled(value: bigint, decimals: number, trim: boolean, group = false): string {
+  const raw = value.toString().padStart(decimals + 1, "0");
+  const whole = decimals === 0 ? raw : raw.slice(0, -decimals);
+  let fraction = decimals === 0 ? "" : raw.slice(-decimals);
+  if (trim) fraction = fraction.replace(/0+$/, "");
+  return `${group ? grouped(whole) : whole}${fraction ? `.${fraction}` : ""}`;
+}
+
 function toNumber(value: Num): number | null {
   if (value === null || value === undefined || value === "") return null;
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? n : null;
 }
 
-export const NA = "n/a";
+export const NA = "Unavailable";
 
 /** Compact USD: $12.4M, $8.4K, $1.23B. Small prices keep significant digits. */
 export function formatCompactUsd(value: Num): string {
-  const n = toNumber(value);
-  if (n === null) return NA;
-  const abs = Math.abs(n);
-  const sign = n < 0 ? "-" : "";
-  const units: Array<[number, string]> = [
-    [1e12, "T"],
-    [1e9, "B"],
-    [1e6, "M"],
-    [1e3, "K"],
+  const parts = decimalParts(value);
+  if (!parts) return NA;
+  const sign = parts.negative ? "-" : "";
+  const units: Array<[bigint, string]> = [
+    [1_000_000_000_000n, "T"],
+    [1_000_000_000n, "B"],
+    [1_000_000n, "M"],
+    [1_000n, "K"],
   ];
   for (const [size, suffix] of units) {
-    if (abs >= size) {
-      const scaled = abs / size;
-      const digits = scaled >= 100 ? 0 : scaled >= 10 ? 1 : 2;
-      return `${sign}$${trimZeros(scaled.toFixed(digits))}${suffix}`;
+    if (atLeast(parts, size)) {
+      const decimals = atLeast(parts, size * 100n) ? 0 : atLeast(parts, size * 10n) ? 1 : 2;
+      return `${sign}$${renderScaled(roundedScaled(parts, size, decimals), decimals, true)}${suffix}`;
     }
   }
-  return `${sign}$${trimZeros(abs.toFixed(2))}`;
-}
-
-function trimZeros(s: string): string {
-  if (!s.includes(".")) return s;
-  return s.replace(/0+$/, "").replace(/\.$/, "");
+  return `${sign}$${renderScaled(roundedScaled(parts, 1n, 2), 2, true)}`;
 }
 
 /** Token price: more precision for sub-dollar values. */
 export function formatPriceUsd(value: Num): string {
-  const n = toNumber(value);
-  if (n === null) return NA;
-  const abs = Math.abs(n);
-  if (abs === 0) return "$0";
-  if (abs >= 1000) return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
-  if (abs >= 1) return `$${trimZeros(n.toFixed(2))}`;
-  if (abs >= 0.01) return `$${trimZeros(n.toFixed(3))}`;
-  // significant digits for tiny prices
-  return `$${trimZeros(n.toPrecision(2))}`.replace(/e-(\d+)/, "e-$1");
+  const parts = decimalParts(value);
+  if (!parts) return NA;
+  if (parts.coefficient === 0n) return "$0";
+  const sign = parts.negative ? "-" : "";
+  if (atLeast(parts, 1000n)) return `${sign}$${renderScaled(roundedScaled(parts, 1n, 2), 2, true, true)}`;
+  if (atLeast(parts, 1n)) return `${sign}$${renderScaled(roundedScaled(parts, 1n, 2), 2, true)}`;
+  const decimals = atLeastRatio(parts, 1n, 100n) ? 3 : Math.min(8, Math.max(4, parts.scale));
+  return `${sign}$${renderScaled(roundedScaled(parts, 1n, decimals), decimals, true)}`;
 }
 
 /** Exact money with two decimals: $148.60 */
 export function formatUsd(value: Num): string {
-  const n = toNumber(value);
-  if (n === null) return NA;
-  const sign = n < 0 ? "-" : "";
-  return `${sign}$${Math.abs(n).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  const parts = decimalParts(value);
+  if (!parts) return NA;
+  const sign = parts.negative ? "-" : "";
+  return `${sign}$${renderScaled(roundedScaled(parts, 1n, 2), 2, false, true)}`;
 }
 
 /** Signed percent from a percent value (not a ratio): "42.7" -> "+42.7%". */

@@ -36,8 +36,14 @@ class TraceScaffold extends ConsumerWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Semantics(header: true, child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700))),
-            if (subtitle != null) Text(subtitle!, style: const TextStyle(fontSize: 12, color: TraceColors.textMuted)),
+            Semantics(
+                header: true,
+                child: Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.w700))),
+            if (subtitle != null)
+              Text(subtitle!,
+                  style: const TextStyle(
+                      fontSize: 12, color: TraceColors.textMuted)),
           ],
         ),
         actions: actions,
@@ -48,7 +54,8 @@ class TraceScaffold extends ConsumerWidget {
         children: [
           ValueListenableBuilder<bool>(
             valueListenable: demo,
-            builder: (context, active, _) => active ? const DemoBanner() : const SizedBox.shrink(),
+            builder: (context, active, _) =>
+                active ? const DemoBanner() : const SizedBox.shrink(),
           ),
           Expanded(child: body),
         ],
@@ -75,8 +82,12 @@ class DemoBanner extends StatelessWidget {
             spacing: 8,
             children: [
               Text(Copy.demoBanner,
-                  style: TextStyle(color: Color(0xFF241A00), fontWeight: FontWeight.w900, letterSpacing: 1)),
-              Text('Fictional example data. Not live.', style: TextStyle(color: Color(0xFF241A00), fontSize: 13)),
+                  style: TextStyle(
+                      color: Color(0xFF241A00),
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1)),
+              Text('Fictional example data. Not live.',
+                  style: TextStyle(color: Color(0xFF241A00), fontSize: 13)),
             ],
           ),
         ),
@@ -94,14 +105,31 @@ class EnvelopeBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color, explain) = switch (env.status) {
       DataStatus.live => ('LIVE', TraceColors.positive, 'Live data'),
-      DataStatus.stale => ('STALE', TraceColors.warning, 'This data is out of date. Do not treat it as current.'),
-      DataStatus.unavailable => ('UNAVAILABLE', TraceColors.negative, 'The data source is not available right now.'),
-      DataStatus.partial => ('PARTIAL', TraceColors.warning, 'Some data is missing, so this view is incomplete.'),
-      DataStatus.demo => (Copy.demoBanner, TraceColors.warning, Copy.demoExplain),
+      DataStatus.stale => (
+          'STALE',
+          TraceColors.warning,
+          'This data is out of date. Do not treat it as current.'
+        ),
+      DataStatus.unavailable => (
+          'UNAVAILABLE',
+          TraceColors.negative,
+          'The data source is not available right now.'
+        ),
+      DataStatus.partial => (
+          'PARTIAL',
+          TraceColors.warning,
+          'Some data is missing, so this view is incomplete.'
+        ),
+      DataStatus.demo => (
+          Copy.demoBanner,
+          TraceColors.warning,
+          Copy.demoExplain
+        ),
     };
     return Semantics(
       container: true,
-      label: 'Data status: $label. $explain. Updated ${relativeTime(env.asOf)}.',
+      label:
+          'Data status: $label. $explain. Updated ${relativeTime(env.asOf)}.',
       child: ExcludeSemantics(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -113,21 +141,28 @@ class EnvelopeBar extends StatelessWidget {
                 runSpacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Pill(label, color: color, filled: env.status == DataStatus.demo),
+                  Pill(label,
+                      color: color, filled: env.status == DataStatus.demo),
                   Text('Updated ${relativeTime(env.asOf)}',
-                      style: const TextStyle(color: TraceColors.textMuted, fontSize: 12)),
+                      style: const TextStyle(
+                          color: TraceColors.textMuted, fontSize: 12)),
                 ],
               ),
               if (env.status != DataStatus.live)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(explain, style: const TextStyle(color: TraceColors.textMuted, fontSize: 12)),
+                  child: Text(explain,
+                      style: const TextStyle(
+                          color: TraceColors.textMuted, fontSize: 12)),
                 ),
-              if (env.coverageNote != null && env.coverageNote!.isNotEmpty && !env.isDemo)
+              if (env.coverageNote != null &&
+                  env.coverageNote!.isNotEmpty &&
+                  !env.isDemo)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text('Coverage: ${env.coverageNote}',
-                      style: const TextStyle(color: TraceColors.textMuted, fontSize: 12)),
+                      style: const TextStyle(
+                          color: TraceColors.textMuted, fontSize: 12)),
                 ),
             ],
           ),
@@ -138,7 +173,8 @@ class EnvelopeBar extends StatelessWidget {
 }
 
 class Pill extends StatelessWidget {
-  const Pill(this.label, {super.key, this.color = TraceColors.emerald, this.filled = false});
+  const Pill(this.label,
+      {super.key, this.color = TraceColors.emerald, this.filled = false});
   final String label;
   final Color color;
   final bool filled;
@@ -183,7 +219,8 @@ class RiskPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
         label: 'Risk check: ${riskWord(state)}',
-        child: ExcludeSemantics(child: Pill(riskWord(state), color: riskColor(state))),
+        child: ExcludeSemantics(
+            child: Pill(riskWord(state), color: riskColor(state))),
       );
 }
 
@@ -195,12 +232,18 @@ class KindLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fact = kind == EvidenceKind.fact;
-    return Pill(fact ? Copy.factLabel : Copy.hypothesisLabel, color: fact ? TraceColors.positive : TraceColors.info);
+    return Pill(fact ? Copy.factLabel : Copy.hypothesisLabel,
+        color: fact ? TraceColors.positive : TraceColors.info);
   }
 }
 
 class TraceCard extends StatelessWidget {
-  const TraceCard({super.key, required this.child, this.onTap, this.semanticsLabel, this.padding});
+  const TraceCard(
+      {super.key,
+      required this.child,
+      this.onTap,
+      this.semanticsLabel,
+      this.padding});
   final Widget child;
   final VoidCallback? onTap;
   final String? semanticsLabel;
@@ -208,7 +251,8 @@ class TraceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = Padding(padding: padding ?? const EdgeInsets.all(16), child: child);
+    final content =
+        Padding(padding: padding ?? const EdgeInsets.all(16), child: child);
     final box = Material(
       color: TraceColors.surface,
       shape: RoundedRectangleBorder(
@@ -221,7 +265,8 @@ class TraceCard extends StatelessWidget {
           : InkWell(
               onTap: onTap,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: TraceSpacing.minTouch),
+                constraints:
+                    const BoxConstraints(minHeight: TraceSpacing.minTouch),
                 child: content,
               ),
             ),
@@ -253,7 +298,9 @@ class SectionTitle extends StatelessWidget {
             Expanded(
               child: Semantics(
                 header: true,
-                child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                child: Text(text,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w700)),
               ),
             ),
             if (trailing != null) trailing!,
@@ -267,7 +314,8 @@ class Muted extends StatelessWidget {
   final String text;
   final double size;
   @override
-  Widget build(BuildContext context) => Text(text, style: TextStyle(color: TraceColors.textMuted, fontSize: size));
+  Widget build(BuildContext context) => Text(text,
+      style: TextStyle(color: TraceColors.textMuted, fontSize: size));
 }
 
 class Disclaimer extends StatelessWidget {
@@ -281,7 +329,12 @@ class Disclaimer extends StatelessWidget {
 }
 
 class StatTile extends StatelessWidget {
-  const StatTile({super.key, required this.label, required this.value, this.note, this.valueColor});
+  const StatTile(
+      {super.key,
+      required this.label,
+      required this.value,
+      this.note,
+      this.valueColor});
   final String label;
   final String value;
   final String? note;
@@ -307,7 +360,10 @@ class StatTile extends StatelessWidget {
               Muted(label, size: 12),
               const SizedBox(height: 4),
               Text(value,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: valueColor ?? TraceColors.text)),
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: valueColor ?? TraceColors.text)),
               if (note != null) Muted(note!, size: 11),
             ],
           ),
@@ -328,7 +384,9 @@ class StatGrid extends StatelessWidget {
     if (!wide) {
       return Column(children: [
         for (final t in tiles)
-          Padding(padding: const EdgeInsets.only(bottom: 8), child: SizedBox(width: double.infinity, child: t))
+          Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: SizedBox(width: double.infinity, child: t))
       ]);
     }
     final rows = <Widget>[];
@@ -341,7 +399,10 @@ class StatGrid extends StatelessWidget {
             children: [
               Expanded(child: tiles[i]),
               const SizedBox(width: 8),
-              Expanded(child: i + 1 < tiles.length ? tiles[i + 1] : const SizedBox.shrink()),
+              Expanded(
+                  child: i + 1 < tiles.length
+                      ? tiles[i + 1]
+                      : const SizedBox.shrink()),
             ],
           ),
         ),
@@ -366,14 +427,17 @@ class TokenAvatar extends StatelessWidget {
             color: tint(TraceColors.emerald, 0.16),
             border: Border.all(color: tint(TraceColors.emerald, 0.5)),
           ),
-          child: Text(symbol.isEmpty ? '?' : symbol.substring(0, 1).toUpperCase(),
-              style: const TextStyle(fontWeight: FontWeight.w800, color: TraceColors.emerald)),
+          child: Text(
+              symbol.isEmpty ? '?' : symbol.substring(0, 1).toUpperCase(),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w800, color: TraceColors.emerald)),
         ),
       );
 }
 
-Color changeColor(double? v) =>
-    v == null ? TraceColors.textMuted : (v < 0 ? TraceColors.negative : TraceColors.positive);
+Color changeColor(double? v) => v == null
+    ? TraceColors.textMuted
+    : (v < 0 ? TraceColors.negative : TraceColors.positive);
 
 /// "Coming later" badge and explanation for features outside the MVP.
 class ComingLaterPanel extends StatelessWidget {
@@ -398,7 +462,10 @@ class ComingLaterPanel extends StatelessWidget {
           Row(children: [
             Icon(icon, color: TraceColors.textMuted),
             const SizedBox(width: 12),
-            Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+            Expanded(
+                child: Text(title,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700))),
             const Pill(Copy.comingLater, color: TraceColors.info),
           ]),
           const SizedBox(height: 8),
@@ -442,8 +509,9 @@ class ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final msg = error is ApiException ? (error as ApiException).message : 'Something went wrong.';
-    final unreachable = error is ApiException && (error as ApiException).isUnreachable;
+    final apiError = error is ApiException ? error as ApiException : null;
+    final msg = apiError?.message ?? 'Something went wrong.';
+    final unreachable = apiError?.isUnreachable ?? false;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -452,10 +520,31 @@ class ErrorState extends StatelessWidget {
           children: [
             const Icon(Icons.cloud_off, size: 40, color: TraceColors.textMuted),
             const SizedBox(height: 12),
-            const Text('Data unavailable', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const Text('Data unavailable',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
-            Text(unreachable ? 'We could not reach the TRACE server.' : msg,
-                textAlign: TextAlign.center, style: const TextStyle(color: TraceColors.textMuted)),
+            Text(msg,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: TraceColors.textMuted)),
+            if (unreachable && msg != 'We could not reach the GiFTED! server.')
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text(
+                    'The GiFTED! server may be offline or unconfigured.',
+                    textAlign: TextAlign.center,
+                    style:
+                        TextStyle(color: TraceColors.textMuted, fontSize: 12)),
+              ),
+            if (apiError != null) ...[
+              const SizedBox(height: 8),
+              Text('Code: ${apiError.code}',
+                  style: const TextStyle(
+                      color: TraceColors.textMuted, fontSize: 12)),
+              if (apiError.requestId != null)
+                Text('Request id: ${apiError.requestId}',
+                    style: const TextStyle(
+                        color: TraceColors.textMuted, fontSize: 12)),
+            ],
             const SizedBox(height: 16),
             FilledButton(onPressed: onRetry, child: const Text('Try again')),
           ],
@@ -466,7 +555,8 @@ class ErrorState extends StatelessWidget {
 }
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.title, required this.message, this.action});
+  const EmptyState(
+      {super.key, required this.title, required this.message, this.action});
   final String title;
   final String message;
   final Widget? action;
@@ -475,9 +565,14 @@ class EmptyState extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700), textAlign: TextAlign.center),
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center),
             const SizedBox(height: 8),
-            Text(message, textAlign: TextAlign.center, style: const TextStyle(color: TraceColors.textMuted)),
+            Text(message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: TraceColors.textMuted)),
             if (action != null) ...[const SizedBox(height: 16), action!],
           ]),
         ),
@@ -485,7 +580,11 @@ class EmptyState extends StatelessWidget {
 }
 
 class AsyncBody<T> extends StatelessWidget {
-  const AsyncBody({super.key, required this.value, required this.builder, required this.onRetry});
+  const AsyncBody(
+      {super.key,
+      required this.value,
+      required this.builder,
+      required this.onRetry});
   final AsyncValue<T> value;
   final Widget Function(T data) builder;
   final VoidCallback onRetry;

@@ -608,11 +608,30 @@ export function demoResponse(
   if (method === "GET" && path === "/chains") {
     return ok({
       chains: [
-        { chain: "solana", status: "demo", note: "Demo coverage list." },
-        { chain: "ethereum", status: "demo" },
-        { chain: "base", status: "demo" },
-        { chain: "bnb", status: "demo" },
+        {
+          chain: "ethereum",
+          display_name: "Ethereum",
+          status: "partial",
+          watch_only_supported: true,
+          protocols: [
+            { chain: "ethereum", protocol: "uniswap_v2", family: "constant-product AMM", status: "enabled", limitations: ["Swap log and Transfer context required"], blocker: null },
+            { chain: "ethereum", protocol: "uniswap_v3", family: "concentrated liquidity", status: "unsupported", limitations: [], blocker: "No adapter is enabled." },
+          ],
+        },
+        {
+          chain: "solana",
+          display_name: "Solana",
+          status: "disabled",
+          watch_only_supported: true,
+          protocols: [
+            { chain: "solana", protocol: "raydium_amm_v4", family: "constant-product AMM", status: "disabled", limitations: [], blocker: "Real fixtures have not been reviewed." },
+          ],
+        },
+        { chain: "base", display_name: "Base", status: "disabled", watch_only_supported: true, protocols: [] },
+        { chain: "bnb", display_name: "BNB Chain", status: "disabled", watch_only_supported: true, protocols: [] },
       ],
+      ingestion: [],
+      coverage_note: "Ethereum Uniswap V2 is enabled. Other listed protocols remain disabled or unsupported.",
     });
   }
   return notFound();

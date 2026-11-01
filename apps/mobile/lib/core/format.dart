@@ -1,5 +1,5 @@
 /// Display formatters. Display only: the client never computes authoritative PnL.
-const String kNotAvailable = 'n/a';
+const String kNotAvailable = 'Unavailable';
 
 double? parseDecimal(String? s) {
   if (s == null) return null;
@@ -25,38 +25,57 @@ String _withThousands(String intPart) {
   return buf.toString();
 }
 
-/// Compact USD: $12.4M, $127K, $2,840.25, $0.0084. Null gives "n/a".
-String compactUsd(double? v) {
-  if (v == null || v.isNaN || v.isInfinite) return kNotAvailable;
-  final neg = v < 0;
-  final a = v.abs();
-  String body;
-  if (a >= 1e12) {
-    body = '${_trimZeros((a / 1e12).toStringAsFixed(1))}T';
-  } else if (a >= 1e9) {
-    body = '${_trimZeros((a / 1e9).toStringAsFixed(1))}B';
-  } else if (a >= 1e6) {
-    body = '${_trimZeros((a / 1e6).toStringAsFixed(1))}M';
-  } else if (a >= 1e4) {
-    body = '${_trimZeros((a / 1e3).toStringAsFixed(1))}K';
-  } else if (a >= 1) {
-    final fixed = a.toStringAsFixed(2);
-    final parts = fixed.split('.');
-    body = '${_withThousands(parts[0])}.${parts[1]}';
-  } else if (a == 0) {
-    body = '0.00';
-  } else {
-    // Below $1: up to 6 decimals, but never fewer than 4.
-    var small = a.toStringAsFixed(6);
-    while (small.endsWith('0') && small.length - small.indexOf('.') - 1 > 4) {
-      small = small.substring(0, small.length - 1);
-    }
-    body = small;
-  }
-  return '${neg ? '-' : ''}\$$body';
-}
+/// Compact USD from an API decimal string. Money is never converted to a float.
+String compactUsdString(String? s) {
+  if (s == null) return kNotAvailable;
+  final match = RegExp(r'^([+-]?)(\d+)(?:\.(\d+))?$').firstMatch(s.trim());
+  if (match == null) return kNotAvailable;
+  final whole = match.group(2) ?? '0';
+  final fraction = match.group(3) ?? '';
+  final coefficient = BigInt.parse('$whole$fraction');
+  final scale = fraction.length;
+  final negative = match.group(1) == '-' && coefficient != BigInt.zero;
+  final tenScale = BigInt.from(10).pow(scale);
 
-String compactUsdString(String? s) => compactUsd(parseDecimal(s));
+  bool atLeast(BigInt value) => coefficient >= value * tenScale;
+  BigInt rounded(BigInt divisor, int decimals) {
+    final factor = BigInt.from(10).pow(decimals);
+    final denominator = tenScale * divisor;
+    return (coefficient * factor + denominator ~/ BigInt.two) ~/ denominator;
+  }
+
+  String render(BigInt value, int decimals,
+      {bool trim = true, bool group = false}) {
+    final raw = value.toString().padLeft(decimals + 1, '0');
+    final integer =
+        decimals == 0 ? raw : raw.substring(0, raw.length - decimals);
+    var decimal = decimals == 0 ? '' : raw.substring(raw.length - decimals);
+    if (trim) decimal = decimal.replaceFirst(RegExp(r'0+$'), '');
+    final displayedInteger = group ? _withThousands(integer) : integer;
+    return decimal.isEmpty ? displayedInteger : '$displayedInteger.$decimal';
+  }
+
+  final units = <(BigInt, String)>[
+    (BigInt.from(10).pow(12), 'T'),
+    (BigInt.from(10).pow(9), 'B'),
+    (BigInt.from(10).pow(6), 'M'),
+    (BigInt.from(10).pow(3), 'K'),
+  ];
+  final sign = negative ? '-' : '';
+  for (final (size, suffix) in units) {
+    if (suffix == 'K' && !atLeast(BigInt.from(10000))) continue;
+    if (atLeast(size)) {
+      final decimals = atLeast(size * BigInt.from(100))
+          ? 0
+          : (atLeast(size * BigInt.from(10)) ? 1 : 2);
+      return '$sign\$${render(rounded(size, decimals), decimals)}$suffix';
+    }
+  }
+  final decimals = coefficient == BigInt.zero
+      ? 2
+      : (atLeast(BigInt.one) ? 2 : scale.clamp(4, 8));
+  return '$sign\$${render(rounded(BigInt.one, decimals), decimals, trim: !atLeast(BigInt.one) && coefficient != BigInt.zero, group: atLeast(BigInt.one))}';
+}
 
 /// Signed percent: +42.7%, -3.2%, 0.0%.
 String signedPercent(double? v, {int decimals = 1}) {

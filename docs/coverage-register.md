@@ -7,7 +7,7 @@ This file changes in the same commit as the fixtures that justify an enabled sta
 |---|---|---|---|
 | Solana | raydium_amm_v4 | disabled | Parser not verified against golden fixtures from real transactions |
 | Solana | orca_whirlpool | unsupported | No adapter planned for MVP |
-| Ethereum | uniswap_v2 | enabled | — |
+| Ethereum | uniswap_v2 | enabled | None |
 | Ethereum | uniswap_v3 | unsupported | No adapter planned for MVP |
 | Base | uniswap_v2_forks | disabled | Factory allowlist and fixtures required |
 | BNB Chain | pancakeswap_v2 | disabled | Factory allowlist and fixtures required |

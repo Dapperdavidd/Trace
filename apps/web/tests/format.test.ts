@@ -24,11 +24,14 @@ describe("formatCompactUsd", () => {
     expect(formatCompactUsd("4.2")).toBe("$4.2");
     expect(formatCompactUsd("-4800000")).toBe("-$4.8M");
   });
-  it("returns n/a for missing or invalid values", () => {
-    expect(formatCompactUsd(null)).toBe("n/a");
-    expect(formatCompactUsd(undefined)).toBe("n/a");
-    expect(formatCompactUsd("abc")).toBe("n/a");
-    expect(formatCompactUsd("")).toBe("n/a");
+  it("returns Unavailable for missing or invalid values", () => {
+    expect(formatCompactUsd(null)).toBe("Unavailable");
+    expect(formatCompactUsd(undefined)).toBe("Unavailable");
+    expect(formatCompactUsd("abc")).toBe("Unavailable");
+    expect(formatCompactUsd("")).toBe("Unavailable");
+  });
+  it("formats money strings beyond floating point precision exactly", () => {
+    expect(formatUsd("9007199254740993.125")).toBe("$9,007,199,254,740,993.13");
   });
 });
 
@@ -45,7 +48,7 @@ describe("formatPct", () => {
     expect(formatPct("1324", 0)).toBe("+1,324%");
   });
   it("handles null", () => {
-    expect(formatPct(null)).toBe("n/a");
+    expect(formatPct(null)).toBe("Unavailable");
   });
 });
 
@@ -63,7 +66,7 @@ describe("other number helpers", () => {
   it("formats plain percent and ratios", () => {
     expect(formatPlainPct("78")).toBe("78%");
     expect(formatRatioAsPct("0.916")).toBe("92%");
-    expect(formatRatioAsPct(null)).toBe("n/a");
+    expect(formatRatioAsPct(null)).toBe("Unavailable");
   });
   it("reports tone", () => {
     expect(pctTone("4")).toBe("up");
@@ -83,8 +86,8 @@ describe("formatRelativeTime", () => {
   it("says just now for very recent and handles future or bad input", () => {
     expect(formatRelativeTime("2026-10-28T11:59:40Z", now)).toBe("just now");
     expect(formatRelativeTime("2026-10-28T13:00:00Z", now)).toBe("in 1 hour");
-    expect(formatRelativeTime("nope", now)).toBe("n/a");
-    expect(formatRelativeTime(null, now)).toBe("n/a");
+    expect(formatRelativeTime("nope", now)).toBe("Unavailable");
+    expect(formatRelativeTime(null, now)).toBe("Unavailable");
   });
   it("formats a UTC clock time", () => {
     expect(formatClockUtc("2026-10-28T12:10:00Z")).toBe("12:10 UTC");

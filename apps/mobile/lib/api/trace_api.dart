@@ -14,10 +14,12 @@ abstract class TraceApi {
   Future<AlertsPage> alerts({String? cursor});
 
   Future<MoversResponse> movers({String tab, String window, Chain? chain});
-  Future<WalletsResponse> discoveryWallets({String tab, Chain? chain, String? cursor});
+  Future<WalletsResponse> discoveryWallets(
+      {String tab, Chain? chain, String? cursor});
 
   Future<WalletDetail> wallet(Chain chain, String address);
-  Future<TradesResponse> walletTrades(Chain chain, String address, {String? cursor});
+  Future<TradesResponse> walletTrades(Chain chain, String address,
+      {String? cursor});
   Future<WalletMetricsResponse> walletMetrics(Chain chain, String address);
   Future<DnaResponse> walletDna(Chain chain, String address);
 
@@ -29,4 +31,5 @@ abstract class TraceApi {
   Future<ShadowResults> shadowResults(String id);
 
   Future<BriefingResponse> briefings();
+  Future<CoverageResponse> coverage();
 }

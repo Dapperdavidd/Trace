@@ -75,7 +75,8 @@ class ApiClient implements TraceApi {
     }
   }
 
-  Future<Map<String, dynamic>> _getMap(String path, [Map<String, String?>? q]) async =>
+  Future<Map<String, dynamic>> _getMap(String path,
+          [Map<String, String?>? q]) async =>
       asMap(await _send('GET', path, query: q));
 
   String _w(Chain c, String a) => '/${c.wire}/${Uri.encodeComponent(a)}';
@@ -158,11 +159,12 @@ class ApiClient implements TraceApi {
   @override
   Future<TradesResponse> walletTrades(Chain chain, String address,
           {String? cursor}) async =>
-      TradesResponse.fromJson(
-          await _getMap('/wallets${_w(chain, address)}/trades', {'cursor': cursor}));
+      TradesResponse.fromJson(await _getMap(
+          '/wallets${_w(chain, address)}/trades', {'cursor': cursor}));
 
   @override
-  Future<WalletMetricsResponse> walletMetrics(Chain chain, String address) async =>
+  Future<WalletMetricsResponse> walletMetrics(
+          Chain chain, String address) async =>
       WalletMetricsResponse.fromJson(
           await _getMap('/wallets${_w(chain, address)}/metrics'));
 
@@ -192,19 +194,27 @@ class ApiClient implements TraceApi {
 
   @override
   Future<String> createShadow(ShadowRequest request) async {
-    final m = asMap(await _send('POST', '/shadow-strategies', body: request.toJson()));
+    final m = asMap(
+        await _send('POST', '/shadow-strategies', body: request.toJson()));
     final id = strOrNull(m['id']);
-    if (id == null || id.isEmpty) throw ApiException.parse('Missing strategy id.');
+    if (id == null || id.isEmpty) {
+      throw ApiException.parse('Missing strategy id.');
+    }
     return id;
   }
 
   @override
-  Future<ShadowResults> shadowResults(String id) async => ShadowResults.fromJson(
-      await _getMap('/shadow-strategies/${Uri.encodeComponent(id)}/results'));
+  Future<ShadowResults> shadowResults(String id) async =>
+      ShadowResults.fromJson(await _getMap(
+          '/shadow-strategies/${Uri.encodeComponent(id)}/results'));
 
   // Briefings ----------------------------------------------------------------
 
   @override
   Future<BriefingResponse> briefings() async =>
       BriefingResponse.fromJson(await _getMap('/briefings'));
+
+  @override
+  Future<CoverageResponse> coverage() async =>
+      CoverageResponse.fromJson(await _getMap('/chains'));
 }

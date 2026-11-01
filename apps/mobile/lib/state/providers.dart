@@ -15,8 +15,8 @@ final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 final demoApiProvider = Provider<DemoApi>((ref) => DemoApi());
 
 /// True while the app is showing demo fixtures. Drives the DEMO DATA banner.
-final demoActiveProvider =
-    Provider<ValueNotifier<bool>>((ref) => ValueNotifier<bool>(AppConfig.demoForced));
+final demoActiveProvider = Provider<ValueNotifier<bool>>(
+    (ref) => ValueNotifier<bool>(AppConfig.demoForced));
 
 final apiProvider = Provider<TraceApi>((ref) => FallbackApi(
       remote: ref.watch(apiClientProvider),
@@ -47,30 +47,35 @@ typedef AssetKey = (Chain, String);
 final tokenProvider = FutureProvider.autoDispose.family<TokenDetail, AssetKey>(
     (ref, k) => ref.watch(apiProvider).token(k.$1, k.$2));
 
-final timelineProvider = FutureProvider.autoDispose.family<TimelineResponse, AssetKey>(
-    (ref, k) => ref.watch(apiProvider).tokenTimeline(k.$1, k.$2));
+final timelineProvider = FutureProvider.autoDispose
+    .family<TimelineResponse, AssetKey>(
+        (ref, k) => ref.watch(apiProvider).tokenTimeline(k.$1, k.$2));
 
-final walletDetailProvider = FutureProvider.autoDispose.family<WalletDetail, AssetKey>(
-    (ref, k) => ref.watch(apiProvider).wallet(k.$1, k.$2));
+final walletDetailProvider = FutureProvider.autoDispose
+    .family<WalletDetail, AssetKey>(
+        (ref, k) => ref.watch(apiProvider).wallet(k.$1, k.$2));
 
-final walletTradesProvider = FutureProvider.autoDispose.family<TradesResponse, AssetKey>(
-    (ref, k) => ref.watch(apiProvider).walletTrades(k.$1, k.$2));
+final walletTradesProvider = FutureProvider.autoDispose
+    .family<TradesResponse, AssetKey>(
+        (ref, k) => ref.watch(apiProvider).walletTrades(k.$1, k.$2));
 
-final walletMetricsProvider =
-    FutureProvider.autoDispose.family<WalletMetricsResponse, AssetKey>(
+final walletMetricsProvider = FutureProvider.autoDispose
+    .family<WalletMetricsResponse, AssetKey>(
         (ref, k) => ref.watch(apiProvider).walletMetrics(k.$1, k.$2));
 
-final walletDnaProvider = FutureProvider.autoDispose.family<DnaResponse, AssetKey>(
-    (ref, k) => ref.watch(apiProvider).walletDna(k.$1, k.$2));
+final walletDnaProvider = FutureProvider.autoDispose
+    .family<DnaResponse, AssetKey>(
+        (ref, k) => ref.watch(apiProvider).walletDna(k.$1, k.$2));
 
 /// Compare key: (chainA, addrA, chainB, addrB)
 typedef CompareKey = (Chain, String, Chain, String);
 
-final compareProvider = FutureProvider.autoDispose.family<CompareResponse, CompareKey>(
-    (ref, k) => ref.watch(apiProvider).compare(
-          TokenRef(chain: k.$1, address: k.$2),
-          TokenRef(chain: k.$3, address: k.$4),
-        ));
+final compareProvider = FutureProvider.autoDispose
+    .family<CompareResponse, CompareKey>(
+        (ref, k) => ref.watch(apiProvider).compare(
+              TokenRef(chain: k.$1, address: k.$2),
+              TokenRef(chain: k.$3, address: k.$4),
+            ));
 
 final watchlistProvider = FutureProvider.autoDispose<List<WatchlistItem>>(
     (ref) => ref.watch(apiProvider).watchlists());
@@ -78,8 +83,12 @@ final watchlistProvider = FutureProvider.autoDispose<List<WatchlistItem>>(
 final briefingProvider = FutureProvider.autoDispose<BriefingResponse>(
     (ref) => ref.watch(apiProvider).briefings());
 
-final shadowResultsProvider = FutureProvider.autoDispose.family<ShadowResults, String>(
-    (ref, id) => ref.watch(apiProvider).shadowResults(id));
+final coverageProvider = FutureProvider.autoDispose<CoverageResponse>(
+    (ref) => ref.watch(apiProvider).coverage());
+
+final shadowResultsProvider = FutureProvider.autoDispose
+    .family<ShadowResults, String>(
+        (ref, id) => ref.watch(apiProvider).shadowResults(id));
 
 /// In-app alert polling. No push notifications in this version.
 final alertsProvider = StreamProvider.autoDispose<AlertsPage>((ref) async* {
@@ -92,7 +101,8 @@ final alertsProvider = StreamProvider.autoDispose<AlertsPage>((ref) async* {
     } catch (e) {
       yield* Stream<AlertsPage>.error(e);
     }
-    await Future<void>.delayed(const Duration(seconds: AppConfig.alertPollSeconds));
+    await Future<void>.delayed(
+        const Duration(seconds: AppConfig.alertPollSeconds));
   }
 });
 

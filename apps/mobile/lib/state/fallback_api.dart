@@ -46,7 +46,8 @@ class FallbackApi implements TraceApi {
 
   // Auth never falls back to demo: a demo session would be misleading.
   @override
-  Future<AuthResult> googleSignIn(String idToken) => remote.googleSignIn(idToken);
+  Future<AuthResult> googleSignIn(String idToken) =>
+      remote.googleSignIn(idToken);
 
   @override
   Future<void> logout() async {
@@ -59,7 +60,8 @@ class FallbackApi implements TraceApi {
   }
 
   @override
-  Future<void> deleteAccount() => forceDemo ? demo.deleteAccount() : remote.deleteAccount();
+  Future<void> deleteAccount() =>
+      forceDemo ? demo.deleteAccount() : remote.deleteAccount();
 
   @override
   Future<Me> me() => _run((a) => a.me());
@@ -75,14 +77,17 @@ class FallbackApi implements TraceApi {
   Future<void> removeWatch(String id) => _run((a) => a.removeWatch(id));
 
   @override
-  Future<AlertsPage> alerts({String? cursor}) => _run((a) => a.alerts(cursor: cursor));
+  Future<AlertsPage> alerts({String? cursor}) =>
+      _run((a) => a.alerts(cursor: cursor));
 
   @override
-  Future<MoversResponse> movers({String tab = 'trending', String window = '24h', Chain? chain}) =>
+  Future<MoversResponse> movers(
+          {String tab = 'trending', String window = '24h', Chain? chain}) =>
       _run((a) => a.movers(tab: tab, window: window, chain: chain));
 
   @override
-  Future<WalletsResponse> discoveryWallets({String tab = 'top', Chain? chain, String? cursor}) =>
+  Future<WalletsResponse> discoveryWallets(
+          {String tab = 'top', Chain? chain, String? cursor}) =>
       _run((a) => a.discoveryWallets(tab: tab, chain: chain, cursor: cursor));
 
   @override
@@ -90,7 +95,8 @@ class FallbackApi implements TraceApi {
       _run((a) => a.wallet(chain, address));
 
   @override
-  Future<TradesResponse> walletTrades(Chain chain, String address, {String? cursor}) =>
+  Future<TradesResponse> walletTrades(Chain chain, String address,
+          {String? cursor}) =>
       _run((a) => a.walletTrades(chain, address, cursor: cursor));
 
   @override
@@ -131,4 +137,7 @@ class FallbackApi implements TraceApi {
 
   @override
   Future<BriefingResponse> briefings() => _run((a) => a.briefings());
+
+  @override
+  Future<CoverageResponse> coverage() => _run((a) => a.coverage());
 }

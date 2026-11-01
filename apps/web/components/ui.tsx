@@ -7,16 +7,9 @@ import { describeError } from "@/lib/api/client";
 import { hasEnvelope } from "@/lib/api/guards";
 import type { DataStatus, Envelope, RiskState } from "@/lib/api/types";
 import { formatClockUtc, formatPct, pctTone, shortenAddress } from "@/lib/format";
+import { DEFAULT_EMPTY_TITLE, STATUS_LABEL, UNAVAILABLE_EXPLANATION, UNAVAILABLE_TITLE } from "@/lib/ui-state";
 
 /* ---------------------------- badges and status ---------------------------- */
-
-const STATUS_LABEL: Record<DataStatus, string> = {
-  live: "Live",
-  stale: "Stale",
-  unavailable: "Data unavailable",
-  partial: "Partial data",
-  demo: "DEMO DATA",
-};
 
 export function StatusBadge({ status }: { status: DataStatus }) {
   return (
@@ -161,12 +154,12 @@ export function UnavailableState({ env }: { env?: Envelope }) {
   return (
     <div className="state" role="status">
       <h4>
-        <span className="badge b-unavailable" style={{ marginRight: 8 }}>Data unavailable</span>
+        <span className="badge b-unavailable" style={{ marginRight: 8 }}>{UNAVAILABLE_TITLE}</span>
         We could not load this right now
       </h4>
       <p>
         {env?.coverage_note ??
-          "The data source did not return usable numbers, so TRACE shows nothing here instead of guessing."}
+          UNAVAILABLE_EXPLANATION}
       </p>
     </div>
   );
@@ -234,7 +227,7 @@ export function Remote<T>({
   return (
     <>
       {env && !hideStatus ? <StatusLine env={env} /> : null}
-      {isEmpty?.(data) ? (empty ?? <EmptyState title="Nothing to show yet" />) : children(data)}
+      {isEmpty?.(data) ? (empty ?? <EmptyState title={DEFAULT_EMPTY_TITLE} />) : children(data)}
     </>
   );
 }

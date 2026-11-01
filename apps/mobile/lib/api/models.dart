@@ -247,7 +247,8 @@ class AuthUser {
 }
 
 class AuthResult {
-  const AuthResult({required this.accessToken, this.expiresAt, required this.user});
+  const AuthResult(
+      {required this.accessToken, this.expiresAt, required this.user});
   final String accessToken;
   final DateTime? expiresAt;
   final AuthUser user;
@@ -447,7 +448,8 @@ class WalletSummary {
 }
 
 class WalletsResponse {
-  const WalletsResponse({required this.env, required this.items, this.nextCursor});
+  const WalletsResponse(
+      {required this.env, required this.items, this.nextCursor});
   final Envelope env;
   final List<WalletSummary> items;
   final String? nextCursor;
@@ -517,7 +519,8 @@ class Score {
         explanation: str(j['explanation']),
       );
 
-  static Score? fromAny(Object? v) => v is Map ? Score.fromJson(asMap(v)) : null;
+  static Score? fromAny(Object? v) =>
+      v is Map ? Score.fromJson(asMap(v)) : null;
 }
 
 class WalletDetail {
@@ -571,12 +574,15 @@ class TradeItem {
         token: TokenRef.fromJson(asMap(j['token'])),
         amountUsd: strOrNull(j['amount_usd']),
         // Unknown finality is treated as tentative.
-        finality: str(j['finality']) == 'final' ? Finality.final_ : Finality.tentative,
+        finality: str(j['finality']) == 'final'
+            ? Finality.final_
+            : Finality.tentative,
       );
 }
 
 class TradesResponse {
-  const TradesResponse({required this.env, required this.items, this.nextCursor});
+  const TradesResponse(
+      {required this.env, required this.items, this.nextCursor});
   final Envelope env;
   final List<TradeItem> items;
   final String? nextCursor;
@@ -610,7 +616,8 @@ class WalletMetricsResponse {
 }
 
 class DnaTrait {
-  const DnaTrait({required this.key, required this.label, required this.evidence});
+  const DnaTrait(
+      {required this.key, required this.label, required this.evidence});
   final String key;
   final String label;
   final String evidence;
@@ -702,7 +709,8 @@ class TokenRisk {
 }
 
 class WhyMoving {
-  const WhyMoving({required this.kind, required this.text, this.evidenceIds = const []});
+  const WhyMoving(
+      {required this.kind, required this.text, this.evidenceIds = const []});
   final EvidenceKind kind;
   final String text;
   final List<String> evidenceIds;
@@ -830,7 +838,8 @@ class TokenSummary {
 }
 
 class CompareResponse {
-  const CompareResponse({required this.env, required this.items, this.verdictNote = ''});
+  const CompareResponse(
+      {required this.env, required this.items, this.verdictNote = ''});
   final Envelope env;
   final List<TokenSummary> items;
   final String verdictNote;
@@ -944,5 +953,52 @@ class BriefingResponse {
   factory BriefingResponse.fromJson(Map<String, dynamic> j) => BriefingResponse(
         env: Envelope.fromJson(j),
         sections: mapList(j['sections'], BriefingSection.fromJson),
+      );
+}
+
+class ProtocolCoverage {
+  const ProtocolCoverage(
+      {required this.protocol, required this.status, this.blocker});
+  final String protocol;
+  final String status;
+  final String? blocker;
+
+  factory ProtocolCoverage.fromJson(Map<String, dynamic> j) => ProtocolCoverage(
+        protocol: str(j['protocol']),
+        status: strOrNull(j['status']) ?? 'unsupported',
+        blocker: strOrNull(j['blocker']),
+      );
+}
+
+class ChainCoverage {
+  const ChainCoverage(
+      {required this.chain,
+      required this.name,
+      required this.status,
+      required this.protocols});
+  final Chain chain;
+  final String name;
+  final String status;
+  final List<ProtocolCoverage> protocols;
+
+  factory ChainCoverage.fromJson(Map<String, dynamic> j) => ChainCoverage(
+        chain: Chain.parse(j['chain']),
+        name: strOrNull(j['display_name']) ?? Chain.parse(j['chain']).label,
+        status: strOrNull(j['status']) ?? 'unsupported',
+        protocols: mapList(j['protocols'], ProtocolCoverage.fromJson),
+      );
+}
+
+class CoverageResponse {
+  const CoverageResponse(
+      {required this.env, required this.chains, required this.note});
+  final Envelope env;
+  final List<ChainCoverage> chains;
+  final String note;
+
+  factory CoverageResponse.fromJson(Map<String, dynamic> j) => CoverageResponse(
+        env: Envelope.fromJson(j),
+        chains: mapList(j['chains'], ChainCoverage.fromJson),
+        note: str(j['note']),
       );
 }

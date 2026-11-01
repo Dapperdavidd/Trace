@@ -35,19 +35,20 @@ class ApiException implements Exception {
   factory ApiException.network([String? detail]) => ApiException(
         kind: ApiFailureKind.network,
         code: 'network_unreachable',
-        message: detail ?? 'Could not reach the TRACE server.',
+        message: detail ?? 'Could not reach the GiFTED! server.',
       );
 
   factory ApiException.timeout() => const ApiException(
         kind: ApiFailureKind.timeout,
         code: 'timeout',
-        message: 'The TRACE server took too long to answer.',
+        message: 'The GiFTED! server took too long to answer.',
       );
 
   factory ApiException.parse([String? detail]) => ApiException(
         kind: ApiFailureKind.parse,
         code: 'bad_response',
-        message: detail ?? 'The TRACE server sent a response we could not read.',
+        message:
+            detail ?? 'The GiFTED! server sent a response we could not read.',
       );
 
   /// Parses an HTTP error response. Falls back to a generic error when the body
