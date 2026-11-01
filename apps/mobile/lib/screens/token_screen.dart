@@ -68,15 +68,26 @@ class _Header extends StatelessWidget {
             TokenAvatar(t.token.displayName, size: 48),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(t.token.name ?? t.token.displayName, style: const TextStyle(color: TraceColors.textMuted)),
-                Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
-                  Text(compactUsdString(t.priceUsd), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-                  Text(signedPercent(change),
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: changeColor(change))),
-                  const Muted('24h', size: 12),
-                ]),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(t.token.name ?? t.token.displayName,
+                        style: const TextStyle(color: TraceColors.textMuted)),
+                    Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        children: [
+                          Text(compactUsdString(t.priceUsd),
+                              style: const TextStyle(
+                                  fontSize: 28, fontWeight: FontWeight.w800)),
+                          Text(signedPercent(change),
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: changeColor(change))),
+                          const Muted('24h', size: 12),
+                        ]),
+                  ]),
             ),
           ]),
         ),
@@ -96,27 +107,37 @@ class _Overview extends StatelessWidget {
       _Header(t),
       StatGrid([
         StatTile(label: 'Market cap', value: compactUsdString(t.marketCapUsd)),
-        StatTile(label: 'Volume (24h)', value: compactUsdString(t.volume24hUsd)),
-        StatTile(label: 'Liquidity', value: compactUsdString(t.liquidityUsd), note: 'Money in the trading pool'),
+        StatTile(
+            label: 'Volume (24h)', value: compactUsdString(t.volume24hUsd)),
+        StatTile(
+            label: 'Liquidity',
+            value: compactUsdString(t.liquidityUsd),
+            note: 'Money in the trading pool'),
         StatTile(label: 'Holders', value: compactCount(t.holders)),
       ]),
       const Muted('Price chart: not available in this version.', size: 12),
       const SectionTitle("Why it's moving"),
       if (t.whyMoving.isEmpty)
-        const TraceCard(child: Muted('No reason found. TRACE only lists reasons it can back with evidence.')),
+        const TraceCard(
+            child: Muted(
+                'No reason found. GiFTED! only lists reasons it can back with evidence.')),
       for (final w in t.whyMoving)
         TraceCard(
-          semanticsLabel: '${w.kind == EvidenceKind.fact ? Copy.factLabel : Copy.hypothesisLabel}. ${w.text}',
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          semanticsLabel:
+              '${w.kind == EvidenceKind.fact ? Copy.factLabel : Copy.hypothesisLabel}. ${w.text}',
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             KindLabel(w.kind),
             const SizedBox(height: 8),
             Text(w.text),
-            if (w.evidenceIds.isNotEmpty) Muted('Evidence items: ${w.evidenceIds.length}', size: 12),
+            if (w.evidenceIds.isNotEmpty)
+              Muted('Evidence items: ${w.evidenceIds.length}', size: 12),
           ]),
         ),
       SectionTitle('Risk', trailing: RiskPill(t.risk.overall)),
       TraceCard(
-        onTap: () => context.push('/risk/${t.token.chain.wire}/${t.token.address}'),
+        onTap: () =>
+            context.push('/risk/${t.token.chain.wire}/${t.token.address}'),
         semanticsLabel: 'Open Risk Radar',
         child: const Row(children: [
           Icon(Icons.shield_outlined, color: TraceColors.emerald),
@@ -128,13 +149,17 @@ class _Overview extends StatelessWidget {
       Row(children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => context.push('/compare?a=${t.token.chain.wire}:${t.token.address}'),
+            onPressed: () => context
+                .push('/compare?a=${t.token.chain.wire}:${t.token.address}'),
             child: const Text('Compare'),
           ),
         ),
         const SizedBox(width: 12),
         const Expanded(
-            child: OutlinedButton(onPressed: null, child: Text('Buy (Coming later)', textAlign: TextAlign.center))),
+            child: OutlinedButton(
+                onPressed: null,
+                child:
+                    Text('Buy (Coming later)', textAlign: TextAlign.center))),
       ]),
       const Disclaimer(),
     ]);
@@ -155,18 +180,23 @@ class _Analysis extends StatelessWidget {
             Icon(i, color: TraceColors.emerald),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                Muted(sub, size: 12),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Muted(sub, size: 12),
+                  ]),
             ),
             const Icon(Icons.chevron_right),
           ]),
         );
     return ListView(padding: _pad, children: [
       EnvelopeBar(t.env),
-      link(Icons.timeline, 'Opportunity Timeline', 'What happened, in order', '/timeline/$p'),
-      link(Icons.shield_outlined, 'Risk Radar', 'Checks for scams and thin liquidity', '/risk/$p'),
+      link(Icons.timeline, 'Opportunity Timeline', 'What happened, in order',
+          '/timeline/$p'),
+      link(Icons.shield_outlined, 'Risk Radar',
+          'Checks for scams and thin liquidity', '/risk/$p'),
       link(Icons.compare_arrows, 'Compare coins', 'Put two coins side by side',
           '/compare?a=${t.token.chain.wire}:${t.token.address}'),
       const Disclaimer(),
@@ -182,23 +212,31 @@ class _Buyers extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(padding: _pad, children: [
       EnvelopeBar(t.env),
-      const Muted('Tracked wallets that bought this token recently (observed).'),
+      const Muted(
+          'Tracked wallets that bought this token recently (observed).'),
       const SizedBox(height: 8),
       if (t.buyers.isEmpty)
         const EmptyState(
-            title: 'No tracked buyers', message: 'No tracked wallet bought this token in the recent window.'),
+            title: 'No tracked buyers',
+            message:
+                'No tracked wallet bought this token in the recent window.'),
       for (final w in t.buyers)
         TraceCard(
           onTap: () => context.push(w.path),
-          semanticsLabel: 'Wallet ${w.displayName} on ${w.chain.label}. Open profile.',
+          semanticsLabel:
+              'Wallet ${w.displayName} on ${w.chain.label}. Open profile.',
           child: Row(children: [
-            const Icon(Icons.account_circle_outlined, color: TraceColors.emerald),
+            const Icon(Icons.account_circle_outlined,
+                color: TraceColors.emerald),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(w.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
-                Muted(shortAddress(w.address), size: 12),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(w.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Muted(shortAddress(w.address), size: 12),
+                  ]),
             ),
             const Icon(Icons.chevron_right),
           ]),
@@ -210,11 +248,12 @@ class _Buyers extends StatelessWidget {
 class _News extends StatelessWidget {
   const _News();
   @override
-  Widget build(BuildContext context) => ListView(padding: _pad, children: const [
+  Widget build(BuildContext context) =>
+      ListView(padding: _pad, children: const [
         ComingLaterPanel(
           title: 'News and social',
           explanation:
-              'News and social feeds are not part of this version. TRACE only shows what it can verify on-chain.',
+              'News and social feeds are not part of this version. GiFTED! only shows what it can verify on-chain.',
           icon: Icons.newspaper,
         ),
       ]);

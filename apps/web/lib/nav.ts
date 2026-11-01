@@ -20,7 +20,7 @@ export const MAIN_NAV: NavItem[] = [
   { href: "/alerts", label: "Alerts", icon: "bell" },
   { href: "/briefing", label: "Daily Briefing", icon: "brief" },
   { href: "/compare", label: "Compare Coins", icon: "compare" },
-  { href: "/ask", label: "Ask TRACE", icon: "ask", soon: true },
+  { href: "/ask", label: "Ask GiFTED!", icon: "ask", soon: true },
 ];
 
 export const LATER_NAV: NavItem[] = [

@@ -27,21 +27,28 @@ class TimelineScreen extends ConsumerWidget {
     final tok = ref.watch(tokenProvider(key)).valueOrNull;
     return TraceScaffold(
       title: 'Opportunity Timeline',
-      subtitle: '${tok?.token.displayName ?? shortAddress(address)}: what happened, in order',
+      subtitle:
+          '${tok?.token.displayName ?? shortAddress(address)}: what happened, in order',
       body: AsyncBody<TimelineResponse>(
         value: v,
         onRetry: () => ref.invalidate(timelineProvider(key)),
-        builder: (r) => ListView(padding: const EdgeInsets.all(TraceSpacing.gutter), children: [
-          EnvelopeBar(r.env),
-          const Muted('Facts are things TRACE observed. Hypotheses are possible causes and are not confirmed.',
-              size: 12),
-          const SizedBox(height: 12),
-          if (r.items.isEmpty)
-            const EmptyState(
-                title: 'No events yet', message: 'TRACE has not recorded events for this token in this window.'),
-          for (var i = 0; i < r.items.length; i++) _Step(r.items[i], last: i == r.items.length - 1),
-          const Disclaimer(),
-        ]),
+        builder: (r) => ListView(
+            padding: const EdgeInsets.all(TraceSpacing.gutter),
+            children: [
+              EnvelopeBar(r.env),
+              const Muted(
+                  'Facts are things GiFTED! observed. Hypotheses are possible causes and are not confirmed.',
+                  size: 12),
+              const SizedBox(height: 12),
+              if (r.items.isEmpty)
+                const EmptyState(
+                    title: 'No events yet',
+                    message:
+                        'GiFTED! has not recorded events for this token in this window.'),
+              for (var i = 0; i < r.items.length; i++)
+                _Step(r.items[i], last: i == r.items.length - 1),
+              const Disclaimer(),
+            ]),
       ),
     );
   }
@@ -58,7 +65,8 @@ class _Step extends StatelessWidget {
     final color = fact ? TraceColors.positive : TraceColors.info;
     return Semantics(
       container: true,
-      label: '${clockUtc(item.time)}. ${fact ? Copy.factLabel : Copy.hypothesisLabel}. ${item.title}. ${item.detail}'
+      label:
+          '${clockUtc(item.time)}. ${fact ? Copy.factLabel : Copy.hypothesisLabel}. ${item.title}. ${item.detail}'
           '${item.possibleImpact == null ? '' : ' Possible impact: ${item.possibleImpact}.'}',
       child: ExcludeSemantics(
         child: IntrinsicHeight(
@@ -76,25 +84,35 @@ class _Step extends StatelessWidget {
                     border: Border.all(color: color, width: 2),
                   ),
                 ),
-                if (!last) Expanded(child: Container(width: 2, color: TraceColors.border)),
+                if (!last)
+                  Expanded(
+                      child: Container(width: 2, color: TraceColors.border)),
               ]),
             ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Muted('${clockUtc(item.time)}  (${relativeTime(item.time)})', size: 12),
-                  const SizedBox(height: 4),
-                  KindLabel(item.kind),
-                  const SizedBox(height: 4),
-                  Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                  if (item.detail.isNotEmpty) Muted(item.detail),
-                  if (item.possibleImpact != null) Muted('Possible impact: ${item.possibleImpact}', size: 12),
-                  if (item.evidenceIds.isNotEmpty)
-                    Muted('Evidence items: ${item.evidenceIds.length}', size: 12)
-                  else if (fact)
-                    const Muted('No evidence id attached', size: 12),
-                ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Muted(
+                          '${clockUtc(item.time)}  (${relativeTime(item.time)})',
+                          size: 12),
+                      const SizedBox(height: 4),
+                      KindLabel(item.kind),
+                      const SizedBox(height: 4),
+                      Text(item.title,
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      if (item.detail.isNotEmpty) Muted(item.detail),
+                      if (item.possibleImpact != null)
+                        Muted('Possible impact: ${item.possibleImpact}',
+                            size: 12),
+                      if (item.evidenceIds.isNotEmpty)
+                        Muted('Evidence items: ${item.evidenceIds.length}',
+                            size: 12)
+                      else if (fact)
+                        const Muted('No evidence id attached', size: 12),
+                    ]),
               ),
             ),
           ]),
@@ -109,7 +127,8 @@ class _Step extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class RiskRadarScreen extends ConsumerWidget {
-  const RiskRadarScreen({super.key, required this.chain, required this.address});
+  const RiskRadarScreen(
+      {super.key, required this.chain, required this.address});
   final Chain chain;
   final String address;
 
@@ -130,46 +149,64 @@ class RiskRadarScreen extends ConsumerWidget {
       body: AsyncBody<TokenDetail>(
         value: v,
         onRetry: () => ref.invalidate(tokenProvider(key)),
-        builder: (t) => ListView(padding: const EdgeInsets.all(TraceSpacing.gutter), children: [
-          EnvelopeBar(t.env),
-          Center(
-            child: Semantics(
-              label: 'Overall risk checks for ${t.token.displayName}: ${overallText(t.risk.overall)}',
-              child: ExcludeSemantics(
-                child: Column(children: [
-                  CustomPaint(size: const Size(180, 100), painter: _GaugePainter(t.risk.overall)),
-                  Text(overallText(t.risk.overall),
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: riskColor(t.risk.overall))),
-                  Muted('Checked ${relativeTime(t.risk.fetchedAt)}', size: 12),
-                ]),
+        builder: (t) => ListView(
+            padding: const EdgeInsets.all(TraceSpacing.gutter),
+            children: [
+              EnvelopeBar(t.env),
+              Center(
+                child: Semantics(
+                  label:
+                      'Overall risk checks for ${t.token.displayName}: ${overallText(t.risk.overall)}',
+                  child: ExcludeSemantics(
+                    child: Column(children: [
+                      CustomPaint(
+                          size: const Size(180, 100),
+                          painter: _GaugePainter(t.risk.overall)),
+                      Text(overallText(t.risk.overall),
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: riskColor(t.risk.overall))),
+                      Muted('Checked ${relativeTime(t.risk.fetchedAt)}',
+                          size: 12),
+                    ]),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (t.risk.checks.isEmpty)
-            const EmptyState(title: 'No checks available', message: 'Risk checks could not be run for this token.'),
-          for (final c in t.risk.checks)
-            TraceCard(
-              semanticsLabel: '${c.label}: ${riskWord(c.state)}. ${c.note}',
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Expanded(child: Text(c.label, style: const TextStyle(fontWeight: FontWeight.w700))),
-                  RiskPill(c.state),
-                ]),
-                if (c.note.isNotEmpty) Muted(c.note),
-              ]),
-            ),
-          const SectionTitle('How to read this'),
-          const TraceCard(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Pill(Copy.riskLabel, color: TraceColors.warning),
-              SizedBox(height: 8),
-              Text(
-                  'A passing check is not a safety guarantee. Checks can miss new scams, and low liquidity can make prices swing even when every check passes.'),
+              const SizedBox(height: 12),
+              if (t.risk.checks.isEmpty)
+                const EmptyState(
+                    title: 'No checks available',
+                    message: 'Risk checks could not be run for this token.'),
+              for (final c in t.risk.checks)
+                TraceCard(
+                  semanticsLabel: '${c.label}: ${riskWord(c.state)}. ${c.note}',
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Expanded(
+                              child: Text(c.label,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700))),
+                          RiskPill(c.state),
+                        ]),
+                        if (c.note.isNotEmpty) Muted(c.note),
+                      ]),
+                ),
+              const SectionTitle('How to read this'),
+              const TraceCard(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Pill(Copy.riskLabel, color: TraceColors.warning),
+                      SizedBox(height: 8),
+                      Text(
+                          'A passing check is not a safety guarantee. Checks can miss new scams, and low liquidity can make prices swing even when every check passes.'),
+                    ]),
+              ),
+              const Disclaimer(),
             ]),
-          ),
-          const Disclaimer(),
-        ]),
       ),
     );
   }
@@ -195,7 +232,8 @@ class _GaugePainter extends CustomPainter {
       RiskState.unknown => 0.0,
     };
     if (fraction > 0) {
-      canvas.drawArc(rect, math.pi, math.pi * fraction, false, track..color = riskColor(state));
+      canvas.drawArc(rect, math.pi, math.pi * fraction, false,
+          track..color = riskColor(state));
     }
   }
 
@@ -246,15 +284,20 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
       subtitle: 'See which coin looks stronger, in plain English',
       body: movers.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => ErrorState(error: e, onRetry: () => ref.invalidate(moversProvider(('trending', '24h', '')))),
+        error: (e, _) => ErrorState(
+            error: e,
+            onRetry: () =>
+                ref.invalidate(moversProvider(('trending', '24h', '')))),
         data: (m) {
           final tokens = m.items.map((e) => e.token).toList();
           if (tokens.length < 2) {
             return const EmptyState(
-                title: 'Not enough coins', message: 'Compare needs at least two coins from Top Movers.');
+                title: 'Not enough coins',
+                message: 'Compare needs at least two coins from Top Movers.');
           }
           _a ??= tokens[0];
-          _b ??= tokens.firstWhere((t) => t.address != _a!.address, orElse: () => tokens[1]);
+          _b ??= tokens.firstWhere((t) => t.address != _a!.address,
+              orElse: () => tokens[1]);
           final options = <TokenRef>[...tokens];
           for (final x in [_a!, _b!]) {
             if (!options.any(
@@ -263,12 +306,16 @@ class _CompareScreenState extends ConsumerState<CompareScreen> {
               options.insert(0, x);
             }
           }
-          return ListView(padding: const EdgeInsets.all(TraceSpacing.gutter), children: [
-            _Picker('First coin', options, _a!, (t) => setState(() => _a = t)),
-            _Picker('Second coin', options, _b!, (t) => setState(() => _b = t)),
-            const SizedBox(height: 8),
-            _CompareResult(a: _a!, b: _b!),
-          ]);
+          return ListView(
+              padding: const EdgeInsets.all(TraceSpacing.gutter),
+              children: [
+                _Picker(
+                    'First coin', options, _a!, (t) => setState(() => _a = t)),
+                _Picker(
+                    'Second coin', options, _b!, (t) => setState(() => _b = t)),
+                const SizedBox(height: 8),
+                _CompareResult(a: _a!, b: _b!),
+              ]);
         },
       ),
     );
@@ -295,7 +342,8 @@ class _Picker extends StatelessWidget {
         isExpanded: true,
         decoration: InputDecoration(labelText: label),
         items: [
-          for (final t in options) DropdownMenuItem(value: t, child: Text(t.displayName)),
+          for (final t in options)
+            DropdownMenuItem(value: t, child: Text(t.displayName)),
         ],
         onChanged: (t) {
           if (t != null) onChanged(t);
@@ -315,24 +363,33 @@ class _CompareResult extends ConsumerWidget {
     final key = (a.chain, a.address, b.chain, b.address);
     final v = ref.watch(compareProvider(key));
     return v.when(
-      loading: () => const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),
-      error: (e, _) =>
-          SizedBox(height: 280, child: ErrorState(error: e, onRetry: () => ref.invalidate(compareProvider(key)))),
+      loading: () => const Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(child: CircularProgressIndicator())),
+      error: (e, _) => SizedBox(
+          height: 280,
+          child: ErrorState(
+              error: e, onRetry: () => ref.invalidate(compareProvider(key)))),
       data: (r) {
         final items = r.items;
-        Widget row(String label, String Function(TokenSummary) f, {Color? Function(TokenSummary)? color}) {
+        Widget row(String label, String Function(TokenSummary) f,
+            {Color? Function(TokenSummary)? color}) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Semantics(
               container: true,
-              label: '$label: ${items.map((t) => '${t.token.displayName} ${f(t)}').join(', ')}',
+              label:
+                  '$label: ${items.map((t) => '${t.token.displayName} ${f(t)}').join(', ')}',
               child: ExcludeSemantics(
                 child: Row(children: [
                   Expanded(flex: 3, child: Muted(label, size: 12)),
                   for (final t in items)
                     Expanded(
                       flex: 3,
-                      child: Text(f(t), style: TextStyle(fontWeight: FontWeight.w700, color: color?.call(t))),
+                      child: Text(f(t),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: color?.call(t))),
                     ),
                 ]),
               ),
@@ -349,26 +406,31 @@ class _CompareResult extends ConsumerWidget {
                 for (final t in items)
                   Expanded(
                       flex: 3,
-                      child:
-                          Text(t.token.displayName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+                      child: Text(t.token.displayName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 16))),
               ]),
               const Divider(),
-              row('Price change (24h)', (t) => signedPercentString(t.changePct24h),
+              row('Price change (24h)',
+                  (t) => signedPercentString(t.changePct24h),
                   color: (t) => changeColor(parseDecimal(t.changePct24h))),
               row('Price', (t) => compactUsdString(t.priceUsd)),
               row('Market cap', (t) => compactUsdString(t.marketCapUsd)),
               row('Volume (24h)', (t) => compactUsdString(t.volume24hUsd)),
               row('Liquidity', (t) => compactUsdString(t.liquidityUsd)),
-              row('Risk checks', (t) => riskWord(t.risk), color: (t) => riskColor(t.risk)),
+              row('Risk checks', (t) => riskWord(t.risk),
+                  color: (t) => riskColor(t.risk)),
             ]),
           ),
           if (r.verdictNote.isNotEmpty)
             TraceCard(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Pill(Copy.modelLabel, color: TraceColors.info),
-                const SizedBox(height: 8),
-                Text(r.verdictNote),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Pill(Copy.modelLabel, color: TraceColors.info),
+                    const SizedBox(height: 8),
+                    Text(r.verdictNote),
+                  ]),
             ),
           const Disclaimer(),
         ]);
@@ -381,15 +443,19 @@ class _CompareResult extends ConsumerWidget {
 // Token picker used by More for screens that need a token
 // ---------------------------------------------------------------------------
 
-Future<void> pickTokenAndGo(BuildContext context, WidgetRef ref, String routePrefix) async {
-  final res = await ref.read(moversProvider(('trending', '24h', '')).future).catchError(
-        (_) => const MoversResponse(env: Envelope(status: DataStatus.unavailable), items: []),
-      );
+Future<void> pickTokenAndGo(
+    BuildContext context, WidgetRef ref, String routePrefix) async {
+  final res =
+      await ref.read(moversProvider(('trending', '24h', '')).future).catchError(
+            (_) => const MoversResponse(
+                env: Envelope(status: DataStatus.unavailable), items: []),
+          );
   if (!context.mounted) return;
   final tokens = res.items.map((e) => e.token).toList();
   if (tokens.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No tokens available right now. Try again later.')),
+      const SnackBar(
+          content: Text('No tokens available right now. Try again later.')),
     );
     return;
   }
@@ -400,7 +466,8 @@ Future<void> pickTokenAndGo(BuildContext context, WidgetRef ref, String routePre
       child: ListView(shrinkWrap: true, children: [
         const Padding(
           padding: EdgeInsets.all(16),
-          child: Text('Choose a coin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          child: Text('Choose a coin',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         ),
         for (final t in tokens)
           ListTile(

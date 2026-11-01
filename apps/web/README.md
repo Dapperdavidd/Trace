@@ -29,6 +29,7 @@ npm test                     # vitest: formatting, address validation, API clien
 | `NEXT_PUBLIC_TRACE_API_URL` | `http://localhost:8080` | Base URL of the TRACE Rust API (the client appends `/v1`). |
 | `NEXT_PUBLIC_TRACE_DEMO` | unset | Set to `1` to always serve labelled demo fixtures and never call the API. |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | unset | Google Identity Services web client id. When unset, the Sign-in page shows "Google sign-in not configured". |
+| `NEXT_PUBLIC_TRACE_DEV_AUTH` | unset | Set to `1` only with a local API started using `TRACE_DEV_AUTH=true`; reveals local development sign-in. |
 
 ## Real versus demo
 

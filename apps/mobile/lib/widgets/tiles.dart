@@ -25,7 +25,8 @@ class MoverTile extends StatelessWidget {
           if (showRank)
             SizedBox(
               width: 24,
-              child: Text('${item.rank}', style: const TextStyle(color: TraceColors.textMuted)),
+              child: Text('${item.rank}',
+                  style: const TextStyle(color: TraceColors.textMuted)),
             ),
           TokenAvatar(item.token.displayName),
           const SizedBox(width: 12),
@@ -34,7 +35,8 @@ class MoverTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(item.token.displayName,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 16)),
                 Muted(item.reasonLabel, size: 12),
                 const SizedBox(height: 4),
                 RiskPill(item.risk),
@@ -48,7 +50,8 @@ class MoverTile extends StatelessWidget {
               Sparkline(item.sparkline),
               const SizedBox(height: 4),
               Text(signedPercent(change),
-                  style: TextStyle(fontWeight: FontWeight.w800, color: changeColor(change))),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800, color: changeColor(change))),
               Muted(compactUsdString(item.volumeUsd), size: 12),
             ],
           ),
@@ -59,10 +62,10 @@ class MoverTile extends StatelessWidget {
 }
 
 String decisionText(WalletDecision d) => switch (d) {
-      WalletDecision.eligible => 'Meets TRACE criteria for shadowing',
+      WalletDecision.eligible => 'Meets GiFTED! criteria for shadowing',
       WalletDecision.watchOnly => 'Watch only',
       WalletDecision.insufficientEvidence => 'Not enough history yet',
-      WalletDecision.rejected => 'Does not meet TRACE criteria',
+      WalletDecision.rejected => 'Does not meet GiFTED! criteria',
       WalletDecision.unknown => 'Status unknown',
     };
 
@@ -90,21 +93,26 @@ class WalletTile extends StatelessWidget {
     final ret = item.realizedReturnPct == null
         ? 'Not available'
         : signedPercentString(item.realizedReturnPct, decimals: 0);
-    final win = item.winRatePct == null ? 'Not available' : plainPercentString(item.winRatePct, decimals: 0);
+    final win = item.winRatePct == null
+        ? 'Not available'
+        : plainPercentString(item.winRatePct, decimals: 0);
     return TraceCard(
       onTap: onTap ?? () => context.push(item.wallet.path, extra: item),
-      semanticsLabel: '${item.wallet.displayName} on ${item.wallet.chain.label}. '
+      semanticsLabel:
+          '${item.wallet.displayName} on ${item.wallet.chain.label}. '
           'Past realized return $ret, win rate $win, ${item.sampleSize} trades. '
           '${confidenceText(item.pnlConfidence)}. ${decisionText(item.decision)}.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            const Icon(Icons.account_circle_outlined, color: TraceColors.emerald),
+            const Icon(Icons.account_circle_outlined,
+                color: TraceColors.emerald),
             const SizedBox(width: 8),
             Expanded(
               child: Text(item.wallet.displayName,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 16)),
             ),
             Muted(item.wallet.chain.label, size: 12),
           ]),
@@ -112,19 +120,28 @@ class WalletTile extends StatelessWidget {
           Muted(shortAddress(item.wallet.address), size: 12),
           if (item.tags.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: [for (final t in item.tags) Pill(t)]),
+            Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [for (final t in item.tags) Pill(t)]),
           ],
           const SizedBox(height: 8),
           Wrap(spacing: 16, runSpacing: 4, children: [
-            Text('Past return: $ret', style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text('Past return: $ret',
+                style: const TextStyle(fontWeight: FontWeight.w600)),
             Text('Win rate: $win'),
             Text('${item.sampleSize} trades'),
           ]),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            Pill(confidenceText(item.pnlConfidence), color: confidenceColor(item.pnlConfidence)),
-            Muted('Coverage ${coverageText(item.coverageRatio)}', size: 12),
-          ]),
+          Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Pill(confidenceText(item.pnlConfidence),
+                    color: confidenceColor(item.pnlConfidence)),
+                Muted('Coverage ${coverageText(item.coverageRatio)}', size: 12),
+              ]),
           const SizedBox(height: 4),
           Muted(decisionText(item.decision), size: 12),
         ],

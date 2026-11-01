@@ -22,7 +22,8 @@ class WelcomeScreen extends ConsumerWidget {
           children: [
             ValueListenableBuilder<bool>(
               valueListenable: ref.watch(demoActiveProvider),
-              builder: (_, active, __) => active ? const DemoBanner() : const SizedBox.shrink(),
+              builder: (_, active, __) =>
+                  active ? const DemoBanner() : const SizedBox.shrink(),
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -33,19 +34,22 @@ class WelcomeScreen extends ConsumerWidget {
                     const SizedBox(height: 32),
                     Semantics(
                       header: true,
-                      label: 'trace',
+                      label: 'GiFTED!',
                       child: const ExcludeSemantics(
-                        child: Text.rich(TextSpan(children: [
-                          TextSpan(text: 'trace', style: TextStyle(fontSize: 56, fontWeight: FontWeight.w900)),
-                          TextSpan(
-                              text: '.',
-                              style: TextStyle(fontSize: 56, fontWeight: FontWeight.w900, color: TraceColors.emerald)),
-                        ])),
+                        child: Text('GiFTED!',
+                            style: TextStyle(
+                                fontSize: 52,
+                                fontWeight: FontWeight.w900,
+                                color: TraceColors.text)),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text('Find smart wallets and moving coins, and understand why.',
-                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
+                    const Text(
+                        'Find smart wallets and moving coins, and understand why.',
+                        style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            height: 1.2)),
                     const SizedBox(height: 12),
                     const Muted(
                         'Discover opportunities. Watch any wallet. Practice with paper trades before you risk real money.',
@@ -55,7 +59,8 @@ class WelcomeScreen extends ConsumerWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.visibility_outlined, color: TraceColors.emerald),
+                          Icon(Icons.visibility_outlined,
+                              color: TraceColors.emerald),
                           SizedBox(width: 12),
                           Expanded(child: Text(Copy.watchOnly)),
                         ],
@@ -65,9 +70,13 @@ class WelcomeScreen extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: session.busy || !configured ? null : notifier.signInWithGoogle,
+                        onPressed: session.busy || !configured
+                            ? null
+                            : notifier.signInWithGoogle,
                         icon: const Icon(Icons.login),
-                        label: Text(session.busy ? 'Signing in...' : 'Sign in with Google'),
+                        label: Text(session.busy
+                            ? 'Signing in...'
+                            : 'Sign in with Google'),
                       ),
                     ),
                     if (!configured)
@@ -76,12 +85,30 @@ class WelcomeScreen extends ConsumerWidget {
                         child: Muted(
                             'Google Sign-In is not configured in this build (missing TRACE_GOOGLE_CLIENT_ID). You can still explore.'),
                       ),
+                    if (AppConfig.devAuth) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: session.busy
+                              ? null
+                              : notifier.signInForDevelopment,
+                          icon: const Icon(Icons.developer_mode),
+                          label: const Text('Local development sign-in'),
+                        ),
+                      ),
+                      const Muted(
+                          'Shown only in builds started with TRACE_DEV_AUTH=true.',
+                          size: 12),
+                    ],
                     if (session.error != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Semantics(
                           liveRegion: true,
-                          child: Text(session.error!, style: const TextStyle(color: TraceColors.negative)),
+                          child: Text(session.error!,
+                              style:
+                                  const TextStyle(color: TraceColors.negative)),
                         ),
                       ),
                     const SizedBox(height: 12),
@@ -102,7 +129,7 @@ class WelcomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     const Muted(
-                        'Creating or connecting a spendable wallet is not available yet. Signing in never gives TRACE access to funds.',
+                        'Creating or connecting a spendable wallet is not available yet. Signing in never gives GiFTED! access to funds.',
                         size: 12),
                     const Disclaimer(),
                   ],

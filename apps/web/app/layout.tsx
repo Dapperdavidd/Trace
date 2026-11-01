@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "TRACE | Research wallet", template: "%s | TRACE" },
+  title: { default: "GiFTED! | Research wallet", template: "%s | GiFTED!" },
   description: "Watch-only crypto research and paper trading. Discover what is moving and why.",
 };
 

@@ -47,18 +47,34 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/home',
     refreshListenable: refresh,
-    redirect: (context, state) => redirectFor(ref.read(sessionProvider).phase, state.matchedLocation),
+    redirect: (context, state) =>
+        redirectFor(ref.read(sessionProvider).phase, state.matchedLocation),
     routes: [
-      GoRoute(path: '/splash', builder: (_, __) => const Scaffold(body: Center(child: CircularProgressIndicator()))),
+      GoRoute(
+          path: '/splash',
+          builder: (_, __) =>
+              const Scaffold(body: Center(child: CircularProgressIndicator()))),
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => _Shell(shell),
         branches: [
-          StatefulShellBranch(routes: [GoRoute(path: '/home', builder: (_, __) => const HomeScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: '/market', builder: (_, __) => const MoversScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: '/shadow', builder: (_, __) => const ShadowHomeScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: '/watchlist', builder: (_, __) => const WatchlistScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: '/more', builder: (_, __) => const MoreScreen())]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/home', builder: (_, __) => const HomeScreen())
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/market', builder: (_, __) => const MoversScreen())
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+                path: '/shadow', builder: (_, __) => const ShadowHomeScreen())
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+                path: '/watchlist', builder: (_, __) => const WatchlistScreen())
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/more', builder: (_, __) => const MoreScreen())
+          ]),
         ],
       ),
       GoRoute(
@@ -76,16 +92,28 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/shadow/setup',
         builder: (_, s) => ShadowSetupScreen(
-          chain: s.uri.queryParameters['chain'] == null ? null : Chain.parse(s.uri.queryParameters['chain']),
+          chain: s.uri.queryParameters['chain'] == null
+              ? null
+              : Chain.parse(s.uri.queryParameters['chain']),
           address: s.uri.queryParameters['address'],
         ),
       ),
-      GoRoute(path: '/shadow/results/:id', builder: (_, s) => ShadowResultsScreen(id: s.pathParameters['id'] ?? '')),
-      GoRoute(path: '/timeline/:chain/:address', builder: (_, s) => TimelineScreen(chain: chainOf(s), address: addrOf(s))),
-      GoRoute(path: '/risk/:chain/:address', builder: (_, s) => RiskRadarScreen(chain: chainOf(s), address: addrOf(s))),
+      GoRoute(
+          path: '/shadow/results/:id',
+          builder: (_, s) =>
+              ShadowResultsScreen(id: s.pathParameters['id'] ?? '')),
+      GoRoute(
+          path: '/timeline/:chain/:address',
+          builder: (_, s) =>
+              TimelineScreen(chain: chainOf(s), address: addrOf(s))),
+      GoRoute(
+          path: '/risk/:chain/:address',
+          builder: (_, s) =>
+              RiskRadarScreen(chain: chainOf(s), address: addrOf(s))),
       GoRoute(
         path: '/compare',
-        builder: (_, s) => CompareScreen(a: s.uri.queryParameters['a'], b: s.uri.queryParameters['b']),
+        builder: (_, s) => CompareScreen(
+            a: s.uri.queryParameters['a'], b: s.uri.queryParameters['b']),
       ),
       GoRoute(path: '/ask', builder: (_, __) => const AskScreen()),
       GoRoute(path: '/briefing', builder: (_, __) => const BriefingScreen()),
@@ -106,13 +134,29 @@ class _Shell extends StatelessWidget {
       body: shell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
-        onDestinationSelected: (i) => shell.goBranch(i, initialLocation: i == shell.currentIndex),
+        onDestinationSelected: (i) =>
+            shell.goBranch(i, initialLocation: i == shell.currentIndex),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.bar_chart_outlined), selectedIcon: Icon(Icons.bar_chart), label: 'Market'),
-          NavigationDestination(icon: Icon(Icons.science_outlined), selectedIcon: Icon(Icons.science), label: 'Shadow'),
-          NavigationDestination(icon: Icon(Icons.visibility_outlined), selectedIcon: Icon(Icons.visibility), label: 'Watchlist'),
-          NavigationDestination(icon: Icon(Icons.more_horiz), selectedIcon: Icon(Icons.more_horiz), label: 'More'),
+          NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.bar_chart_outlined),
+              selectedIcon: Icon(Icons.bar_chart),
+              label: 'Market'),
+          NavigationDestination(
+              icon: Icon(Icons.science_outlined),
+              selectedIcon: Icon(Icons.science),
+              label: 'Shadow'),
+          NavigationDestination(
+              icon: Icon(Icons.visibility_outlined),
+              selectedIcon: Icon(Icons.visibility),
+              label: 'Watchlist'),
+          NavigationDestination(
+              icon: Icon(Icons.more_horiz),
+              selectedIcon: Icon(Icons.more_horiz),
+              label: 'More'),
         ],
       ),
     );
@@ -125,13 +169,14 @@ class TraceApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-      title: 'TRACE',
+      title: 'GiFTED!',
       debugShowCheckedModeBanner: false,
       theme: buildTraceTheme(),
       darkTheme: buildTraceTheme(),
       themeMode: ThemeMode.dark,
       routerConfig: ref.watch(routerProvider),
-      builder: (context, child) => ColoredBox(color: TraceColors.bg, child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => ColoredBox(
+          color: TraceColors.bg, child: child ?? const SizedBox.shrink()),
     );
   }
 }

@@ -81,7 +81,7 @@ export default function AlertsPage() {
   return (
     <div className="stack">
       <PageHead title="Alerts" sub="Events from the wallets and coins you follow." />
-      <HonestyNote>Alerts report observed events. Each one shows when it happened and when TRACE published it, and links to transaction evidence when it has some.</HonestyNote>
+      <HonestyNote>Alerts report observed events. Each one shows when it happened and when GiFTED! published it, and links to transaction evidence when it has some.</HonestyNote>
       <div className="cols-2">
         <Panel title="Latest alerts">
           <Remote

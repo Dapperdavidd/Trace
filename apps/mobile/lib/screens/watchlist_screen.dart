@@ -21,11 +21,14 @@ String watchStatusText(WatchStatus s) => switch (s) {
     };
 
 String watchStatusHelp(WatchStatus s) => switch (s) {
-      WatchStatus.active => 'TRACE is checking this wallet.',
+      WatchStatus.active => 'GiFTED! is checking this wallet.',
       WatchStatus.paused => 'Checks are paused.',
-      WatchStatus.partialMonitoring => 'TRACE can see only part of this wallet\'s activity.',
-      WatchStatus.unsupportedProtocol => 'This wallet uses apps TRACE does not read yet.',
-      WatchStatus.waitingForActivity => 'No trades seen yet. We will tell you when one appears.',
+      WatchStatus.partialMonitoring =>
+        'GiFTED! can see only part of this wallet\'s activity.',
+      WatchStatus.unsupportedProtocol =>
+        'This wallet uses apps GiFTED! does not read yet.',
+      WatchStatus.waitingForActivity =>
+        'No trades seen yet. We will tell you when one appears.',
       WatchStatus.unknown => 'Status not reported.',
     };
 
@@ -52,7 +55,8 @@ class WatchlistScreen extends ConsumerWidget {
             await refreshed;
           },
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(TraceSpacing.gutter, TraceSpacing.gutter, TraceSpacing.gutter, 96),
+            padding: const EdgeInsets.fromLTRB(TraceSpacing.gutter,
+                TraceSpacing.gutter, TraceSpacing.gutter, 96),
             children: [
               const Muted(Copy.watchOnly, size: 12),
               const SizedBox(height: 12),
@@ -82,12 +86,17 @@ class _WatchTile extends ConsumerWidget {
       onTap: () => context.push(w.path),
       child: Row(children: [
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(w.displayName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(w.displayName,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             Muted('${w.chain.label}  ${shortAddress(w.address)}', size: 12),
             const SizedBox(height: 6),
             Pill(watchStatusText(item.status),
-                color: item.status == WatchStatus.active ? TraceColors.positive : TraceColors.warning),
+                color: item.status == WatchStatus.active
+                    ? TraceColors.positive
+                    : TraceColors.warning),
             Muted(watchStatusHelp(item.status), size: 12),
             Muted('Last checked ${relativeTime(item.lastCheckedAt)}', size: 12),
           ]),
@@ -102,8 +111,12 @@ class _WatchTile extends ConsumerWidget {
                 title: const Text('Remove wallet?'),
                 content: Text('Stop watching ${w.displayName}?'),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remove')),
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel')),
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Remove')),
                 ],
               ),
             );
@@ -113,7 +126,8 @@ class _WatchTile extends ConsumerWidget {
               } catch (_) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not remove this wallet.')),
+                    const SnackBar(
+                        content: Text('Could not remove this wallet.')),
                   );
                 }
               }
@@ -168,7 +182,9 @@ class _AddWatchFormState extends ConsumerState<_AddWatchForm> {
     if (err != null) return;
     setState(() => _busy = true);
     try {
-      await ref.read(apiProvider).addWatch(_chain, _addr.text.trim(), alias: _alias.text.trim());
+      await ref
+          .read(apiProvider)
+          .addWatch(_chain, _addr.text.trim(), alias: _alias.text.trim());
       ref.invalidate(watchlistProvider);
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
@@ -184,54 +200,69 @@ class _AddWatchFormState extends ConsumerState<_AddWatchForm> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Add a wallet to watch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        Wrap(spacing: 8, children: [
-          for (final c in Chain.supported)
-            ChoiceChip(
-              label: Text(c.label),
-              selected: _chain == c,
-              onSelected: (_) => setState(() {
-                _chain = c;
+      child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Add a wallet to watch',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            Wrap(spacing: 8, children: [
+              for (final c in Chain.supported)
+                ChoiceChip(
+                  label: Text(c.label),
+                  selected: _chain == c,
+                  onSelected: (_) => setState(() {
+                    _chain = c;
+                    if (_error != null) {
+                      _error = validateAddress(_chain, _addr.text);
+                    }
+                  }),
+                ),
+            ]),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _addr,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: InputDecoration(
+                labelText: _chain.isEvm
+                    ? '${_chain.label} address (0x...)'
+                    : 'Solana address',
+                errorText: _error,
+                errorMaxLines: 3,
+              ),
+              onChanged: (_) {
                 if (_error != null) {
-                  _error = validateAddress(_chain, _addr.text);
+                  setState(() => _error = validateAddress(_chain, _addr.text));
                 }
-              }),
+              },
             ),
-        ]),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _addr,
-          autocorrect: false,
-          enableSuggestions: false,
-          decoration: InputDecoration(
-            labelText: _chain.isEvm ? '${_chain.label} address (0x...)' : 'Solana address',
-            errorText: _error,
-            errorMaxLines: 3,
-          ),
-          onChanged: (_) {
-            if (_error != null) {
-              setState(() => _error = validateAddress(_chain, _addr.text));
-            }
-          },
-        ),
-        const SizedBox(height: 12),
-        TextField(controller: _alias, decoration: const InputDecoration(labelText: 'Nickname (optional)')),
-        if (_submitError != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Semantics(
-                liveRegion: true, child: Text(_submitError!, style: const TextStyle(color: TraceColors.negative))),
-          ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(onPressed: _busy ? null : _submit, child: Text(_busy ? 'Adding...' : 'Add to watchlist')),
-        ),
-        const SizedBox(height: 8),
-        const Muted('Public addresses only. Never paste a seed phrase or private key here.', size: 12),
-      ]),
+            const SizedBox(height: 12),
+            TextField(
+                controller: _alias,
+                decoration:
+                    const InputDecoration(labelText: 'Nickname (optional)')),
+            if (_submitError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Semantics(
+                    liveRegion: true,
+                    child: Text(_submitError!,
+                        style: const TextStyle(color: TraceColors.negative))),
+              ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                  onPressed: _busy ? null : _submit,
+                  child: Text(_busy ? 'Adding...' : 'Add to watchlist')),
+            ),
+            const SizedBox(height: 8),
+            const Muted(
+                'Public addresses only. Never paste a seed phrase or private key here.',
+                size: 12),
+          ]),
     );
   }
 }

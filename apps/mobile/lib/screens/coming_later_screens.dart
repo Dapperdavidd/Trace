@@ -18,12 +18,13 @@ class WalletScreen extends StatelessWidget {
       subtitle: Copy.comingLater,
       body: ListView(padding: _pad, children: [
         const ComingLaterPanel(
-          title: 'Your TRACE wallet',
+          title: 'Your GiFTED! wallet',
           explanation:
-              'A wallet that holds and sends your crypto is planned for a later version. Today TRACE never holds funds, so there is no balance to show.',
+              'A wallet that holds and sends your crypto is planned for a later version. Today GiFTED! never holds funds, so there is no balance to show.',
           icon: Icons.account_balance_wallet_outlined,
           children: [
-            DisabledAction(label: 'Create wallet', icon: Icons.add_circle_outline),
+            DisabledAction(
+                label: 'Create wallet', icon: Icons.add_circle_outline),
             DisabledAction(label: 'Send', icon: Icons.north_east),
             DisabledAction(label: 'Receive', icon: Icons.south_west),
             DisabledAction(label: 'Buy', icon: Icons.add_card),
@@ -37,7 +38,9 @@ class WalletScreen extends StatelessWidget {
           child: const Row(children: [
             Icon(Icons.visibility_outlined, color: TraceColors.emerald),
             SizedBox(width: 12),
-            Expanded(child: Text('Watch any public wallet address. No keys needed.')),
+            Expanded(
+                child:
+                    Text('Watch any public wallet address. No keys needed.')),
             Icon(Icons.chevron_right),
           ]),
         ),
@@ -59,14 +62,16 @@ class TradeScreen extends StatelessWidget {
         const ComingLaterPanel(
           title: 'Buy, sell and swap in the app',
           explanation:
-              'Trading with real money is not available. TRACE does not sign or send transactions. Nothing here can move funds.',
+              'Trading with real money is not available. GiFTED! does not sign or send transactions. Nothing here can move funds.',
           icon: Icons.swap_horiz,
           children: [
             SizedBox(height: 8),
             Wrap(spacing: 8, children: [
-              ChoiceChip(label: Text('Swap'), selected: false, onSelected: null),
+              ChoiceChip(
+                  label: Text('Swap'), selected: false, onSelected: null),
               ChoiceChip(label: Text('Buy'), selected: false, onSelected: null),
-              ChoiceChip(label: Text('Sell'), selected: false, onSelected: null),
+              ChoiceChip(
+                  label: Text('Sell'), selected: false, onSelected: null),
             ]),
             DisabledAction(label: 'Swap'),
           ],
@@ -77,7 +82,9 @@ class TradeScreen extends StatelessWidget {
           child: const Row(children: [
             Icon(Icons.science_outlined, color: TraceColors.emerald),
             SizedBox(width: 12),
-            Expanded(child: Text('Practice with a paper simulation instead. No real money.')),
+            Expanded(
+                child: Text(
+                    'Practice with a paper simulation instead. No real money.')),
             Icon(Icons.chevron_right),
           ]),
         ),
@@ -93,7 +100,7 @@ class AskScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TraceScaffold(
-      title: 'Ask TRACE',
+      title: 'Ask GiFTED!',
       subtitle: Copy.comingLater,
       body: ListView(padding: _pad, children: [
         const ComingLaterPanel(
@@ -121,7 +128,8 @@ class AskScreen extends StatelessWidget {
                     border: Border.all(color: TraceColors.border),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(q, style: const TextStyle(color: TraceColors.textMuted)),
+                  child: Text(q,
+                      style: const TextStyle(color: TraceColors.textMuted)),
                 ),
               ),
             ),

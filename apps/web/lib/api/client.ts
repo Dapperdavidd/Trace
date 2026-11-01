@@ -385,11 +385,11 @@ export function describeError(err: unknown): { title: string; message: string; r
   if (err instanceof ApiError) {
     switch (err.kind) {
       case "network":
-        return { title: "Cannot reach TRACE", message: err.message, requestId: null };
+        return { title: "Cannot reach GiFTED!", message: err.message, requestId: null };
       case "timeout":
-        return { title: "TRACE is slow to respond", message: err.message, requestId: null };
+        return { title: "GiFTED! is slow to respond", message: err.message, requestId: null };
       case "unauthorized":
-        return { title: "Sign in required", message: "Sign in with Google to use this part of TRACE.", requestId: err.requestId };
+        return { title: "Sign in required", message: "Sign in with Google to use this part of GiFTED!.", requestId: err.requestId };
       case "invalid_response":
         return { title: "Unexpected response", message: err.message, requestId: err.requestId };
       default:

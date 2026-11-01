@@ -24,7 +24,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return TraceScaffold(
-      title: 'trace.',
+      title: 'GiFTED!',
       actions: [
         IconButton(
           tooltip: 'Alerts',
@@ -39,7 +39,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const _PaperCard(),
           const ComingLaterPanel(
             title: 'Send, Receive, Buy, Swap',
-            explanation: 'TRACE does not hold funds yet. Wallet actions arrive in a later version.',
+            explanation:
+                'GiFTED! does not hold funds yet. Wallet actions arrive in a later version.',
             icon: Icons.account_balance_wallet_outlined,
           ),
           TraceCard(
@@ -48,7 +49,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: const Row(children: [
               Icon(Icons.wb_sunny_outlined, color: TraceColors.emerald),
               SizedBox(width: 12),
-              Expanded(child: Text('Daily briefing', style: TextStyle(fontWeight: FontWeight.w700))),
+              Expanded(
+                  child: Text('Daily briefing',
+                      style: TextStyle(fontWeight: FontWeight.w700))),
               Icon(Icons.chevron_right),
             ]),
           ),
@@ -65,7 +68,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          if (_tab == 2) const _SmartTraders() else _Movers(limit: _tab == 0 ? 3 : 5),
+          if (_tab == 2)
+            const _SmartTraders()
+          else
+            _Movers(limit: _tab == 0 ? 3 : 5),
           const Disclaimer(),
         ],
       ),
@@ -82,12 +88,17 @@ class _Movers extends ConsumerWidget {
     const q = ('trending', '24h', '');
     final v = ref.watch(moversProvider(q));
     return v.when(
-      loading: () => const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),
-      error: (e, _) => ErrorState(error: e, onRetry: () => ref.invalidate(moversProvider(q))),
+      loading: () => const Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(child: CircularProgressIndicator())),
+      error: (e, _) => ErrorState(
+          error: e, onRetry: () => ref.invalidate(moversProvider(q))),
       data: (r) => Column(children: [
         Align(alignment: Alignment.centerLeft, child: EnvelopeBar(r.env)),
         if (r.items.isEmpty)
-          const EmptyState(title: 'Nothing moving yet', message: 'No tokens passed the liquidity and activity filters.'),
+          const EmptyState(
+              title: 'Nothing moving yet',
+              message: 'No tokens passed the liquidity and activity filters.'),
         for (final m in r.items.take(limit)) MoverTile(m),
       ]),
     );
@@ -101,12 +112,18 @@ class _SmartTraders extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final v = ref.watch(discoveryWalletsProvider('top'));
     return v.when(
-      loading: () => const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),
-      error: (e, _) => ErrorState(error: e, onRetry: () => ref.invalidate(discoveryWalletsProvider('top'))),
+      loading: () => const Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(child: CircularProgressIndicator())),
+      error: (e, _) => ErrorState(
+          error: e,
+          onRetry: () => ref.invalidate(discoveryWalletsProvider('top'))),
       data: (r) => Column(children: [
         Align(alignment: Alignment.centerLeft, child: EnvelopeBar(r.env)),
         if (r.items.isEmpty)
-          const EmptyState(title: 'No wallets yet', message: 'No wallet has enough history to show.'),
+          const EmptyState(
+              title: 'No wallets yet',
+              message: 'No wallet has enough history to show.'),
         for (final w in r.items) WalletTile(w),
       ]),
     );
@@ -123,8 +140,11 @@ class _WatchlistCard extends ConsumerWidget {
       loading: () => 'Loading your watchlist...',
       error: (_, __) => 'Watchlist unavailable right now.',
       data: (items) {
-        if (items.isEmpty) return 'No wallets watched yet. Add any public address.';
-        final attention = items.where((i) => i.status != WatchStatus.active).length;
+        if (items.isEmpty) {
+          return 'No wallets watched yet. Add any public address.';
+        }
+        final attention =
+            items.where((i) => i.status != WatchStatus.active).length;
         return '${items.length} wallet${items.length == 1 ? '' : 's'} watched'
             '${attention > 0 ? ', $attention not fully monitored' : ''}.';
       },
@@ -136,10 +156,14 @@ class _WatchlistCard extends ConsumerWidget {
         const Icon(Icons.visibility_outlined, color: TraceColors.emerald),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Your watchlist', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Your watchlist',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
             Muted(text),
-            const Muted('Watch-only. No balances are shown because TRACE holds no funds.', size: 12),
+            const Muted(
+                'Watch-only. No balances are shown because GiFTED! holds no funds.',
+                size: 12),
           ]),
         ),
         const Icon(Icons.chevron_right),
@@ -162,9 +186,12 @@ class _PaperCard extends ConsumerWidget {
           Icon(Icons.science_outlined, color: TraceColors.emerald),
           SizedBox(width: 12),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Paper results', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-              Muted('No simulation yet. See what would have happened if you shadowed a trader. No real money.'),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Paper results',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              Muted(
+                  'No simulation yet. See what would have happened if you shadowed a trader. No real money.'),
             ]),
           ),
           Icon(Icons.chevron_right),
@@ -174,14 +201,20 @@ class _PaperCard extends ConsumerWidget {
     final v = ref.watch(shadowResultsProvider(ids.first));
     return v.when(
       loading: () => const TraceCard(child: Text('Loading paper results...')),
-      error: (_, __) => const TraceCard(child: Text('Paper results unavailable right now.')),
+      error: (_, __) =>
+          const TraceCard(child: Text('Paper results unavailable right now.')),
       data: (r) => TraceCard(
         onTap: () => context.push('/shadow/results/${ids.first}'),
-        semanticsLabel: 'Paper results. Simulated return ${signedPercentString(r.returnPct)}. Simulation, not real money.',
+        semanticsLabel:
+            'Paper results. Simulated return ${signedPercentString(r.returnPct)}. Simulation, not real money.',
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Paper results', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          const Text('Paper results',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           Text(signedPercentString(r.returnPct),
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: changeColor(parseDecimal(r.returnPct)))),
+              style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: changeColor(parseDecimal(r.returnPct)))),
           const Muted('Simulated result, not real money.', size: 12),
           const Muted(Copy.paperOnly, size: 12),
         ]),

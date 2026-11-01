@@ -9,14 +9,16 @@ import 'providers.dart';
 enum SessionPhase { loading, signedOut, explorer, signedIn }
 
 class SessionState {
-  const SessionState(this.phase, {this.name, this.email, this.error, this.busy = false});
+  const SessionState(this.phase,
+      {this.name, this.email, this.error, this.busy = false});
   final SessionPhase phase;
   final String? name;
   final String? email;
   final String? error;
   final bool busy;
 
-  SessionState copyWith({String? error, bool? busy, bool clearError = false}) => SessionState(
+  SessionState copyWith({String? error, bool? busy, bool clearError = false}) =>
+      SessionState(
         phase,
         name: name,
         email: email,
@@ -81,9 +83,11 @@ class SessionController extends Notifier<SessionState> {
     state = state.copyWith(busy: true, clearError: true);
     try {
       final gs = GoogleSignIn(
-        clientId: AppConfig.googleClientId.isEmpty ? null : AppConfig.googleClientId,
-        serverClientId:
-            AppConfig.googleServerClientId.isEmpty ? null : AppConfig.googleServerClientId,
+        clientId:
+            AppConfig.googleClientId.isEmpty ? null : AppConfig.googleClientId,
+        serverClientId: AppConfig.googleServerClientId.isEmpty
+            ? null
+            : AppConfig.googleServerClientId,
         scopes: const ['email', 'profile'],
       );
       final account = await gs.signIn();
@@ -94,7 +98,8 @@ class SessionController extends Notifier<SessionState> {
       final auth = await account.authentication;
       final idToken = auth.idToken;
       if (idToken == null) {
-        state = state.copyWith(busy: false, error: 'Google did not return an ID token.');
+        state = state.copyWith(
+            busy: false, error: 'Google did not return an ID token.');
         return;
       }
       final res = await ref.read(apiProvider).googleSignIn(idToken);
@@ -102,11 +107,34 @@ class SessionController extends Notifier<SessionState> {
       await _write(_tokenKey, res.accessToken);
       await _write(_nameKey, res.user.name);
       await _write(_emailKey, res.user.email);
-      state = SessionState(SessionPhase.signedIn, name: res.user.name, email: res.user.email);
+      state = SessionState(SessionPhase.signedIn,
+          name: res.user.name, email: res.user.email);
     } on ApiException catch (e) {
       state = state.copyWith(busy: false, error: e.message);
     } catch (_) {
-      state = state.copyWith(busy: false, error: 'Sign-in failed. Please try again.');
+      state = state.copyWith(
+          busy: false, error: 'Sign-in failed. Please try again.');
+    }
+  }
+
+  Future<void> signInForDevelopment() async {
+    if (!AppConfig.devAuth) return;
+    state = state.copyWith(busy: true, clearError: true);
+    try {
+      final res = await ref
+          .read(apiProvider)
+          .googleSignIn('dev:mobile-local@gifted.test');
+      ref.read(apiClientProvider).accessToken = res.accessToken;
+      await _write(_tokenKey, res.accessToken);
+      await _write(_nameKey, res.user.name);
+      await _write(_emailKey, res.user.email);
+      state = SessionState(SessionPhase.signedIn,
+          name: res.user.name, email: res.user.email);
+    } on ApiException catch (e) {
+      state = state.copyWith(
+          busy: false,
+          error:
+              '${e.message}${e.requestId == null ? '' : ' Request id: ${e.requestId}'}');
     }
   }
 

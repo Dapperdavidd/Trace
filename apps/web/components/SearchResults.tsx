@@ -48,7 +48,7 @@ export function SearchResults() {
           ) : (
             <p className="muted" style={{ marginBottom: 14 }}>Format matches {CHAIN_LABEL[active]}.</p>
           )}
-          <p className="muted" style={{ marginBottom: 10 }}>TRACE cannot tell from the address alone whether this is a wallet or a token, so pick one.</p>
+          <p className="muted" style={{ marginBottom: 10 }}>GiFTED! cannot tell from the address alone whether this is a wallet or a token, so pick one.</p>
           <div className="hero-cta" style={{ margin: 0 }}>
             <Link className="btn btn-primary" href={`/wallets/${active}/${encodeURIComponent(q)}`}>Open as wallet</Link>
             <Link className="btn" href={`/tokens/${active}/${encodeURIComponent(q)}`}>Open as token</Link>
@@ -61,9 +61,9 @@ export function SearchResults() {
   const looksLikeQuestion = /\s/.test(q) && q.split(/\s+/).length >= 3;
   return (
     <div className="stack">
-      <PageHead title={`Results for "${q}"`} sub="Searches the coins and wallets TRACE is currently listing." />
+      <PageHead title={`Results for "${q}"`} sub="Searches the coins and wallets GiFTED! is currently listing." />
       {looksLikeQuestion ? (
-        <Panel title="Ask TRACE" action={<ComingLaterBadge />}>
+        <Panel title="Ask GiFTED!" action={<ComingLaterBadge />}>
           <p className="muted">Answering questions in plain language is coming later. Meanwhile, matching coins and wallets are listed below.</p>
         </Panel>
       ) : null}

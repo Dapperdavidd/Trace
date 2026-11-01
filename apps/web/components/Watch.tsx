@@ -15,10 +15,10 @@ export const WATCH_STATUS_LABEL: Record<WatchStatus, string> = {
 };
 
 export const WATCH_STATUS_HELP: Record<WatchStatus, string> = {
-  active: "TRACE is checking this address for new buys and sells.",
+  active: "GiFTED! is checking this address for new buys and sells.",
   paused: "You paused alerts for this address.",
   partial_monitoring: "Only some of this address's activity is covered.",
-  unsupported_protocol: "This address mostly uses a protocol TRACE cannot read yet.",
+  unsupported_protocol: "This address mostly uses a protocol GiFTED! cannot read yet.",
   waiting_for_activity: "No supported trades have been seen yet.",
 };
 
