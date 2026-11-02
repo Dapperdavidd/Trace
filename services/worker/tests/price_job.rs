@@ -190,16 +190,16 @@ async fn an_accepted_quote_is_stored_at_its_own_time_per_base_unit(pool: PgPool)
 #[sqlx::test(migrator = "trace_database::MIGRATOR")]
 async fn decimals_are_learned_only_when_unknown_and_flagged(pool: PgPool) {
     seed(&pool).await;
-    let p = Stub::new(vec![quote(USDC, "1.0", Some(6), 10)]);
+    let p = Stub::new(vec![quote(WETH, "3000", Some(18), 10)]);
     let r = poll(&pool, p.as_ref(), now()).await.unwrap();
     assert_eq!((r.stored, r.learned_decimals), (1, 1));
     let d: Option<i16> =
         sqlx::query_scalar("SELECT decimals FROM tokens WHERE contract_or_mint = $1")
-            .bind(USDC)
+            .bind(WETH)
             .fetch_one(&pool)
             .await
             .unwrap();
-    assert_eq!(d, Some(6));
+    assert_eq!(d, Some(18));
 }
 
 #[sqlx::test(migrator = "trace_database::MIGRATOR")]
