@@ -1,40 +1,84 @@
 # TRACE
 
-A discovery-first crypto research wallet. Rust (Actix Web, Tokio, SQLx, PostgreSQL) backend,
-Next.js web app and Flutter mobile app that share one API.
+TRACE is a watch-only crypto research product for discovering on-chain activity, studying wallets and tokens, and testing Shadow strategies with paper money.
 
-TRACE answers: what are capable on-chain traders buying, why might that matter, and would a
-follower still have a viable trade at their own price?
+It has a Rust backend, PostgreSQL, a Next.js web app, and a Flutter mobile app. TRACE has no custody, signing, live trade execution, copy trading, Send, Buy, or Swap. Those surfaces are labelled Coming later.
 
-Scope today is watch-only research and paper trading. There is no custody, no signing and no
-live trade execution. See `docs/` for the capability register and limitations.
+## Current coverage
 
-## Run the backend locally
+| Capability | Status |
+| --- | --- |
+| Ethereum Uniswap V2 ingestion | Enabled with reviewed real fixtures |
+| Solana Raydium AMM v4 | Disabled pending reviewed real fixtures |
+| Base and BNB protocols | Disabled pending deployments and fixtures |
+| Real token prices | DefiLlama adapter available, off until configured |
+| Market snapshots | Real prices and finalized-swap volume; liquidity unavailable pending a reviewed source |
+| Watchlist alerts | Real finalized direct swaps, in-app only |
+| Signals | Outcome evaluation exists; real signal publishing is not built |
+| Shadow | Paper-only and gated by price and liquidity evidence |
+| Google sign-in | Implemented; production credentials and an end-to-end live check are still required |
+
+The code registry and [coverage register](docs/coverage-register.md) are the source of truth for protocol support. Disabled or unsupported activity is never guessed.
+
+## Run locally
+
+Start PostgreSQL:
 
 ```bash
 docker compose -f infra/docker-compose.yml up -d
-cp .env.example .env
-cargo run -p trace-api          # runs migrations, then serves on 127.0.0.1:8080
-curl localhost:8080/v1/health/ready
-curl localhost:8080/v1/chains
+export DATABASE_URL=postgres://trace:trace@localhost:5432/trace
 ```
 
-## Checks
+Start the API with clearly labelled demo data and development sign-in:
+
+```bash
+TRACE_SEED_DEMO=true TRACE_DEV_AUTH=true cargo run -p trace-api
+```
+
+Start the worker separately. Ingestion and pricing stay off unless their configuration is present:
+
+```bash
+TRACE_RPC_ETHEREUM='your secret RPC URL' \
+TRACE_PRICE_PROVIDER=defillama \
+cargo run -p trace-worker
+```
+
+Run the web app:
+
+```bash
+cd apps/web
+npm ci
+npm run dev
+```
+
+Run the mobile app:
+
+```bash
+cd apps/mobile
+flutter pub get
+flutter run
+```
+
+Never commit RPC URLs, OAuth credentials, or other secrets.
+
+## Quality checks
 
 ```bash
 export DATABASE_URL=postgres://trace:trace@localhost:5432/trace
-cargo fmt --all -- --check
+cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace      # DB tests create throwaway databases (needs CREATEDB)
+cargo test --workspace
 ```
 
-## Layout
+Web checks are `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build`. Mobile checks are `flutter analyze` and `flutter test`. GitHub Actions also builds the API and worker container targets.
 
-- `crates/` shared libraries (domain, database, chain adapters, and more per milestone)
-- `services/api` Actix Web API, `services/worker` Tokio jobs
-- `migrations/` forward-only SQLx migrations
-- `apps/web`, `apps/mobile` clients
-- `docs/` ADRs, coverage register, provider matrix, milestone reports
+## Repository layout
 
-Source of truth for behaviour: `TRACE v3 Master AI Build Instructions`. Where it conflicts with
-older text, v3 wins.
+- `crates/` contains domain, database, adapters, accounting, intelligence, risk, pricing, signals, discovery, Shadow, and job-queue libraries.
+- `services/api` exposes the HTTP API.
+- `services/worker` runs ingestion, pricing, market snapshots, alerts, and signal outcome jobs.
+- `migrations/` contains forward-only SQLx migrations.
+- `apps/web` and `apps/mobile` are the user clients.
+- `docs/` contains the API contract, architecture, ADRs, deployment notes, fixture policy, and coverage register.
+
+Start with [architecture.md](docs/architecture.md), [api-contract.md](docs/api-contract.md), and [deploy.md](docs/deploy.md).
