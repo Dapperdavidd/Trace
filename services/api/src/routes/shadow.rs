@@ -236,13 +236,14 @@ async fn results(
         let asset = trace_domain::AssetId::parse(w.chain, &t)?;
         let single: BTreeSet<_> = [asset.clone()].into();
         let prices = crate::analysis::DbPrices::load(&state.pool, &single).await?;
-        let liq: Option<Decimal> = sqlx::query_scalar(
+        let liq: Option<Decimal> = sqlx::query_scalar::<_, Option<Decimal>>(
             "SELECT liquidity_usd FROM market_snapshots WHERE chain=$1 AND token=$2 ORDER BY last_updated DESC LIMIT 1",
         )
         .bind(w.chain.as_str())
         .bind(&t)
         .fetch_optional(&state.pool)
-        .await?;
+        .await?
+        .flatten();
         let qs: Vec<Quote> = sqlx::query(
             "SELECT observed_at FROM price_points WHERE chain=$1 AND asset=$2 ORDER BY observed_at",
         )
@@ -252,11 +253,12 @@ async fn results(
         .await?
         .iter()
         .filter_map(|r| {
+            let liquidity_usd = liq?;
             let at: DateTime<Utc> = r.get("observed_at");
             prices.unit_price(&asset, at).map(|price_usd| Quote {
                 at,
                 price_usd,
-                liquidity_usd: liq.unwrap_or(Decimal::ZERO),
+                liquidity_usd,
             })
         })
         .collect();

@@ -102,13 +102,16 @@ async fn movers(
             .is_some_and(|r| r.demo)
     });
     let newest = rows.iter().map(|r| r.snap.last_updated).max();
-    let status = if rows.is_empty() {
+    let mut status = if rows.is_empty() {
         DataStatus::Unavailable
     } else if ranked.is_empty() && excluded.stale == rows.len() {
         DataStatus::Stale
     } else {
         status_for(used_demo, newest, now, cfg.max_age.num_seconds())
     };
+    if status == DataStatus::Live && excluded.unavailable_liquidity > 0 {
+        status = DataStatus::Partial;
+    }
     let mut env = Envelope::new(status, newest.unwrap_or(now), used_demo);
     let mut notes = vec![];
     if rows.is_empty() {
@@ -116,6 +119,7 @@ async fn movers(
     }
     for (n, what) in [
         (excluded.stale, "stale"),
+        (excluded.unavailable_liquidity, "liquidity unavailable"),
         (excluded.thin_liquidity, "thin liquidity"),
         (excluded.invalid_price, "invalid price"),
         (excluded.blocked_risk, "blocked by risk checks"),

@@ -45,6 +45,9 @@ async fn main() -> anyhow::Result<()> {
                 if let Err(e) = trace_worker::price_job::schedule_prices(&pool, ctx.prices.is_some(), now).await {
                     tracing::warn!(error = %e, "could not schedule price poll");
                 }
+                if let Err(e) = trace_worker::market_job::schedule(&pool, ctx.prices.is_some(), now).await {
+                    tracing::warn!(error = %e, "could not schedule market snapshots");
+                }
                 match trace_worker::drain_with(&pool, now, &ctx).await {
                     Ok(n) if n > 0 => tracing::info!(ran = n, "jobs run"),
                     Ok(_) => {}

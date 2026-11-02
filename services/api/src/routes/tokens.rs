@@ -25,11 +25,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 const MAX_AGE_SECS: i64 = 600;
 
 fn snapshot_envelope(r: &SnapshotRow, now: chrono::DateTime<Utc>) -> Envelope {
-    Envelope::new(
-        status_for(r.demo, Some(r.snap.last_updated), now, MAX_AGE_SECS),
-        r.snap.last_updated,
-        r.demo,
-    )
+    let mut status = status_for(r.demo, Some(r.snap.last_updated), now, MAX_AGE_SECS);
+    if status == trace_domain::DataStatus::Live && r.snap.liquidity_usd.is_none() {
+        status = trace_domain::DataStatus::Partial;
+    }
+    Envelope::new(status, r.snap.last_updated, r.demo)
 }
 
 fn change_pct(r: &SnapshotRow) -> Option<Decimal> {
@@ -119,7 +119,7 @@ async fn token(
     body["change_pct_24h"] = json!(change_pct(&row).map(dec_str));
     body["market_cap_usd"] = json!(row.market_cap_usd.map(dec_str));
     body["volume_24h_usd"] = json!(dec_str(s.volume_window_usd));
-    body["liquidity_usd"] = json!(dec_str(s.liquidity_usd));
+    body["liquidity_usd"] = json!(s.liquidity_usd.map(dec_str));
     body["holders"] = json!(row.holders);
     body["risk"] = risk_json(&row);
     body["why_moving"] = Value::Array(why);
@@ -246,7 +246,7 @@ async fn compare(
             "change_pct_24h": change_pct(&row).map(dec_str).unwrap_or_default(),
             "market_cap_usd": row.market_cap_usd.map(dec_str),
             "volume_24h_usd": dec_str(s.volume_window_usd),
-            "liquidity_usd": dec_str(s.liquidity_usd),
+            "liquidity_usd": s.liquidity_usd.map(dec_str),
             "risk": row.risk.overall,
             "note": row.risk.checks.iter().find(|c| c.state != trace_risk::RiskState::Pass).map(|c| c.note.clone()),
         }));

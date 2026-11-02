@@ -194,7 +194,7 @@ fn snap(
         price_window_start_usd: d(start_p),
         volume_window_usd: d(vol),
         volume_baseline_usd: base.map(d),
-        liquidity_usd: d(liq),
+        liquidity_usd: Some(d(liq)),
         pool_age_hours: age,
         independent_smart_buyers: smart,
         large_buyer_flows: 0,
@@ -386,4 +386,25 @@ fn ranking_is_deterministic() {
     let mut rev = snaps.clone();
     rev.reverse();
     assert_eq!(a, rank(&MoverConfig::default(), Tab::Trending, &rev, now()));
+}
+
+#[test]
+fn unavailable_liquidity_is_never_ranked_as_a_mover() {
+    let mut partial = snap(
+        "PARTIAL",
+        9,
+        "2",
+        "1",
+        "900000",
+        Some("100000"),
+        "500000",
+        None,
+        3,
+        RiskState::Warn,
+        30,
+    );
+    partial.liquidity_usd = None;
+    let (ranked, excluded) = rank(&MoverConfig::default(), Tab::Trending, &[partial], now());
+    assert!(ranked.is_empty());
+    assert_eq!(excluded.unavailable_liquidity, 1);
 }

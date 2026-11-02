@@ -18,7 +18,8 @@ pub struct Snapshot {
     pub volume_window_usd: Decimal,
     /// Typical volume for the same window length, from a baseline period.
     pub volume_baseline_usd: Option<Decimal>,
-    pub liquidity_usd: Decimal,
+    /// None means no reviewed live liquidity source is available.
+    pub liquidity_usd: Option<Decimal>,
     pub pool_age_hours: Option<u32>,
     pub independent_smart_buyers: u32,
     pub large_buyer_flows: u32,
@@ -75,6 +76,7 @@ pub struct Mover {
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize)]
 pub struct Excluded {
     pub stale: usize,
+    pub unavailable_liquidity: usize,
     pub thin_liquidity: usize,
     pub invalid_price: usize,
     pub blocked_risk: usize,
@@ -141,7 +143,11 @@ pub fn rank(
             ex.invalid_price += 1;
             continue;
         }
-        if s.liquidity_usd < cfg.min_liquidity_usd {
+        let Some(liquidity_usd) = s.liquidity_usd else {
+            ex.unavailable_liquidity += 1;
+            continue;
+        };
+        if liquidity_usd < cfg.min_liquidity_usd {
             ex.thin_liquidity += 1;
             continue;
         }
@@ -153,7 +159,7 @@ pub fn rank(
         let in_tab = match tab {
             Tab::Trending => true,
             Tab::EarlyMomentum => {
-                s.liquidity_usd < Decimal::from(1_000_000)
+                liquidity_usd < Decimal::from(1_000_000)
                     && (s.independent_smart_buyers > 0 || s.large_buyer_flows > 0)
             }
             Tab::SmartMoney => s.independent_smart_buyers >= cfg.min_smart_buyers,
@@ -175,7 +181,7 @@ pub fn rank(
             Tab::SmartMoney => {
                 Decimal::from(s.independent_smart_buyers) * Decimal::from(1_000) + change
             }
-            Tab::New => s.liquidity_usd,
+            Tab::New => liquidity_usd,
             _ => change * attention.max(Decimal::new(1, 1)),
         };
         items.push((
@@ -188,7 +194,7 @@ pub fn rank(
                 price_usd: s.price_now_usd,
                 change_pct: change,
                 volume_usd: s.volume_window_usd,
-                liquidity_usd: s.liquidity_usd,
+                liquidity_usd,
                 reason: r,
                 risk: s.risk,
                 source_timestamp: s.last_updated,

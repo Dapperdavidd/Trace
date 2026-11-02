@@ -252,7 +252,7 @@ export interface TokenDetail extends Envelope {
   change_pct_24h: string;
   market_cap_usd: string | null;
   volume_24h_usd: string;
-  liquidity_usd: string;
+  liquidity_usd: string | null;
   holders: number | null;
   risk: { overall: RiskState; checks: RiskCheck[]; fetched_at: string };
   why_moving: WhyMoving[];
@@ -279,7 +279,7 @@ export interface TokenSummary {
   change_pct_24h: string;
   market_cap_usd: string | null;
   volume_24h_usd: string;
-  liquidity_usd: string;
+  liquidity_usd: string | null;
   risk: RiskState;
   /** short plain language note about this token, if the API provides one */
   note?: string | null;

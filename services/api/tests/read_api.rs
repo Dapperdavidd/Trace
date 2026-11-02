@@ -153,6 +153,35 @@ async fn stale_snapshots_are_not_ranked(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "trace_database::MIGRATOR")]
+async fn token_snapshot_without_liquidity_is_partial_not_live(pool: PgPool) {
+    let token = "0x00000000000000000000000000000000000000f1";
+    sqlx::query(
+        "INSERT INTO tokens (chain,contract_or_mint,symbol,decimals)
+         VALUES ('ethereum',$1,'REAL',18)",
+    )
+    .bind(token)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO market_snapshots
+         (chain,token,pool,win,price_now_usd,price_window_start_usd,
+          volume_window_usd,liquidity_usd,last_updated,demo)
+         VALUES ('ethereum',$1,'pool','24h',2,1,10,NULL,$2,FALSE)",
+    )
+    .bind(token)
+    .bind(Utc::now())
+    .execute(&pool)
+    .await
+    .unwrap();
+    let app = app!(pool);
+    let (status, body) = get!(app, &format!("/v1/tokens/ethereum/{token}"));
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data_status"], "partial");
+    assert_eq!(body["liquidity_usd"], Value::Null);
+}
+
+#[sqlx::test(migrator = "trace_database::MIGRATOR")]
 async fn seeding_twice_does_not_duplicate_and_refresh_only_touches_demo(pool: PgPool) {
     assert!(demo::seed(&pool, Utc::now()).await.unwrap());
     let swaps: i64 = sqlx::query_scalar("SELECT count(*) FROM normalized_swaps")

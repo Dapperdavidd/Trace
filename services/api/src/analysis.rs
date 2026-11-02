@@ -267,12 +267,14 @@ fn build_snapshot(r: &sqlx::postgres::PgRow, now: DateTime<Utc>) -> Option<Snaps
     let chain: ChainId = r.get::<String, _>("chain").parse().ok()?;
     let token = AssetId::parse(chain, &r.get::<String, _>("token")).ok()?;
     let last_updated: DateTime<Utc> = r.get("last_updated");
-    let liquidity: Decimal = r.get("liquidity_usd");
+    let liquidity: Option<Decimal> = r.get("liquidity_usd");
     let pool_age = r
         .get::<Option<i32>, _>("pool_age_hours")
         .map(|h| h.max(0) as u32);
     let mut inputs: RiskInputs = serde_json::from_value(r.get("risk_inputs")).unwrap_or_default();
-    inputs.liquidity_usd.get_or_insert(liquidity);
+    if inputs.liquidity_usd.is_none() {
+        inputs.liquidity_usd = liquidity;
+    }
     if inputs.pool_age_hours.is_none() {
         inputs.pool_age_hours = pool_age;
     }

@@ -60,13 +60,14 @@ async fn prices_for(
     let scale = Decimal::from_i128_with_scale(10i128.pow(d.clamp(0, 28) as u32), 0);
     // Exit liquidity comes from the latest snapshot. With no snapshot we cannot
     // claim the position could be sold, so the exit is treated as not liquid.
-    let liquidity: Option<Decimal> = sqlx::query_scalar(
+    let liquidity: Option<Decimal> = sqlx::query_scalar::<_, Option<Decimal>>(
         "SELECT liquidity_usd FROM market_snapshots WHERE chain=$1 AND token=$2 ORDER BY last_updated DESC LIMIT 1",
     )
     .bind(&r.chain)
     .bind(&r.token)
     .fetch_optional(pool)
-    .await?;
+    .await?
+    .flatten();
     let liquid = liquidity.is_some_and(|l| l >= RiskPolicy::default().min_liquidity_usd);
     let rows = sqlx::query(
         "SELECT observed_at, usd_per_base_unit FROM price_points WHERE chain=$1 AND asset=$2 AND observed_at >= $3 ORDER BY observed_at",

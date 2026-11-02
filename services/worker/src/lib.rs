@@ -1,5 +1,6 @@
 pub mod ingest;
 pub mod ingest_job;
+pub mod market_job;
 pub mod outcomes;
 pub mod price_job;
 pub mod rpc_source;
@@ -55,6 +56,9 @@ pub async fn run_job_with(
                 "price provider is not configured".into(),
             )),
         },
+        market_job::BUILD_MARKET_SNAPSHOTS => market_job::build(pool, now)
+            .await
+            .map(|r| tracing::info!(?r, "market snapshots built")),
         ingest_job::INGEST_EVM => ingest_job::run_ingest(pool, ctx, job)
             .await
             .map(|r| tracing::info!(?r, "ingest step")),
@@ -86,6 +90,7 @@ pub async fn drain_with(
     }
     if ctx.prices.is_some() {
         kinds.push(price_job::POLL_PRICES);
+        kinds.push(market_job::BUILD_MARKET_SNAPSHOTS);
     }
     let mut n = 0;
     while let Some(job) = trace_jobs::lease(pool, now, Duration::minutes(5), &kinds).await? {
