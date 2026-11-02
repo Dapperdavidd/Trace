@@ -1,3 +1,4 @@
+pub mod alert_job;
 pub mod ingest;
 pub mod ingest_job;
 pub mod market_job;
@@ -13,7 +14,7 @@ use sqlx::PgPool;
 use trace_jobs::{Failure, Job};
 
 pub const EVALUATE_OUTCOMES: &str = "evaluate_signal_outcomes";
-pub const KINDS: &[&str] = &[EVALUATE_OUTCOMES];
+pub const KINDS: &[&str] = &[EVALUATE_OUTCOMES, alert_job::GENERATE_ALERTS];
 
 /// Queue the periodic jobs. Keys are bucketed so repeated calls in the same
 /// window enqueue one job.
@@ -26,6 +27,16 @@ pub async fn schedule_periodic(
         pool,
         EVALUATE_OUTCOMES,
         Some(&format!("{EVALUATE_OUTCOMES}:{bucket}")),
+        serde_json::json!({}),
+        now,
+        3,
+    )
+    .await?;
+    let alert_bucket = now.timestamp() / 60;
+    trace_jobs::enqueue(
+        pool,
+        alert_job::GENERATE_ALERTS,
+        Some(&format!("{}:{alert_bucket}", alert_job::GENERATE_ALERTS)),
         serde_json::json!({}),
         now,
         3,
@@ -45,6 +56,9 @@ pub async fn run_job_with(
     ctx: &ingest_job::Ctx,
 ) -> Result<(), Failure> {
     match job.kind.as_str() {
+        alert_job::GENERATE_ALERTS => alert_job::generate(pool, now)
+            .await
+            .map(|r| tracing::info!(?r, "wallet alerts generated")),
         solana_job::INGEST_SOLANA => solana_job::run_solana(pool, ctx, job)
             .await
             .map(|r| tracing::info!(?r, "solana ingest step")),
