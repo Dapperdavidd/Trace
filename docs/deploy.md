@@ -31,7 +31,7 @@ With `TRACE_ENV=production` the api refuses to start if any of these hold: dev a
 ## Order of work
 
 1. Create PostgreSQL (managed if you can) and a strong password. Turn on automated backups and test one restore.
-2. Build the images (`docker build --target api` and `--target worker`). The Dockerfile has not been built in CI yet; do one build before relying on it.
+2. Build the images (`docker build --target api` and `--target worker`). CI builds both targets on every push and pull request.
 3. Put the secrets in your host's secret store, not in the repo or the compose file.
 4. Start `api`, check `GET /v1/health/ready`, then start `worker`.
 5. Ingestion stays idle until a protocol is Enabled in the registry **and** its RPC variable is set. Check the worker log for `ingestion is idle` or `ingestion active`.
@@ -65,7 +65,6 @@ Logs are JSON on stdout. Errors never contain RPC URLs or keys.
 
 ## Not done
 
-* The Docker images have not been built or run in CI.
 * No log shipping, tracing or paging integration. The alert rules above are a starting point.
 * No rate limiting on the api. Put it behind a proxy or platform limiter before opening sign-in to the public.
 * The web app is deployed separately (for example Vercel). Set its API base URL to the api's public https origin.

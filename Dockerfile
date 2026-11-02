@@ -1,6 +1,6 @@
 # Build:  docker build --target api    -t trace-api .
 #         docker build --target worker -t trace-worker .
-# Not verified in CI yet: build it once before relying on it.
+# CI builds both final targets on every push and pull request.
 
 FROM rust:1-bookworm AS build
 WORKDIR /src
