@@ -32,4 +32,5 @@ class TraceSpacing {
 }
 
 /// Same colour with a different opacity, without deprecated APIs.
-Color tint(Color c, double opacity) => c.withAlpha((opacity * 255).round().clamp(0, 255));
+Color tint(Color c, double opacity) =>
+    c.withAlpha((opacity * 255).round().clamp(0, 255));

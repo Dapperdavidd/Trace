@@ -2,7 +2,8 @@
 Map<String, dynamic> asMap(Object? v) =>
     v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{};
 
-List<Object?> asList(Object? v) => v is List ? List<Object?>.from(v) : const <Object?>[];
+List<Object?> asList(Object? v) =>
+    v is List ? List<Object?>.from(v) : const <Object?>[];
 
 String? strOrNull(Object? v) {
   if (v == null) return null;
@@ -50,10 +51,11 @@ List<String> strList(Object? v) =>
 List<double> doubleList(Object? v) =>
     asList(v).map(doubleOrNull).whereType<double>().toList();
 
-List<T> mapList<T>(Object? v, T Function(Map<String, dynamic>) parse) => asList(v)
-    .whereType<Map<dynamic, dynamic>>()
-    .map((e) => parse(Map<String, dynamic>.from(e)))
-    .toList();
+List<T> mapList<T>(Object? v, T Function(Map<String, dynamic>) parse) =>
+    asList(v)
+        .whereType<Map<dynamic, dynamic>>()
+        .map((e) => parse(Map<String, dynamic>.from(e)))
+        .toList();
 
 Map<String, String> stringMap(Object? v) {
   final out = <String, String>{};

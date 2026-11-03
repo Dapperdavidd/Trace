@@ -45,28 +45,55 @@ class _MoversScreenState extends ConsumerState<MoversScreen> {
               ),
           ]),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            const Muted('Window'),
-            for (final w in _windows)
-              ChoiceChip(label: Text(w), selected: _window == w, onSelected: (_) => setState(() => _window = w)),
-          ]),
+          Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Muted('Window'),
+                for (final w in _windows)
+                  ChoiceChip(
+                      label: Text(w),
+                      selected: _window == w,
+                      onSelected: (_) => setState(() => _window = w)),
+              ]),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            const Muted('Chain'),
-            ChoiceChip(label: const Text('All'), selected: _chain.isEmpty, onSelected: (_) => setState(() => _chain = '')),
-            for (final c in Chain.supported)
-              ChoiceChip(label: Text(c.label), selected: _chain == c.wire, onSelected: (_) => setState(() => _chain = c.wire)),
-          ]),
+          Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Muted('Chain'),
+                ChoiceChip(
+                    label: const Text('All'),
+                    selected: _chain.isEmpty,
+                    onSelected: (_) => setState(() => _chain = '')),
+                for (final c in Chain.supported)
+                  ChoiceChip(
+                      label: Text(c.label),
+                      selected: _chain == c.wire,
+                      onSelected: (_) => setState(() => _chain = c.wire)),
+              ]),
           const SizedBox(height: 12),
           v.when(
-            loading: () => const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())),
-            error: (e, _) => SizedBox(height: 320, child: ErrorState(error: e, onRetry: () => ref.invalidate(moversProvider(q)))),
-            data: (r) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            loading: () => const Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(child: CircularProgressIndicator())),
+            error: (e, _) => SizedBox(
+                height: 320,
+                child: ErrorState(
+                    error: e,
+                    onRetry: () => ref.invalidate(moversProvider(q)))),
+            data: (r) =>
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               EnvelopeBar(r.env),
-              const Muted('Observed pool data. Thin liquidity can make a price jump look bigger than it is. Check the risk label before you act.', size: 12),
+              const Muted(
+                  'Observed pool data. Thin liquidity can make a price jump look bigger than it is. Check the risk label before you act.',
+                  size: 12),
               const SizedBox(height: 12),
               if (r.items.isEmpty)
-                const EmptyState(title: 'No tokens in this view', message: 'Nothing passed the activity and liquidity filters. Try another window or chain.'),
+                const EmptyState(
+                    title: 'No tokens in this view',
+                    message:
+                        'Nothing passed the activity and liquidity filters. Try another window or chain.'),
               for (final m in r.items) MoverTile(m),
               const Disclaimer(),
             ]),

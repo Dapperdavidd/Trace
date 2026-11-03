@@ -21,7 +21,11 @@ void main() {
         (await api.walletDna(Chain.solana, DemoApi.demoWalletAddress)).env,
         (await api.token(Chain.solana, neura)).env,
         (await api.tokenTimeline(Chain.solana, neura)).env,
-        (await api.compare(TokenRef(chain: Chain.solana, address: neura), TokenRef(chain: Chain.solana, address: DemoApi.addressOf('SOLX')))).env,
+        (await api.compare(
+                TokenRef(chain: Chain.solana, address: neura),
+                TokenRef(
+                    chain: Chain.solana, address: DemoApi.addressOf('SOLX'))))
+            .env,
         (await api.shadowResults('demo-shadow-1')).env,
         (await api.briefings()).env,
       ];
@@ -38,7 +42,8 @@ void main() {
       expect(m.first.volumeUsd, '12400000');
     });
     test('insufficient_history is exercised by the thin demo wallet', () async {
-      final d = await api.walletDna(Chain.solana, DemoApi.demoThinWalletAddress);
+      final d =
+          await api.walletDna(Chain.solana, DemoApi.demoThinWalletAddress);
       expect(d.insufficientHistory, isTrue);
       expect(d.traits, isEmpty);
       final ok = await api.walletDna(Chain.solana, DemoApi.demoWalletAddress);
@@ -48,7 +53,8 @@ void main() {
     test('why moving separates facts from hypotheses', () async {
       final t = await api.token(Chain.solana, neura);
       expect(t.whyMoving.where((w) => w.kind == EvidenceKind.fact), isNotEmpty);
-      expect(t.whyMoving.where((w) => w.kind == EvidenceKind.hypothesis), isNotEmpty);
+      expect(t.whyMoving.where((w) => w.kind == EvidenceKind.hypothesis),
+          isNotEmpty);
       for (final w in t.whyMoving.where((w) => w.kind == EvidenceKind.fact)) {
         expect(w.evidenceIds, isNotEmpty);
       }
@@ -107,7 +113,11 @@ void main() {
           if (f is File && f.path.endsWith('.dart')) yield f;
         }
       }
-      for (final name in ['README.md', 'pubspec.yaml', 'analysis_options.yaml']) {
+      for (final name in [
+        'README.md',
+        'pubspec.yaml',
+        'analysis_options.yaml'
+      ]) {
         final f = File(name);
         if (f.existsSync()) yield f;
       }
@@ -117,15 +127,20 @@ void main() {
       final offenders = <String>[];
       for (final f in sources()) {
         final text = f.readAsStringSync();
-        if (text.contains(emDash) || text.contains(enDash)) offenders.add(f.path);
+        if (text.contains(emDash) || text.contains(enDash)) {
+          offenders.add(f.path);
+        }
       }
       expect(offenders, isEmpty);
     });
 
     test('no profit guarantee or win-probability language in UI copy', () {
-      final banned = RegExp(r'guaranteed (profit|return)|risk[- ]free|win probability|will (go|moon)', caseSensitive: false);
+      final banned = RegExp(
+          r'guaranteed (profit|return)|risk[- ]free|win probability|will (go|moon)',
+          caseSensitive: false);
       final offenders = <String>[];
-      for (final f in Directory('lib').listSync(recursive: true).whereType<File>()) {
+      for (final f
+          in Directory('lib').listSync(recursive: true).whereType<File>()) {
         if (!f.path.endsWith('.dart')) continue;
         if (banned.hasMatch(f.readAsStringSync())) offenders.add(f.path);
       }

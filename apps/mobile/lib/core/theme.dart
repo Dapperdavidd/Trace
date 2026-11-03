@@ -89,10 +89,14 @@ ThemeData buildTraceTheme() {
     dividerColor: TraceColors.border,
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith(
-        (s) => s.contains(WidgetState.selected) ? TraceColors.onEmerald : TraceColors.textMuted,
+        (s) => s.contains(WidgetState.selected)
+            ? TraceColors.onEmerald
+            : TraceColors.textMuted,
       ),
       trackColor: WidgetStateProperty.resolveWith(
-        (s) => s.contains(WidgetState.selected) ? TraceColors.emerald : TraceColors.surfaceRaised,
+        (s) => s.contains(WidgetState.selected)
+            ? TraceColors.emerald
+            : TraceColors.surfaceRaised,
       ),
     ),
   );

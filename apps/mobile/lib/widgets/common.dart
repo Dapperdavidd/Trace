@@ -529,8 +529,7 @@ class ErrorState extends StatelessWidget {
             if (unreachable && msg != 'We could not reach the TRACE server.')
               const Padding(
                 padding: EdgeInsets.only(top: 6),
-                child: Text(
-                    'The TRACE server may be offline or unconfigured.',
+                child: Text('The TRACE server may be offline or unconfigured.',
                     textAlign: TextAlign.center,
                     style:
                         TextStyle(color: TraceColors.textMuted, fontSize: 12)),
