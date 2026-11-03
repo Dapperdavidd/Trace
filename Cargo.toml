@@ -24,7 +24,7 @@ license = "MIT"
 publish = false
 
 [workspace.dependencies]
-actix-web = "4"
+actix-web = { version = "4", default-features = false }
 actix-cors = "0.7"
 anyhow = "1"
 bs58 = "0.5"
