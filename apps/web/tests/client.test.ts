@@ -122,6 +122,40 @@ describe("api client: live responses", () => {
     const init = fetchImpl.mock.calls[0]![1] as RequestInit;
     expect(JSON.parse(init.body as string)).toEqual({ id_token: "id-token" });
   });
+
+  it("lists and revokes account sessions", async () => {
+    setToken("tok123");
+    const sessions = {
+      items: [
+        {
+          id: "session 1",
+          device_label: "Mac",
+          created_at: "2026-10-28T12:00:00Z",
+          expires_at: "2026-11-27T12:00:00Z",
+          current: true,
+        },
+      ],
+    };
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(json(sessions))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const c = createApiClient({ baseUrl: "http://api.test", demoMode: false, fetchImpl });
+
+    await expect(c.sessions()).resolves.toEqual(sessions);
+    await expect(c.revokeSession("session 1")).resolves.toBeUndefined();
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe("http://api.test/v1/auth/sessions");
+    expect(fetchImpl.mock.calls[1]?.[0]).toBe("http://api.test/v1/auth/sessions/session%201");
+    expect((fetchImpl.mock.calls[1]?.[1] as RequestInit).method).toBe("DELETE");
+  });
+
+  it("revokes every session and clears the local token", async () => {
+    setToken("tok123");
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    const c = createApiClient({ baseUrl: "http://api.test", demoMode: false, fetchImpl });
+    await c.logoutAll();
+    expect(getToken()).toBeNull();
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe("http://api.test/v1/auth/logout-all");
+  });
 });
 
 describe("api client: demo fallback", () => {

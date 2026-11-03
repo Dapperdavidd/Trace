@@ -108,6 +108,7 @@ function AccountMenu() {
               </div>
               <Link role="menuitem" href="/watchlist" onClick={() => setOpen(false)}>Watchlist</Link>
               <Link role="menuitem" href="/alerts" onClick={() => setOpen(false)}>Alerts</Link>
+              <Link role="menuitem" href="/account" onClick={() => setOpen(false)}>Account and sessions</Link>
               <button role="menuitem" type="button" onClick={signOut}>Sign out</button>
             </>
           ) : (

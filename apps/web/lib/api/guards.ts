@@ -102,6 +102,19 @@ export const guardAuth: Guard<unknown> = (v): v is unknown =>
 export const guardMe: Guard<unknown> = (v): v is unknown =>
   isRecord(v) && typeof v.id === "string" && typeof v.email === "string";
 
+export const guardSessions: Guard<unknown> = (v): v is unknown =>
+  isRecord(v) &&
+  arrayOf(
+    v.items,
+    (i) =>
+      isRecord(i) &&
+      typeof i.id === "string" &&
+      typeof i.device_label === "string" &&
+      typeof i.created_at === "string" &&
+      typeof i.expires_at === "string" &&
+      typeof i.current === "boolean",
+  );
+
 export const guardIdCreated: Guard<unknown> = (v): v is unknown => isRecord(v) && typeof v.id === "string";
 
 export const guardAny: Guard<unknown> = (v): v is unknown => v !== undefined;

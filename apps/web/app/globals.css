@@ -344,6 +344,15 @@ ul { margin: 0; padding: 0; list-style: none; }
 .cols-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .cols-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .stack { display: grid; gap: 16px; }
+.session-list { display: grid; gap: 10px; }
+.session-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.018);
+}
+.session-details { display: grid; gap: 3px; min-width: 0; }
+.session-details small { color: var(--muted); }
+.btn-danger { color: #ffb0b0; border-color: rgba(255, 107, 107, 0.45); }
+.btn-danger:hover { background: rgba(255, 107, 107, 0.1); }
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 14px; }
 .scroll-x { overflow-x: auto; }
 

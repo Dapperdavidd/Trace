@@ -63,6 +63,18 @@ export interface MyWallets {
   embedded: { available: false; reason: string };
 }
 
+export interface AccountSession {
+  id: string;
+  device_label: string;
+  created_at: string;
+  expires_at: string;
+  current: boolean;
+}
+
+export interface AccountSessionsResponse {
+  items: AccountSession[];
+}
+
 /* ---------------------------- Watchlist and alerts ---------------------------- */
 
 export type WatchStatus =

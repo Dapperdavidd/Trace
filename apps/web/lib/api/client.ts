@@ -13,6 +13,7 @@ import {
   guardMe,
   guardMovers,
   guardShadowResults,
+  guardSessions,
   guardTimeline,
   guardToken,
   guardWalletDetail,
@@ -25,6 +26,7 @@ import {
 } from "./guards";
 import type {
   AddWatchlistBody,
+  AccountSessionsResponse,
   AlertPreferences,
   AlertsResponse,
   ApiErrorBody,
@@ -247,6 +249,27 @@ export function createApiClient(options: ClientOptions = {}) {
         clearToken();
       }
     },
+    async logoutAll(): Promise<void> {
+      try {
+        await request<void>({ method: "POST", path: "/auth/logout-all", guard: guardAny as Guard<void>, allowDemo: false });
+      } finally {
+        clearToken();
+      }
+    },
+    sessions: () =>
+      request<AccountSessionsResponse>({
+        method: "GET",
+        path: "/auth/sessions",
+        guard: guardSessions as Guard<AccountSessionsResponse>,
+        allowDemo: false,
+      }),
+    revokeSession: (id: string) =>
+      request<void>({
+        method: "DELETE",
+        path: `/auth/sessions/${enc(id)}`,
+        guard: guardAny as Guard<void>,
+        allowDemo: false,
+      }),
     async deleteAccount(): Promise<void> {
       await request<void>({ method: "DELETE", path: "/me", guard: guardAny as Guard<void>, allowDemo: false });
       clearToken();
