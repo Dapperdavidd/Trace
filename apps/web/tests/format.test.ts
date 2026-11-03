@@ -8,7 +8,9 @@ import {
   formatRatioAsPct,
   formatRelativeTime,
   formatUsd,
+  multiplyDecimalString,
   pctTone,
+  positiveDecimalAtMost,
   shortenAddress,
   walletLabel,
 } from "@/lib/format";
@@ -32,6 +34,22 @@ describe("formatCompactUsd", () => {
   });
   it("formats money strings beyond floating point precision exactly", () => {
     expect(formatUsd("9007199254740993.125")).toBe("$9,007,199,254,740,993.13");
+  });
+});
+
+describe("exact decimal input", () => {
+  it("validates money without converting it to a float", () => {
+    expect(positiveDecimalAtMost("0.01", 1_000_000n)).toBe(true);
+    expect(positiveDecimalAtMost("1000000.000", 1_000_000n)).toBe(true);
+    expect(positiveDecimalAtMost("1000000.001", 1_000_000n)).toBe(false);
+    expect(positiveDecimalAtMost("0", 1_000_000n)).toBe(false);
+    expect(positiveDecimalAtMost("9007199254740993.125", 1_000_000n)).toBe(false);
+  });
+
+  it("scales money with integer arithmetic", () => {
+    expect(multiplyDecimalString("9007199254740993.125", 1486n, 1000n, 2))
+      .toBe("13384698092545115.78");
+    expect(multiplyDecimalString("100", 42n, 1000n, 2)).toBe("4.20");
   });
 });
 

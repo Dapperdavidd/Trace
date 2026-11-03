@@ -18,6 +18,7 @@ import type {
   WalletTrade,
   WatchlistItem,
 } from "./types";
+import { multiplyDecimalString, positiveDecimalAtMost } from "../format";
 
 export type DemoResult = { found: true; data: unknown } | { found: false };
 
@@ -514,18 +515,19 @@ export function demoResponse(
     const id = decodeURIComponent(m[1] as string);
     if (!id.startsWith("demo")) return notFound();
     const strat = strategies.get(id);
-    const start = strat ? Number(strat.budget_usd) || 100 : 100;
-    const ret = 48.6;
-    const end = Math.round(start * (1 + ret / 100) * 100) / 100;
+    const candidate = strat?.budget_usd.trim() ?? "100";
+    const start = positiveDecimalAtMost(candidate, 1_000_000n) ? candidate : "100";
+    const end = multiplyDecimalString(start, 1486n, 1000n, 2) ?? "Unavailable";
+    const fees = multiplyDecimalString(start, 42n, 1000n, 2) ?? "Unavailable";
     return ok({
       ...envelope(now, "Demo simulation. A fixed sample result, scaled to the budget you entered."),
-      starting_usd: start.toFixed(2),
-      ending_usd: end.toFixed(2),
-      return_pct: ret.toFixed(1),
+      starting_usd: multiplyDecimalString(start, 1n, 1n, 2),
+      ending_usd: end,
+      return_pct: "48.6",
       trades: 12,
       win_rate_pct: "66.7",
       skipped_unexecutable: 2,
-      fees_and_slippage_usd: (Math.round(start * 0.042 * 100) / 100).toFixed(2),
+      fees_and_slippage_usd: fees,
       baseline: { label: "Hold the same tokens from the first follow-up price", return_pct: "31.2" },
       assumptions: {
         delay_seconds: strat?.delay_seconds ?? 30,

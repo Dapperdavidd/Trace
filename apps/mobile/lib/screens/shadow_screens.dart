@@ -202,6 +202,7 @@ class ShadowResultsScreen extends ConsumerWidget {
                         ]),
                 ),
                 const Muted(Copy.paperOnly, size: 12),
+                const Muted(Copy.notAdvice, size: 12),
                 const Disclaimer(
                     text:
                         'Simulated results use prices available after your chosen delay. They are not guaranteed and do not predict future results.'),
@@ -256,11 +257,11 @@ class _ShadowSetupScreenState extends ConsumerState<ShadowSetupScreen> {
     String? budgetErr;
     var budget = _budget;
     if (_customBudget) {
-      final v = double.tryParse(_custom.text.trim());
-      if (v == null || v <= 0 || v > 1000000) {
+      final value = _custom.text.trim();
+      if (!isPositiveDecimalAtMost(value, BigInt.from(1000000))) {
         budgetErr = 'Enter an amount above 0 and up to 1,000,000.';
       } else {
-        budget = v.toString();
+        budget = value;
       }
     }
     setState(() {

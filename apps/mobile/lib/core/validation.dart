@@ -23,6 +23,18 @@ bool isValidAddressForChain(Chain chain, String input) {
   return false;
 }
 
+/// Accepts a positive decimal amount no larger than [maximumWhole] without
+/// converting money to a floating-point number.
+bool isPositiveDecimalAtMost(String input, BigInt maximumWhole) {
+  final match = RegExp(r'^\+?(\d+)(?:\.(\d+))?$').firstMatch(input.trim());
+  if (match == null) return false;
+  final whole = match.group(1) ?? '0';
+  final fraction = match.group(2) ?? '';
+  final coefficient = BigInt.parse('$whole$fraction');
+  final scale = BigInt.from(10).pow(fraction.length);
+  return coefficient > BigInt.zero && coefficient <= maximumWhole * scale;
+}
+
 /// Returns a plain-language error, or null when the address is acceptable.
 String? validateAddress(Chain chain, String input) {
   final s = input.trim();

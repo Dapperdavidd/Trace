@@ -8,7 +8,7 @@ import { CHAINS } from "@/lib/api/types";
 import { CHAIN_LABEL, isValidChain, validateAddress } from "@/lib/address";
 import { useApi } from "@/hooks/useApi";
 import { readLocal, SHADOW_IDS_KEY, writeLocal } from "@/lib/local";
-import { walletLabel } from "@/lib/format";
+import { positiveDecimalAtMost, walletLabel } from "@/lib/format";
 import { ShadowResultView } from "./ShadowResultView";
 import { EmptyState, HonestyNote, PageHead, Panel, Remote } from "./ui";
 
@@ -53,7 +53,7 @@ export function ShadowTrades() {
     const b = sp?.get("budget");
     if (c && isValidChain(c)) setChain(c);
     if (a) setAddress(a);
-    if (b && Number(b) > 0) setBudget(b);
+    if (b && positiveDecimalAtMost(b, 1_000_000n)) setBudget(b);
   }, [sp]);
 
   const results = useApi(() => api.shadowResults(activeId as string), [activeId], !!activeId);
@@ -63,9 +63,10 @@ export function ShadowTrades() {
     const errs: Record<string, string> = {};
     const v = validateAddress(chain, address);
     if (!v.ok) errs.address = v.reason;
-    const b = Number(budget);
-    if (!Number.isFinite(b) || b <= 0) errs.budget = "Enter an amount above 0.";
-    else if (b > 1_000_000) errs.budget = "Paper budgets are limited to $1,000,000.";
+    const cleanBudget = budget.trim();
+    if (!positiveDecimalAtMost(cleanBudget, 1_000_000n)) {
+      errs.budget = "Enter an amount above 0 and up to $1,000,000.";
+    }
     const s = Number(slippage);
     if (!Number.isFinite(s) || s < 0 || s > 1000) errs.slippage = "Enter 0 to 1000 basis points (100 = 1%).";
     setErrors(errs);
@@ -75,7 +76,7 @@ export function ShadowTrades() {
     try {
       const created = await api.createShadowStrategy({
         wallet: { chain, address: address.trim() },
-        budget_usd: String(b),
+        budget_usd: cleanBudget,
         size_rule: sizeRule,
         delay_seconds: delay,
         slippage_bps: Math.round(s),
@@ -96,7 +97,7 @@ export function ShadowTrades() {
     <div className="stack">
       <PageHead title="Shadow Trades" sub="See what would have happened if you followed a wallet, using paper money." />
       <HonestyNote>
-        This is a simulation. Nothing is bought, signed or sent. TRACE uses the price a follower could have got after the delay you choose, adds fees and slippage, and skips trades a follower could not have copied. Simulated results are not a prediction or a promise.
+        Research only, not financial advice. This is a simulation. Nothing is bought, signed or sent. TRACE uses the price a follower could have got after the delay you choose, adds fees and slippage, and skips trades a follower could not have mirrored. Simulated results are not a prediction or a promise.
       </HonestyNote>
       <div className="cols-2">
         <Panel title="Set up a simulation">
@@ -153,7 +154,7 @@ export function ShadowTrades() {
                 </select>
               </div>
               <div className="field">
-                <label htmlFor="sw-delay">Delay before you could copy</label>
+                <label htmlFor="sw-delay">Delay before you could mirror the trade</label>
                 <select id="sw-delay" className="select" value={delay} onChange={(e) => setDelay(Number(e.target.value))}>
                   {DELAYS.map((d) => <option key={d.v} value={d.v}>{d.label}</option>)}
                 </select>

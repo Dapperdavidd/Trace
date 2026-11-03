@@ -16,6 +16,28 @@ function decimalParts(value: Num): DecimalParts | null {
   };
 }
 
+export function positiveDecimalAtMost(value: string, maximumWhole: bigint): boolean {
+  const parts = decimalParts(value);
+  return !!parts
+    && !parts.negative
+    && parts.coefficient > 0n
+    && parts.coefficient <= maximumWhole * pow10(parts.scale);
+}
+
+export function multiplyDecimalString(
+  value: string,
+  numerator: bigint,
+  denominator: bigint,
+  decimals = 2,
+): string | null {
+  const parts = decimalParts(value);
+  if (!parts || parts.negative || denominator <= 0n || numerator < 0n) return null;
+  const scaledNumerator = parts.coefficient * numerator * pow10(decimals);
+  const scaledDenominator = pow10(parts.scale) * denominator;
+  const rounded = (scaledNumerator + scaledDenominator / 2n) / scaledDenominator;
+  return renderScaled(rounded, decimals, false);
+}
+
 function pow10(n: number): bigint {
   return 10n ** BigInt(n);
 }

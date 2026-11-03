@@ -4,6 +4,18 @@ import 'package:trace_mobile/api/models.dart';
 import 'package:trace_mobile/core/validation.dart';
 
 void main() {
+  group('decimal money validation', () {
+    test('uses exact string arithmetic', () {
+      final maximum = BigInt.from(1000000);
+      expect(isPositiveDecimalAtMost('0.01', maximum), isTrue);
+      expect(isPositiveDecimalAtMost('1000000.000', maximum), isTrue);
+      expect(isPositiveDecimalAtMost('1000000.001', maximum), isFalse);
+      expect(isPositiveDecimalAtMost('0', maximum), isFalse);
+      expect(isPositiveDecimalAtMost('9007199254740993.01', maximum), isFalse);
+      expect(isPositiveDecimalAtMost('not money', maximum), isFalse);
+    });
+  });
+
   group('EVM addresses', () {
     const good = '0x52908400098527886E0F7030069857D2E4169EE7';
     test('accepts 0x plus 40 hex', () {
@@ -47,7 +59,8 @@ void main() {
       expect(validateAddress(Chain.base, evm), isNull);
       expect(validateAddress(Chain.bnb, evm), isNull);
       expect(validateAddress(Chain.solana, evm), isNotNull);
-      expect(validateAddress(Chain.ethereum, DemoApi.demoWalletAddress), isNotNull);
+      expect(validateAddress(Chain.ethereum, DemoApi.demoWalletAddress),
+          isNotNull);
       expect(validateAddress(Chain.solana, DemoApi.demoWalletAddress), isNull);
     });
     test('empty and unknown chain', () {
