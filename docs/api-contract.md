@@ -4,6 +4,8 @@ Base path `/v1`. JSON only. Amounts that can exceed 2^53 are strings. Percentage
 decimal strings. Every analytic response carries the honesty envelope below. Errors use
 `{ "code", "message", "details?", "request_id" }`.
 
+Every route may return HTTP 429 with code `rate_limited`, a request ID, and a `Retry-After` header. Sign-in has a stricter per-peer limit than general API traffic.
+
 ```ts
 type Chain = "solana" | "ethereum" | "base" | "bnb";
 type DataStatus = "live" | "stale" | "unavailable" | "partial" | "demo";

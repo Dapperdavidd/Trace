@@ -179,7 +179,8 @@ pub fn document() -> Value {
             "summary": summary,
             "responses": {
                 "200": { "description": "OK" },
-                "400": { "description": "Invalid input", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+                "400": { "description": "Invalid input", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+                "429": { "description": "Rate limit exceeded", "headers": { "Retry-After": { "schema": { "type": "integer" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
             }
         });
         if *auth {

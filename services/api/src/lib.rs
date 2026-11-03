@@ -3,6 +3,7 @@ pub mod auth;
 pub mod config;
 pub mod demo;
 pub mod error;
+pub mod rate_limit;
 pub mod request_id;
 pub mod routes;
 pub mod state;
@@ -38,6 +39,7 @@ pub fn run(
     cors_origins: Vec<String>,
 ) -> std::io::Result<actix_web::dev::Server> {
     let data = web::Data::new(state);
+    let rate_limit = rate_limit::RateLimit::default();
     let server = HttpServer::new(move || {
         let mut cors = actix_cors::Cors::default()
             .allowed_methods(["GET", "POST", "PATCH", "DELETE"])
@@ -53,6 +55,7 @@ pub fn run(
             .app_data(data.clone())
             .app_data(error::json_config())
             .wrap(cors)
+            .wrap(rate_limit.clone())
             .wrap(request_id::RequestId)
             .configure(configure)
             .default_service(web::to(error::not_found))

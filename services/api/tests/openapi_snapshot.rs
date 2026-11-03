@@ -37,6 +37,10 @@ fn every_operation_declares_error_and_auth_behaviour() {
                 op["responses"]["400"].is_object(),
                 "{method} {path}: no 400"
             );
+            assert!(
+                op["responses"]["429"].is_object(),
+                "{method} {path}: no 429"
+            );
             if op["security"].is_array() {
                 assert!(
                     op["responses"]["401"].is_object(),
