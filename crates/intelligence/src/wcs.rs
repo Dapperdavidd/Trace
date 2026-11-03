@@ -1,4 +1,4 @@
-//! WCS: Wallet Copyability Score. Could a follower with a defined order size
+//! WCS: Wallet Shadow Suitability Score. Could a paper follower with a defined order size
 //! and detection delay still get a viable trade at their own price?
 //! Stored together with its reference_amount, delay_assumption and quote_time.
 
@@ -63,7 +63,7 @@ pub fn score(
         };
 
     let Some(q) = quote else {
-        return mk(Decision::WatchOnly, None, "No usable follower quote is available, so this wallet can only be observed, not simulated as a copy.", comps, "n/a".into());
+        return mk(Decision::WatchOnly, None, "No usable follower quote is available, so this wallet can only be observed, not tested with Shadow.", comps, "n/a".into());
     };
     comps.insert(
         "reference_amount_usd".into(),
@@ -86,7 +86,7 @@ pub fn score(
         return mk(
             Decision::WatchOnly,
             None,
-            "The follower quote is too old to rely on, so copyability is unknown right now.",
+            "The follower quote is too old to rely on, so Shadow suitability is unknown right now.",
             comps,
             window,
         );

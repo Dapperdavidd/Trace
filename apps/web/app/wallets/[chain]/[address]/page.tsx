@@ -68,7 +68,7 @@ function MetricsPanel({ m }: { m: WalletMetricsResponse }) {
       </p>
       <div className="cols-2">
         <ScoreCard title="Wallet quality score (WQS)" score={m.wqs} note="Not available." />
-        <ScoreCard title="Wallet copyability score (WCS)" score={m.wcs} note="No copyability score yet. TRACE only scores wallets with enough evidence." />
+        <ScoreCard title="Wallet Shadow suitability score (WCS)" score={m.wcs} note="No Shadow suitability score yet. TRACE only scores wallets with enough evidence." />
       </div>
     </>
   );

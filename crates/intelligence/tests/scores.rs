@@ -200,7 +200,7 @@ fn wcs_changes_with_amount_and_delay_and_stores_assumptions() {
 }
 
 #[test]
-fn high_wallet_quality_does_not_imply_copyability() {
+fn high_wallet_quality_does_not_imply_shadow_suitability() {
     // Leader edge is large but follower costs eat all of it.
     let s = wcs::score(
         &wcs::WcsConfig::default(),

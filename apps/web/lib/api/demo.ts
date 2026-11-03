@@ -432,7 +432,7 @@ export function demoResponse(
       },
       wcs: w && w.decision === "eligible"
         ? {
-            decision: "copyable",
+            decision: "eligible",
             value: 64,
             version: "wcs-demo-1",
             components: { follower_price_gap: "0.63", delay_sensitivity: "0.55" },
