@@ -125,6 +125,21 @@ fn parsing_reads_price_text_exactly_and_matches_evm_keys_case_insensitively() {
 }
 
 #[test]
+fn captured_live_defillama_weth_response_matches_the_adapter() {
+    let body: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/defillama_weth_2026-11-03.json")).unwrap();
+    let batch = parse_defillama(&body, &[eth(WETH)]);
+    assert!(batch.rejected.is_empty());
+    assert_eq!(batch.quotes.len(), 1);
+    let quote = &batch.quotes[0];
+    assert_eq!(quote.usd_per_token, d("2275.8786226968355"));
+    assert_eq!(quote.decimals, Some(18));
+    assert_eq!(quote.symbol.as_deref(), Some("WETH"));
+    assert_eq!(quote.observed_at.timestamp(), 1_793_708_753);
+    assert_eq!(quote.confidence, Some(0.99));
+}
+
+#[test]
 fn solana_mints_match_exactly_and_unknown_assets_are_reported_missing() {
     let sol = AssetId::parse(ChainId::Solana, MINT).unwrap();
     let body = json!({ "coins": {

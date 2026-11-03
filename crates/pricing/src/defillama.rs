@@ -1,8 +1,8 @@
 //! DefiLlama coins API (`/prices/current/{coins}`), which needs no key.
 //!
 //! The response shape is parsed by `parse_defillama` and unit-tested on a
-//! synthetic body. It has not yet been checked against a live response: capture
-//! one (see docs/pricing.md) and compare before turning the provider on.
+//! synthetic edge cases and a captured live WETH response. The capture and
+//! independent comparison are recorded in `docs/pricing.md`.
 
 use async_trait::async_trait;
 use std::time::Duration;

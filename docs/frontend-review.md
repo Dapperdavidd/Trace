@@ -8,7 +8,7 @@ Before this pass, the apps already used the dark emerald visual direction, but s
 
 After this pass, both apps use the TRACE name, keep the dense dark card layout from the designs, expose freshness and data status on API-backed surfaces, show protocol coverage, preserve decimal money strings, show reportable API errors, and keep Wallet, Send, Receive, Buy, Swap, real-money trade mirroring, and Ask TRACE visibly unavailable. Shadow is paper-only everywhere.
 
-The designs contain balances, real trading, auto-copy, and AI chat actions that the current product does not provide. Those areas match the designs in hierarchy and styling, but deliberately show `Coming later` or `Unavailable` instead of pretending to work.
+The designs contain balances, real trading, automated mirroring, and AI chat actions that the current product does not provide. Those areas match the designs in hierarchy and styling, but deliberately show `Coming later` or `Unavailable` instead of pretending to work.
 
 ## Web screens
 
@@ -16,7 +16,7 @@ The designs contain balances, real trading, auto-copy, and AI chat actions that 
 | --- | --- | --- | --- |
 | Home | Yes | loading, empty, error, offline, demo, partial, unavailable | Dense dashboard, honest wallet rail, freshness, and coverage panel. |
 | Top Movers | Yes | loading, empty, error, offline, demo | Tabs, ranked rows, compact charts, risk, status, and freshness. |
-| Smart Wallets | Yes | loading, empty, error, offline, demo | Confidence and evidence remain visible. Shadow replaces copy. |
+| Smart Wallets | Yes | loading, empty, error, offline, demo | Confidence and evidence remain visible. Shadow provides paper simulation. |
 | Wallet profile | Yes | loading, empty, error, offline, demo, partial | Public address only. No balance or custody claim. |
 | Token research | Yes | loading, empty, error, offline, demo, unavailable | Exact decimal prices and observed versus hypothesis labels. |
 | Token timeline | Yes | loading, empty, error, offline, demo | Facts and hypotheses remain distinct. |
@@ -48,7 +48,7 @@ Web captures are in [`docs/screens/web`](screens/web).
 | Smart Wallets | Yes | loading, empty, error, offline, demo | Confidence and small-sample warnings are visible. |
 | Wallet profile | Yes | loading, empty, error, offline, demo, partial | Public address and observed behaviour only. |
 | Shadow Trades | Yes | loading, empty, error, offline, demo | Paper-only statement stays above the flow. |
-| Shadow setup | Yes | validation, submit error, demo | Real-money auto-copy remains disabled. |
+| Shadow setup | Yes | validation, submit error, demo | Real-money automation remains disabled. |
 | Shadow results | Yes | loading, empty, error, offline, demo | Clearly labelled simulated result and assumptions. |
 | Watchlist | Yes | loading, empty, error, offline, demo, partial | Monitoring state and freshness are explicit. |
 | Opportunity Timeline | Yes | loading, empty, error, offline, demo | Fact and hypothesis timeline matches the reference hierarchy. |
