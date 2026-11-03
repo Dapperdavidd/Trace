@@ -123,8 +123,9 @@ pub struct Config<'a> {
 
 fn parse_amount(s: &str) -> Result<i128, Skipped> {
     s.parse::<u128>()
-        .map(|v| v as i128)
-        .map_err(|_| Skipped::Malformed(format!("bad token amount '{s}'")))
+        .ok()
+        .and_then(|value| i128::try_from(value).ok())
+        .ok_or_else(|| Skipped::Malformed(format!("bad token amount '{s}'")))
 }
 
 /// Parse one transaction. `Ok(None)` is not used: every outcome is either a

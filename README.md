@@ -72,6 +72,8 @@ cargo test --workspace
 
 Web checks are `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build`. Mobile checks are `flutter analyze` and `flutter test`. GitHub Actions also builds the API and worker container targets.
 
+The chain-adapter suite includes randomized property tests for arbitrary EVM log bytes and Solana token amount strings. Parser boundaries must reject malformed or oversized values without panicking or wrapping.
+
 ## Repository layout
 
 - `crates/` contains domain, database, adapters, accounting, intelligence, risk, pricing, signals, discovery, Shadow, and job-queue libraries.
