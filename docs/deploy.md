@@ -63,6 +63,8 @@ Suggested alerts:
 
 Logs are JSON on stdout. Errors never contain RPC URLs or keys.
 
+Incident diagnosis and recovery procedures are in [runbook.md](runbook.md).
+
 ## Not done
 
 * No log shipping, tracing or paging integration. The alert rules above are a starting point.

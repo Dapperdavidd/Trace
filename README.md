@@ -81,6 +81,6 @@ The chain-adapter suite includes randomized property tests for arbitrary EVM log
 - `services/worker` runs ingestion, token metadata, pricing, market snapshots, alerts, and signal outcome jobs.
 - `migrations/` contains forward-only SQLx migrations.
 - `apps/web` and `apps/mobile` are the user clients.
-- `docs/` contains the API contract, architecture, ADRs, deployment notes, fixture policy, and coverage register.
+- `docs/` contains the API contract, architecture, ADRs, deployment notes, operations runbook, fixture policy, and coverage register.
 
 Start with [architecture.md](docs/architecture.md), [api-contract.md](docs/api-contract.md), and [deploy.md](docs/deploy.md).
