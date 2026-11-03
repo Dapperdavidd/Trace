@@ -208,6 +208,51 @@ async fn new_signatures_are_ingested_oldest_first_as_final_and_the_cursor_follow
     .await
     .unwrap();
     assert_eq!(raw, 4);
+    let decimals: Vec<(String, Option<i16>)> = sqlx::query_as(
+        "SELECT contract_or_mint,decimals FROM tokens
+         WHERE chain='solana' ORDER BY contract_or_mint",
+    )
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert!(decimals.contains(&(USDC.to_string(), Some(6))));
+    assert!(decimals.contains(&(BONK.to_string(), Some(6))));
+}
+
+#[sqlx::test(migrator = "trace_database::MIGRATOR")]
+async fn conflicting_solana_decimals_are_audited_not_overwritten(pool: PgPool) {
+    let m = Mock::new();
+    m.push_swap("s0", 1);
+    step(&pool, &m, &cfg()).await.unwrap();
+    sqlx::query(
+        "INSERT INTO tokens (chain,contract_or_mint,decimals)
+         VALUES ('solana',$1,9)",
+    )
+    .bind(BONK)
+    .execute(&pool)
+    .await
+    .unwrap();
+    m.push_swap("s1", 2);
+    step(&pool, &m, &cfg()).await.unwrap();
+    let decimals: Option<i16> = sqlx::query_scalar(
+        "SELECT decimals FROM tokens WHERE chain='solana' AND contract_or_mint=$1",
+    )
+    .bind(BONK)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(decimals, Some(9));
+    let audit: Value = sqlx::query_scalar(
+        "SELECT detail FROM audit_events
+         WHERE action='token_decimals_conflict' AND subject=$1",
+    )
+    .bind(format!("solana:{BONK}"))
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(audit["stored"], 9);
+    assert_eq!(audit["reported"], 6);
+    assert_eq!(audit["transaction"], "s1");
 }
 
 #[sqlx::test(migrator = "trace_database::MIGRATOR")]

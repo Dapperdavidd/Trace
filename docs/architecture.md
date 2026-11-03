@@ -70,7 +70,7 @@ The API and worker container targets share one build stage and run as a non-root
 
 - Real signal publishing is not implemented.
 - Live liquidity and token-risk providers are not selected.
-- Solana mint decimals and metadata still need a real chain reader.
+- Solana ingestion stores consistent mint decimals from finalized transaction balances and audits conflicts. Names and symbols still need a real chain reader.
 - Historical swap and price backfill are not implemented.
 - Push and email alert delivery are not implemented.
 - Production hosting, Google OAuth credentials, app-store accounts, and release operations require owner decisions or credentials.

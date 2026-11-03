@@ -183,6 +183,20 @@ pub async fn step(
                     InsertOutcome::Inserted => report.inserted += 1,
                     InsertOutcome::Duplicate => report.duplicates += 1,
                 }
+                store_token_decimals(
+                    pool,
+                    &tx,
+                    swap.token_in.contract_or_mint.as_str(),
+                    &s.signature,
+                )
+                .await?;
+                store_token_decimals(
+                    pool,
+                    &tx,
+                    swap.token_out.contract_or_mint.as_str(),
+                    &s.signature,
+                )
+                .await?;
             }
             Err(skip) => {
                 let name = format!("{skip:?}");
@@ -223,4 +237,74 @@ pub async fn step(
     }
     ingestion::record_successful_scan(pool, "solana", &cfg.protocol, None).await?;
     Ok(report)
+}
+
+fn reported_decimals(tx: &TxResult, mint: &str) -> Option<u8> {
+    if mint == trace_chain_adapters::solana::WRAPPED_SOL {
+        return Some(9);
+    }
+    let mut values = tx
+        .meta
+        .pre_token_balances
+        .iter()
+        .chain(&tx.meta.post_token_balances)
+        .filter(|balance| balance.mint == mint)
+        .map(|balance| balance.ui_token_amount.decimals);
+    let first = values.next()?;
+    values.all(|value| value == first).then_some(first)
+}
+
+async fn store_token_decimals(
+    pool: &sqlx::PgPool,
+    tx: &TxResult,
+    mint: &str,
+    signature: &str,
+) -> Result<(), trace_database::DbError> {
+    let Some(reported) = reported_decimals(tx, mint) else {
+        return Ok(());
+    };
+    let existing: Option<i16> = sqlx::query_scalar(
+        "SELECT decimals FROM tokens WHERE chain='solana' AND contract_or_mint=$1",
+    )
+    .bind(mint)
+    .fetch_one(pool)
+    .await?;
+    match existing {
+        None => {
+            sqlx::query(
+                "UPDATE tokens SET decimals=$2
+                 WHERE chain='solana' AND contract_or_mint=$1 AND decimals IS NULL",
+            )
+            .bind(mint)
+            .bind(i16::from(reported))
+            .execute(pool)
+            .await?;
+        }
+        Some(value) if value != i16::from(reported) => {
+            let subject = format!("solana:{mint}");
+            let detail = serde_json::json!({
+                "stored": value,
+                "reported": reported,
+                "transaction": signature,
+            });
+            sqlx::query(
+                "INSERT INTO audit_events (id,actor,action,subject,detail)
+                 SELECT $1,'indexer','token_decimals_conflict',$2,$3
+                 WHERE NOT EXISTS (
+                   SELECT 1 FROM audit_events
+                   WHERE action='token_decimals_conflict' AND subject=$2
+                     AND detail->>'stored'=$4 AND detail->>'reported'=$5
+                 )",
+            )
+            .bind(uuid::Uuid::new_v4())
+            .bind(subject)
+            .bind(detail)
+            .bind(value.to_string())
+            .bind(reported.to_string())
+            .execute(pool)
+            .await?;
+        }
+        Some(_) => {}
+    }
+    Ok(())
 }
