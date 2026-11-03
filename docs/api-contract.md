@@ -18,6 +18,7 @@ type RiskState = "pass" | "warn" | "block" | "unknown";
 ## Auth and account
 - `POST /auth/google` body `{ id_token }` -> `{ access_token, expires_at, user: { id, email, name } }`
 - `POST /auth/logout`, `DELETE /me` (account deletion), `GET /me` -> `{ id, email, name, wallets: { watch_only: number, connected: 0 } }`
+- `GET /auth/sessions` lists active sessions with a coarse device label and marks the current session. `DELETE /auth/sessions/{id}` revokes one, and `POST /auth/logout-all` revokes every session.
 - A signed-in user has NO spendable wallet. `GET /me/wallets` -> `{ watch_only: WalletRef[], connected: [], embedded: { available: false, reason: string } }`
 
 ## Watchlist and alerts

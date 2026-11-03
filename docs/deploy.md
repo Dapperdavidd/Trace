@@ -66,5 +66,5 @@ Logs are JSON on stdout. Errors never contain RPC URLs or keys.
 ## Not done
 
 * No log shipping, tracing or paging integration. The alert rules above are a starting point.
-* No rate limiting on the api. Put it behind a proxy or platform limiter before opening sign-in to the public.
+* The api has per-peer and per-session in-process rate limits. Production still needs a shared proxy or platform limiter because counters are not coordinated across replicas and only the proxy knows the original client IP.
 * The web app is deployed separately (for example Vercel). Set its API base URL to the api's public https origin.

@@ -213,16 +213,18 @@ pub fn hash_token(token: &str) -> String {
 pub async fn create_session(
     pool: &PgPool,
     user_id: Uuid,
+    device_label: &str,
     now: DateTime<Utc>,
 ) -> Result<(String, DateTime<Utc>), sqlx::Error> {
     let token = new_token();
     let expires = now + Duration::days(SESSION_TTL_DAYS);
     sqlx::query(
-        "INSERT INTO app_sessions (id, user_id, token_hash, created_at, expires_at) VALUES ($1,$2,$3,$4,$5)",
+        "INSERT INTO app_sessions (id, user_id, token_hash, device_label, created_at, expires_at) VALUES ($1,$2,$3,$4,$5,$6)",
     )
     .bind(Uuid::new_v4())
     .bind(user_id)
     .bind(hash_token(&token))
+    .bind(device_label)
     .bind(now)
     .bind(expires)
     .execute(pool)

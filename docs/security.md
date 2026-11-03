@@ -16,3 +16,7 @@ cargo audit --ignore RUSTSEC-2023-0071
 ```
 
 The first command must report that nothing depends on `sqlx-mysql`; the second must pass.
+
+## Sessions
+
+TRACE issues opaque 30-day session tokens and stores only SHA-256 hashes. Users can list active sessions, revoke one session, sign out the current session, or revoke every session on the account. Session lists expose only a coarse device label such as `Mac` or `iPhone`; the API does not store full user-agent strings or client IP addresses.

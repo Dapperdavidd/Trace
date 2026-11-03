@@ -9,6 +9,7 @@ use trace_api::{
     request_id::RequestId,
     AppState,
 };
+use uuid::Uuid;
 
 const CLIENT_ID: &str = "test-client.apps.googleusercontent.com";
 const PRIVATE_PEM: &[u8] = include_bytes!("keys/test_rsa.pem");
@@ -162,11 +163,25 @@ async fn sign_in(
     sub: &str,
     email: &str,
 ) -> (String, Value) {
+    sign_in_with_agent(app, sub, email, "TRACE tests").await
+}
+
+async fn sign_in_with_agent(
+    app: &impl actix_web::dev::Service<
+        actix_http::Request,
+        Response = actix_web::dev::ServiceResponse<actix_web::body::BoxBody>,
+        Error = actix_web::Error,
+    >,
+    sub: &str,
+    email: &str,
+    user_agent: &str,
+) -> (String, Value) {
     let tok = mint(good_claims(sub, email), "test-key-1");
     let res = test::call_service(
         app,
         test::TestRequest::post()
             .uri("/v1/auth/google")
+            .insert_header(("user-agent", user_agent))
             .set_json(json!({ "id_token": tok }))
             .to_request(),
     )
@@ -287,6 +302,106 @@ async fn expired_sessions_are_rejected(pool: PgPool) {
             .insert_header(auth(&t))
     );
     assert_eq!(s, StatusCode::UNAUTHORIZED);
+}
+
+#[sqlx::test(migrator = "trace_database::MIGRATOR")]
+async fn sessions_can_be_listed_and_revoked(pool: PgPool) {
+    let app = app!(pool.clone());
+    let (mac, _) = sign_in_with_agent(
+        &app,
+        "g-1",
+        "a@example.com",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X)",
+    )
+    .await;
+    let (phone, _) = sign_in_with_agent(
+        &app,
+        "g-1",
+        "a@example.com",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS)",
+    )
+    .await;
+    let (other_user, _) = sign_in_with_agent(
+        &app,
+        "g-2",
+        "b@example.com",
+        "Mozilla/5.0 (Windows NT 10.0)",
+    )
+    .await;
+    let (status, list) = call!(
+        app,
+        test::TestRequest::get()
+            .uri("/v1/auth/sessions")
+            .insert_header(auth(&mac))
+    );
+    assert_eq!(status, StatusCode::OK);
+    let items = list["items"].as_array().unwrap();
+    assert_eq!(items.len(), 2);
+    assert!(items.iter().any(|item| item["device_label"] == "Mac"));
+    let phone_session = items
+        .iter()
+        .find(|item| item["device_label"] == "iPhone")
+        .unwrap();
+    assert_eq!(phone_session["current"], false);
+    let id = phone_session["id"].as_str().unwrap();
+    let (status, _) = call!(
+        app,
+        test::TestRequest::delete()
+            .uri(&format!("/v1/auth/sessions/{id}"))
+            .insert_header(auth(&mac))
+    );
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (status, _) = call!(
+        app,
+        test::TestRequest::get()
+            .uri("/v1/me")
+            .insert_header(auth(&phone))
+    );
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+
+    let other_id: Uuid = sqlx::query_scalar(
+        "SELECT s.id FROM app_sessions s JOIN users u ON u.id=s.user_id
+         WHERE u.email='b@example.com'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let (status, _) = call!(
+        app,
+        test::TestRequest::delete()
+            .uri(&format!("/v1/auth/sessions/{other_id}"))
+            .insert_header(auth(&mac))
+    );
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (status, _) = call!(
+        app,
+        test::TestRequest::get()
+            .uri("/v1/me")
+            .insert_header(auth(&other_user))
+    );
+    assert_eq!(status, StatusCode::OK);
+
+    let (status, _) = call!(
+        app,
+        test::TestRequest::post()
+            .uri("/v1/auth/logout-all")
+            .insert_header(auth(&mac))
+    );
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (status, _) = call!(
+        app,
+        test::TestRequest::get()
+            .uri("/v1/me")
+            .insert_header(auth(&mac))
+    );
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    let (status, _) = call!(
+        app,
+        test::TestRequest::get()
+            .uri("/v1/me")
+            .insert_header(auth(&other_user))
+    );
+    assert_eq!(status, StatusCode::OK);
 }
 
 #[sqlx::test(migrator = "trace_database::MIGRATOR")]

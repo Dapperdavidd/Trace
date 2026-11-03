@@ -13,6 +13,9 @@ use crate::{
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("/auth/google", web::post().to(google))
         .route("/auth/logout", web::post().to(logout))
+        .route("/auth/logout-all", web::post().to(logout_all))
+        .route("/auth/sessions", web::get().to(sessions))
+        .route("/auth/sessions/{id}", web::delete().to(revoke_session))
         .route("/me", web::get().to(me))
         .route("/me", web::delete().to(delete_me))
         .route("/me/wallets", web::get().to(my_wallets));
@@ -31,6 +34,7 @@ struct UserOut {
 }
 
 async fn google(
+    req: HttpRequest,
     state: web::Data<AppState>,
     body: web::Json<GoogleBody>,
 ) -> Result<HttpResponse, ApiError> {
@@ -99,7 +103,8 @@ async fn google(
     if state.demo {
         crate::demo::seed_alerts_for(&state.pool, user_id, Utc::now()).await?;
     }
-    let (token, expires) = create_session(&state.pool, user_id, Utc::now()).await?;
+    let label = device_label(&req);
+    let (token, expires) = create_session(&state.pool, user_id, label, Utc::now()).await?;
     let row = sqlx::query("SELECT email, name FROM users WHERE id = $1")
         .bind(user_id)
         .fetch_one(&state.pool)
@@ -111,12 +116,92 @@ async fn google(
     })))
 }
 
+fn device_label(req: &HttpRequest) -> &'static str {
+    let agent = req
+        .headers()
+        .get(actix_web::http::header::USER_AGENT)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default();
+    if agent.contains("iPhone") {
+        "iPhone"
+    } else if agent.contains("iPad") {
+        "iPad"
+    } else if agent.contains("Android") {
+        "Android device"
+    } else if agent.contains("Macintosh") {
+        "Mac"
+    } else if agent.contains("Windows") {
+        "Windows device"
+    } else if agent.is_empty() {
+        "Unknown device"
+    } else {
+        "Web browser"
+    }
+}
+
 async fn logout(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse, ApiError> {
     let u = authenticate(&req, &state.pool).await?;
     sqlx::query("UPDATE app_sessions SET revoked_at = now() WHERE id = $1")
         .bind(u.session_id)
         .execute(&state.pool)
         .await?;
+    Ok(HttpResponse::NoContent().finish())
+}
+
+async fn logout_all(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+) -> Result<HttpResponse, ApiError> {
+    let user = authenticate(&req, &state.pool).await?;
+    sqlx::query(
+        "UPDATE app_sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL",
+    )
+    .bind(user.user_id)
+    .execute(&state.pool)
+    .await?;
+    Ok(HttpResponse::NoContent().finish())
+}
+
+async fn sessions(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse, ApiError> {
+    let user = authenticate(&req, &state.pool).await?;
+    let rows = sqlx::query(
+        "SELECT id,device_label,created_at,expires_at FROM app_sessions
+         WHERE user_id=$1 AND revoked_at IS NULL AND expires_at > now()
+         ORDER BY created_at DESC",
+    )
+    .bind(user.user_id)
+    .fetch_all(&state.pool)
+    .await?;
+    let items: Vec<_> = rows
+        .iter()
+        .map(|row| {
+            let id: Uuid = row.get("id");
+            serde_json::json!({
+                "id": id,
+                "device_label": row.get::<String, _>("device_label"),
+                "created_at": row.get::<chrono::DateTime<Utc>, _>("created_at"),
+                "expires_at": row.get::<chrono::DateTime<Utc>, _>("expires_at"),
+                "current": id == user.session_id,
+            })
+        })
+        .collect();
+    Ok(HttpResponse::Ok().json(serde_json::json!({ "items": items })))
+}
+
+async fn revoke_session(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    id: web::Path<Uuid>,
+) -> Result<HttpResponse, ApiError> {
+    let user = authenticate(&req, &state.pool).await?;
+    sqlx::query(
+        "UPDATE app_sessions SET revoked_at=now()
+         WHERE id=$1 AND user_id=$2 AND revoked_at IS NULL",
+    )
+    .bind(*id)
+    .bind(user.user_id)
+    .execute(&state.pool)
+    .await?;
     Ok(HttpResponse::NoContent().finish())
 }
 

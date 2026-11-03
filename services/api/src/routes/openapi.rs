@@ -32,6 +32,24 @@ pub const ROUTES: &[(&str, &str, &str, bool)] = &[
         "Revoke the current session",
         true,
     ),
+    (
+        "post",
+        "/v1/auth/logout-all",
+        "Revoke every session for the current account",
+        true,
+    ),
+    (
+        "get",
+        "/v1/auth/sessions",
+        "List active account sessions",
+        true,
+    ),
+    (
+        "delete",
+        "/v1/auth/sessions/{id}",
+        "Revoke one account session",
+        true,
+    ),
     ("get", "/v1/me", "Current account", true),
     ("delete", "/v1/me", "Delete the account and its data", true),
     (
