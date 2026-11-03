@@ -49,7 +49,7 @@ export default function SmartWalletsPage() {
     <div className="stack">
       <PageHead title="Smart Wallets" sub="Wallets that TRACE found by watching real trades, ranked with the evidence behind them." />
       <HonestyNote>
-        Return figures are estimates from observed trades. The confidence label says how much to trust them, and wallets with few trades are marked as such. Past results do not guarantee future results. Shadow lets you test a wallet with paper money. TRACE cannot copy trades with real money.
+        Return figures are estimates from observed trades. The confidence label says how much to trust them, and wallets with few trades are marked as such. Past results do not guarantee future results. Shadow lets you test a wallet with paper money. TRACE cannot mirror trades with real money.
       </HonestyNote>
       <Panel>
         <div className="toolbar">

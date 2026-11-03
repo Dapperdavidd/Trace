@@ -88,15 +88,15 @@ Watchlist, More.
 
 Design changes made on purpose, to stay honest with the MVP scope:
 
-- "Copy" becomes **Shadow** (paper simulation via `POST /shadow-strategies`) or
-  **Watch** (watchlist). Copy risk controls become simulation assumptions.
-- Home shows paper results instead of copy P&L, and no balances anywhere.
+- Trade mirroring becomes **Shadow** (paper simulation via `POST /shadow-strategies`) or
+  **Watch** (watchlist). Mirroring risk controls become simulation assumptions.
+- Home shows paper results instead of mirrored-trade P&L, and no balances anywhere.
 - Facts, hypotheses, estimates, model assessments and risk warnings are labelled
   separately. There is no profit or win-probability language.
 
 ## Coming later (visible but disabled, with a one-line reason)
 
-Create wallet, Send, Receive, Buy, Swap, wallet balances, Auto Copy and live copy
+Create wallet, Send, Receive, Buy, Swap, wallet balances, real-money mirroring and live
 trading, Ask TRACE natural-language chat, push notifications, news and social
 feed, token price charts (the contract has no price series). Alerts are in-app
 polling of `GET /alerts` every 30 seconds while the Alerts screen is open.

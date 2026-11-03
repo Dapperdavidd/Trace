@@ -66,9 +66,9 @@ class ShadowHomeScreen extends ConsumerWidget {
             ]),
           ),
           const ComingLaterPanel(
-            title: 'Auto Copy',
+            title: 'Automatic Shadow',
             explanation:
-                'Real copy trading is not available. Shadow simulations never trade real money.',
+                'Real-money trade mirroring is not available. Shadow simulations never trade real money.',
           ),
           const Disclaimer(),
         ],
@@ -443,7 +443,7 @@ class _ShadowSetupScreenState extends ConsumerState<ShadowSetupScreen> {
               onPressed: _busy ? null : _submit,
               child: Text(_busy ? 'Starting...' : 'Start paper simulation'),
             ),
-            const DisabledAction(label: 'Auto Copy with real money'),
+            const DisabledAction(label: 'Real-money automation'),
             const Disclaimer(),
           ]),
     );

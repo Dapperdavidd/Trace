@@ -6,7 +6,7 @@ Reviewed on 2026-11-01 against the supplied desktop dashboard and mobile screen 
 
 Before this pass, the apps already used the dark emerald visual direction, but several surfaces still used the old product name, compact controls missed the 44 point target, coverage was not visible on the main surfaces, money strings could pass through floating point values, and mobile API errors did not show their request ID.
 
-After this pass, both apps use the TRACE name, keep the dense dark card layout from the designs, expose freshness and data status on API-backed surfaces, show protocol coverage, preserve decimal money strings, show reportable API errors, and keep Wallet, Send, Receive, Buy, Swap, copy trading, and Ask TRACE visibly unavailable. Shadow is paper-only everywhere.
+After this pass, both apps use the TRACE name, keep the dense dark card layout from the designs, expose freshness and data status on API-backed surfaces, show protocol coverage, preserve decimal money strings, show reportable API errors, and keep Wallet, Send, Receive, Buy, Swap, real-money trade mirroring, and Ask TRACE visibly unavailable. Shadow is paper-only everywhere.
 
 The designs contain balances, real trading, auto-copy, and AI chat actions that the current product does not provide. Those areas match the designs in hierarchy and styling, but deliberately show `Coming later` or `Unavailable` instead of pretending to work.
 
@@ -66,6 +66,6 @@ Mobile captures are in [`docs/screens/mobile`](screens/mobile).
 ## Known intentional differences
 
 - The supplied designs show real balances and trading controls. The implemented surfaces say `Unavailable` or `Coming later` because those capabilities do not exist.
-- The supplied designs say Copy Trade in a few places. The implemented product uses Shadow and describes it as a paper simulation.
+- The supplied designs use real-money mirroring language in a few places. The implemented product uses Shadow and describes it as a paper simulation.
 - Live market charts are not available from the API contract, so the UI does not fabricate them.
 - Dark mode is the only design mode in the supplied references. Both clients consistently use it and support increased text size and keyboard or screen-reader navigation.

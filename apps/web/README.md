@@ -57,8 +57,7 @@ npm test                     # vitest: formatting, address validation, API clien
 
 ## Coming later (shown disabled, never faked)
 
-Wallet balance, Send, Receive, Buy, Swap, Create New Wallet, Connect Wallet, live copy trading ("Copy" is
-"Shadow", a paper simulation), Ask TRACE (natural-language assistant), coin watchlist (the contract only
+Wallet balance, Send, Receive, Buy, Swap, Create New Wallet, Connect Wallet, real-money trade mirroring (the available Shadow feature is a paper simulation), Ask TRACE (natural-language assistant), coin watchlist (the contract only
 covers wallet watchlists), push notifications.
 
 ## Contract assumptions that need backend confirmation

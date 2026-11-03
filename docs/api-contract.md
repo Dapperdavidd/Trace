@@ -56,7 +56,7 @@ type RiskState = "pass" | "warn" | "block" | "unknown";
 - `GET /chains` (implemented): chain and protocol coverage truth.
 
 ## Out of scope for MVP (UI must show "Coming later", never fake it)
-Spendable wallet creation, send, receive, buy, swap, live copy trading, natural-language "Ask TRACE".
+Spendable wallet creation, send, receive, buy, swap, real-money trade mirroring, natural-language "Ask TRACE".
 
 
 ## Settled in milestone 5 (previously ambiguous)

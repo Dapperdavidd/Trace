@@ -2,7 +2,7 @@
 
 TRACE is a watch-only crypto research product for discovering on-chain activity, studying wallets and tokens, and testing Shadow strategies with paper money.
 
-It has a Rust backend, PostgreSQL, a Next.js web app, and a Flutter mobile app. TRACE has no custody, signing, live trade execution, copy trading, Send, Buy, or Swap. Those surfaces are labelled Coming later.
+It has a Rust backend, PostgreSQL, a Next.js web app, and a Flutter mobile app. TRACE has no custody, signing, live trade execution, real-money trade mirroring, Send, Buy, or Swap. Those surfaces are labelled Coming later.
 
 ## Current coverage
 
