@@ -60,6 +60,17 @@ class FallbackApi implements TraceApi {
   }
 
   @override
+  Future<void> logoutAll() => forceDemo ? demo.logoutAll() : remote.logoutAll();
+
+  @override
+  Future<List<AccountSession>> sessions() =>
+      forceDemo ? demo.sessions() : remote.sessions();
+
+  @override
+  Future<void> revokeSession(String id) =>
+      forceDemo ? demo.revokeSession(id) : remote.revokeSession(id);
+
+  @override
   Future<void> deleteAccount() =>
       forceDemo ? demo.deleteAccount() : remote.deleteAccount();
 

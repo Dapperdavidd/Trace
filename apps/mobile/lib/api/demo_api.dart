@@ -89,6 +89,15 @@ class DemoApi implements TraceApi {
   Future<void> logout() async {}
 
   @override
+  Future<void> logoutAll() async {}
+
+  @override
+  Future<List<AccountSession>> sessions() async => const [];
+
+  @override
+  Future<void> revokeSession(String id) async {}
+
+  @override
   Future<void> deleteAccount() async {}
 
   @override

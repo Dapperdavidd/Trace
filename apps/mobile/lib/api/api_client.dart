@@ -93,6 +93,20 @@ class ApiClient implements TraceApi {
   }
 
   @override
+  Future<void> logoutAll() async {
+    await _send('POST', '/auth/logout-all');
+  }
+
+  @override
+  Future<List<AccountSession>> sessions() async => mapList(
+      (await _getMap('/auth/sessions'))['items'], AccountSession.fromJson);
+
+  @override
+  Future<void> revokeSession(String id) async {
+    await _send('DELETE', '/auth/sessions/${Uri.encodeComponent(id)}');
+  }
+
+  @override
   Future<void> deleteAccount() async {
     await _send('DELETE', '/me');
   }

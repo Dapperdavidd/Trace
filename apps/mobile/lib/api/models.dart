@@ -286,6 +286,30 @@ class Me {
   }
 }
 
+class AccountSession {
+  const AccountSession({
+    required this.id,
+    required this.deviceLabel,
+    required this.current,
+    this.createdAt,
+    this.expiresAt,
+  });
+
+  final String id;
+  final String deviceLabel;
+  final bool current;
+  final DateTime? createdAt;
+  final DateTime? expiresAt;
+
+  factory AccountSession.fromJson(Map<String, dynamic> j) => AccountSession(
+        id: str(j['id']),
+        deviceLabel: strOrNull(j['device_label']) ?? 'Unknown device',
+        current: boolOr(j['current']),
+        createdAt: dateOrNull(j['created_at']),
+        expiresAt: dateOrNull(j['expires_at']),
+      );
+}
+
 // ---------------------------------------------------------------------------
 // Watchlist and alerts
 // ---------------------------------------------------------------------------

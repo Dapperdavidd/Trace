@@ -5,6 +5,9 @@ import 'models.dart';
 abstract class TraceApi {
   Future<AuthResult> googleSignIn(String idToken);
   Future<void> logout();
+  Future<void> logoutAll();
+  Future<List<AccountSession>> sessions();
+  Future<void> revokeSession(String id);
   Future<void> deleteAccount();
   Future<Me> me();
 

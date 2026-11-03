@@ -145,6 +145,11 @@ class SessionController extends Notifier<SessionState> {
     await _clear();
   }
 
+  Future<void> signOutAll() async {
+    await ref.read(apiProvider).logoutAll();
+    await _clear();
+  }
+
   Future<void> deleteAccount() async {
     await ref.read(apiProvider).deleteAccount();
     await _clear();

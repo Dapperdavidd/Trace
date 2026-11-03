@@ -11,7 +11,8 @@ void main() {
       expect(e.asOf, isNull);
     });
     test('unknown data_status is unavailable', () {
-      expect(Envelope.fromJson(const {'data_status': 'weird'}).status, DataStatus.unavailable);
+      expect(Envelope.fromJson(const {'data_status': 'weird'}).status,
+          DataStatus.unavailable);
     });
     test('demo flag wins over a live status', () {
       final e = Envelope.fromJson(const {'data_status': 'live', 'demo': true});
@@ -54,7 +55,12 @@ void main() {
         'items': [
           {
             'rank': 1,
-            'token': {'chain': 'solana', 'address': 'AAA', 'symbol': 'NEURA', 'name': null},
+            'token': {
+              'chain': 'solana',
+              'address': 'AAA',
+              'symbol': 'NEURA',
+              'name': null
+            },
             'price_usd': '0.0084',
             'change_pct': '42.7',
             'volume_usd': '12400000',
@@ -82,7 +88,11 @@ void main() {
         'data_status': 'live',
         'extra_unknown_field': 1,
         'items': [
-          {'rank': '3', 'risk': 'sketchy', 'token': {'chain': 'dogechain', 'address': 'X'}},
+          {
+            'rank': '3',
+            'risk': 'sketchy',
+            'token': {'chain': 'dogechain', 'address': 'X'}
+          },
           'not a map',
           null,
         ],
@@ -124,7 +134,15 @@ void main() {
         'coverage_ratio': '0.5',
         'pnl_confidence': 'low',
         'unresolved_disposals': 2,
-        'wqs': {'decision': 'eligible', 'value': 71, 'version': 'v1', 'components': {'a': '0.5'}, 'cohort': 'c', 'window': '90d', 'explanation': 'e'},
+        'wqs': {
+          'decision': 'eligible',
+          'value': 71,
+          'version': 'v1',
+          'components': {'a': '0.5'},
+          'cohort': 'c',
+          'window': '90d',
+          'explanation': 'e'
+        },
         'wcs': null,
       });
       expect(r.metrics.realizedPnlUsd, '10.5');
@@ -149,7 +167,10 @@ void main() {
     });
     test('DNA with unknown or missing state is treated as insufficient', () {
       expect(DnaResponse.fromJson(const {}).insufficientHistory, isTrue);
-      expect(DnaResponse.fromJson(const {'state': 'new_state'}).insufficientHistory, isTrue);
+      expect(
+          DnaResponse.fromJson(const {'state': 'new_state'})
+              .insufficientHistory,
+          isTrue);
     });
     test('DNA ok keeps traits', () {
       final r = DnaResponse.fromJson({
@@ -164,10 +185,12 @@ void main() {
       expect(r.traits.single.label, 'Early buyer');
     });
     test('trade finality defaults to tentative', () {
-      final t = TradeItem.fromJson({'tx_id': 't', 'side': 'sell', 'finality': 'weird'});
+      final t = TradeItem.fromJson(
+          {'tx_id': 't', 'side': 'sell', 'finality': 'weird'});
       expect(t.isBuy, isFalse);
       expect(t.finality, Finality.tentative);
-      expect(TradeItem.fromJson(const {'finality': 'final'}).finality, Finality.final_);
+      expect(TradeItem.fromJson(const {'finality': 'final'}).finality,
+          Finality.final_);
     });
   });
 
@@ -177,7 +200,11 @@ void main() {
         'data_status': 'live',
         'token': {'chain': 'base', 'address': '0x1', 'symbol': 'X'},
         'why_moving': [
-          {'kind': 'fact', 'text': 'a', 'evidence_ids': ['e1']},
+          {
+            'kind': 'fact',
+            'text': 'a',
+            'evidence_ids': ['e1']
+          },
           {'kind': 'rumor', 'text': 'b'},
           {'text': 'c'},
         ],
@@ -190,7 +217,8 @@ void main() {
       expect(t.risk.checks, isEmpty);
     });
     test('risk check labels', () {
-      expect(RiskCheck.fromJson(const {'key': 'honeypot'}).label, 'Honeypot risk');
+      expect(
+          RiskCheck.fromJson(const {'key': 'honeypot'}).label, 'Honeypot risk');
       expect(RiskCheck.fromJson(const {'key': 'new_check'}).label, 'new check');
       expect(RiskCheck.fromJson(const {}).label, 'Check');
     });
@@ -198,8 +226,15 @@ void main() {
       final r = CompareResponse.fromJson({
         'data_status': 'live',
         'items': [
-          {'token': {'chain': 'solana', 'address': 'A', 'symbol': 'A'}, 'risk': 'pass', 'change_pct': '1'},
-          {'token': {'chain': 'solana', 'address': 'B', 'symbol': 'B'}, 'risk': {'overall': 'warn'}},
+          {
+            'token': {'chain': 'solana', 'address': 'A', 'symbol': 'A'},
+            'risk': 'pass',
+            'change_pct': '1'
+          },
+          {
+            'token': {'chain': 'solana', 'address': 'B', 'symbol': 'B'},
+            'risk': {'overall': 'warn'}
+          },
         ],
         'verdict_note': 'n',
       });
@@ -224,7 +259,10 @@ void main() {
 
   group('Account, watchlist, alerts, shadow, briefing', () {
     test('Me and auth', () {
-      final me = Me.fromJson(const {'id': '1', 'wallets': {'watch_only': 2, 'connected': 0}});
+      final me = Me.fromJson(const {
+        'id': '1',
+        'wallets': {'watch_only': 2, 'connected': 0}
+      });
       expect(me.watchOnlyWallets, 2);
       expect(me.connectedWallets, 0);
       final a = AuthResult.fromJson(const {
@@ -234,6 +272,16 @@ void main() {
       });
       expect(a.accessToken, 'tok');
       expect(a.user.email, 'e');
+      final session = AccountSession.fromJson(const {
+        'id': 's1',
+        'device_label': 'Mac',
+        'current': true,
+        'created_at': '2026-10-28T12:00:00Z',
+        'expires_at': '2026-11-27T12:00:00Z',
+      });
+      expect(session.deviceLabel, 'Mac');
+      expect(session.current, isTrue);
+      expect(session.createdAt, isNotNull);
     });
     test('watchlist status falls back to unknown', () {
       final w = WatchlistItem.fromJson(const {
@@ -242,12 +290,19 @@ void main() {
         'status': 'brand_new',
       });
       expect(w.status, WatchStatus.unknown);
-      expect(WatchStatus.parse('partial_monitoring'), WatchStatus.partialMonitoring);
+      expect(WatchStatus.parse('partial_monitoring'),
+          WatchStatus.partialMonitoring);
     });
     test('alerts page', () {
       final p = AlertsPage.fromJson(const {
         'items': [
-          {'id': 'a', 'type': 'wallet_buy', 'title': 't', 'body': 'b', 'evidence_tx': ['x']},
+          {
+            'id': 'a',
+            'type': 'wallet_buy',
+            'title': 't',
+            'body': 'b',
+            'evidence_tx': ['x']
+          },
           {'id': 'b', 'type': 'new_type'},
         ],
         'next_cursor': 'c2',

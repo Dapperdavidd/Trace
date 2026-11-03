@@ -6,6 +6,7 @@ import 'api/models.dart';
 import 'core/theme.dart';
 import 'core/tokens.dart';
 import 'screens/alerts_screen.dart';
+import 'screens/account_sessions_screen.dart';
 import 'screens/briefing_screen.dart';
 import 'screens/coming_later_screens.dart';
 import 'screens/home_screen.dart';
@@ -120,6 +121,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
       GoRoute(path: '/trade', builder: (_, __) => const TradeScreen()),
       GoRoute(path: '/alerts', builder: (_, __) => const AlertsScreen()),
+      GoRoute(
+          path: '/account-sessions',
+          builder: (_, __) => const AccountSessionsScreen()),
     ],
   );
 });

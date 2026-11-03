@@ -89,6 +89,11 @@ class MoreScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
                     if (session.phase == SessionPhase.signedIn) ...[
                       OutlinedButton(
+                        onPressed: () => context.push('/account-sessions'),
+                        child: const Text('Manage signed-in devices'),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
                         onPressed: () =>
                             ref.read(sessionProvider.notifier).signOut(),
                         child: const Text('Sign out'),

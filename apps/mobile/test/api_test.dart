@@ -13,13 +13,14 @@ import 'package:trace_mobile/api/models.dart';
 import 'package:trace_mobile/state/fallback_api.dart';
 
 http.Response _json(Object body, [int status = 200]) =>
-    http.Response(jsonEncode(body), status, headers: {'content-type': 'application/json'});
+    http.Response(jsonEncode(body), status,
+        headers: {'content-type': 'application/json'});
 
 void main() {
   group('error envelope parsing', () {
     test('parses contract envelope', () {
-      final e = ApiException.fromHttp(
-          404, '{"code":"not_found","message":"No such wallet","details":{"x":1},"request_id":"r1"}');
+      final e = ApiException.fromHttp(404,
+          '{"code":"not_found","message":"No such wallet","details":{"x":1},"request_id":"r1"}');
       expect(e.code, 'not_found');
       expect(e.message, 'No such wallet');
       expect(e.requestId, 'r1');
@@ -48,25 +49,38 @@ void main() {
   group('demo fallback decision', () {
     test('forced demo always uses demo', () {
       expect(shouldUseDemo(forceDemo: true), isTrue);
-      expect(shouldUseDemo(forceDemo: true, error: ApiException.fromHttp(401, '')), isTrue);
+      expect(
+          shouldUseDemo(forceDemo: true, error: ApiException.fromHttp(401, '')),
+          isTrue);
     });
     test('network, timeout and gateway errors fall back', () {
-      expect(shouldUseDemo(forceDemo: false, error: ApiException.network()), isTrue);
-      expect(shouldUseDemo(forceDemo: false, error: ApiException.timeout()), isTrue);
-      expect(shouldUseDemo(forceDemo: false, error: ApiException.fromHttp(503, '')), isTrue);
+      expect(shouldUseDemo(forceDemo: false, error: ApiException.network()),
+          isTrue);
+      expect(shouldUseDemo(forceDemo: false, error: ApiException.timeout()),
+          isTrue);
+      expect(
+          shouldUseDemo(
+              forceDemo: false, error: ApiException.fromHttp(503, '')),
+          isTrue);
     });
     test('real application errors are not hidden by demo data', () {
       for (final s in [400, 401, 403, 404, 409, 422, 429, 500]) {
-        expect(shouldUseDemo(forceDemo: false, error: ApiException.fromHttp(s, '')), isFalse, reason: '$s');
+        expect(
+            shouldUseDemo(
+                forceDemo: false, error: ApiException.fromHttp(s, '')),
+            isFalse,
+            reason: '$s');
       }
-      expect(shouldUseDemo(forceDemo: false, error: ApiException.parse()), isFalse);
+      expect(shouldUseDemo(forceDemo: false, error: ApiException.parse()),
+          isFalse);
       expect(shouldUseDemo(forceDemo: false), isFalse);
       expect(shouldUseDemo(forceDemo: false, error: StateError('x')), isFalse);
     });
   });
 
   group('ApiClient', () {
-    test('builds /v1 URLs, drops empty query values, sends bearer token', () async {
+    test('builds /v1 URLs, drops empty query values, sends bearer token',
+        () async {
       late http.Request seen;
       final c = ApiClient(
         baseUrl: 'http://host:8080/',
@@ -99,25 +113,37 @@ void main() {
         baseUrl: 'http://h',
         client: MockClient((req) async {
           seen = req.url;
-          return _json({'data_status': 'live', 'items': [], 'verdict_note': ''});
+          return _json(
+              {'data_status': 'live', 'items': [], 'verdict_note': ''});
         }),
       );
-      await c.compare(const TokenRef(chain: Chain.solana, address: 'A'), const TokenRef(chain: Chain.base, address: '0xB'));
+      await c.compare(const TokenRef(chain: Chain.solana, address: 'A'),
+          const TokenRef(chain: Chain.base, address: '0xB'));
       expect(seen.queryParameters, {'a': 'solana:A', 'b': 'base:0xB'});
     });
     test('maps HTTP error envelope', () async {
       final c = ApiClient(
         baseUrl: 'http://h',
-        client: MockClient((req) async => _json({'code': 'rate_limited', 'message': 'Slow down', 'request_id': 'q'}, 429)),
+        client: MockClient((req) async => _json(
+            {'code': 'rate_limited', 'message': 'Slow down', 'request_id': 'q'},
+            429)),
       );
       await expectLater(
         c.token(Chain.solana, 'A'),
-        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'rate_limited').having((e) => e.requestId, 'request id', 'q')),
+        throwsA(isA<ApiException>()
+            .having((e) => e.code, 'code', 'rate_limited')
+            .having((e) => e.requestId, 'request id', 'q')),
       );
     });
     test('maps socket failure to a network error', () async {
-      final c = ApiClient(baseUrl: 'http://h', client: MockClient((req) async => throw const SocketException('no route')));
-      await expectLater(c.briefings(), throwsA(isA<ApiException>().having((e) => e.kind, 'kind', ApiFailureKind.network)));
+      final c = ApiClient(
+          baseUrl: 'http://h',
+          client: MockClient(
+              (req) async => throw const SocketException('no route')));
+      await expectLater(
+          c.briefings(),
+          throwsA(isA<ApiException>()
+              .having((e) => e.kind, 'kind', ApiFailureKind.network)));
     });
     test('maps slow server to a timeout', () async {
       final c = ApiClient(
@@ -128,11 +154,19 @@ void main() {
           return _json({});
         }),
       );
-      await expectLater(c.briefings(), throwsA(isA<ApiException>().having((e) => e.kind, 'kind', ApiFailureKind.timeout)));
+      await expectLater(
+          c.briefings(),
+          throwsA(isA<ApiException>()
+              .having((e) => e.kind, 'kind', ApiFailureKind.timeout)));
     });
     test('invalid JSON on 200 is a parse error', () async {
-      final c = ApiClient(baseUrl: 'http://h', client: MockClient((req) async => http.Response('not json', 200)));
-      await expectLater(c.briefings(), throwsA(isA<ApiException>().having((e) => e.kind, 'kind', ApiFailureKind.parse)));
+      final c = ApiClient(
+          baseUrl: 'http://h',
+          client: MockClient((req) async => http.Response('not json', 200)));
+      await expectLater(
+          c.briefings(),
+          throwsA(isA<ApiException>()
+              .having((e) => e.kind, 'kind', ApiFailureKind.parse)));
     });
     test('createShadow posts the contract body and returns the id', () async {
       late http.Request seen;
@@ -158,7 +192,8 @@ void main() {
       expect(jsonDecode(seen.body), containsPair('budget_usd', '100'));
     });
     test('createShadow without an id is a parse error', () async {
-      final c = ApiClient(baseUrl: 'http://h', client: MockClient((req) async => _json({})));
+      final c = ApiClient(
+          baseUrl: 'http://h', client: MockClient((req) async => _json({})));
       await expectLater(
         c.createShadow(const ShadowRequest(
           chain: Chain.solana,
@@ -184,11 +219,53 @@ void main() {
       await c.addWatch(Chain.solana, 'A', alias: '');
       expect(jsonDecode(seen.body), {'chain': 'solana', 'address': 'A'});
     });
+    test('lists and revokes account sessions', () async {
+      final seen = <http.Request>[];
+      final c = ApiClient(
+        baseUrl: 'http://h',
+        client: MockClient((req) async {
+          seen.add(req);
+          if (req.method == 'GET') {
+            return _json({
+              'items': [
+                {
+                  'id': 'session 1',
+                  'device_label': 'iPhone',
+                  'current': false,
+                  'created_at': '2026-10-28T12:00:00Z',
+                  'expires_at': '2026-11-27T12:00:00Z',
+                }
+              ]
+            });
+          }
+          return http.Response('', 204);
+        }),
+      );
+      final sessions = await c.sessions();
+      expect(sessions.single.deviceLabel, 'iPhone');
+      await c.revokeSession('session 1');
+      expect(seen[0].url.path, '/v1/auth/sessions');
+      expect(seen[1].method, 'DELETE');
+      expect(seen[1].url.path, '/v1/auth/sessions/session%201');
+    });
+    test('logout all uses the account endpoint', () async {
+      late http.Request seen;
+      final c = ApiClient(
+        baseUrl: 'http://h',
+        client: MockClient((req) async {
+          seen = req;
+          return http.Response('', 204);
+        }),
+      );
+      await c.logoutAll();
+      expect(seen.method, 'POST');
+      expect(seen.url.path, '/v1/auth/logout-all');
+    });
   });
 
   group('FallbackApi', () {
-    ApiClient failing(Object error) =>
-        ApiClient(baseUrl: 'http://h', client: MockClient((req) async => throw error));
+    ApiClient failing(Object error) => ApiClient(
+        baseUrl: 'http://h', client: MockClient((req) async => throw error));
 
     test('serves flagged demo data when the server is unreachable', () async {
       final active = ValueNotifier<bool>(false);
@@ -206,7 +283,10 @@ void main() {
     test('does not hide real server errors behind demo data', () async {
       final active = ValueNotifier<bool>(false);
       final api = FallbackApi(
-        remote: ApiClient(baseUrl: 'http://h', client: MockClient((req) async => _json({'code': 'forbidden', 'message': 'no'}, 403))),
+        remote: ApiClient(
+            baseUrl: 'http://h',
+            client: MockClient((req) async =>
+                _json({'code': 'forbidden', 'message': 'no'}, 403))),
         demo: DemoApi(),
         forceDemo: false,
         demoActive: active,
@@ -218,10 +298,12 @@ void main() {
       var calls = 0;
       final active = ValueNotifier<bool>(false);
       final api = FallbackApi(
-        remote: ApiClient(baseUrl: 'http://h', client: MockClient((req) async {
-          calls++;
-          return _json({});
-        })),
+        remote: ApiClient(
+            baseUrl: 'http://h',
+            client: MockClient((req) async {
+              calls++;
+              return _json({});
+            })),
         demo: DemoApi(),
         forceDemo: true,
         demoActive: active,
@@ -234,7 +316,10 @@ void main() {
     test('real success clears the demo flag', () async {
       final active = ValueNotifier<bool>(false);
       final api = FallbackApi(
-        remote: ApiClient(baseUrl: 'http://h', client: MockClient((req) async => _json({'data_status': 'live', 'sections': []}))),
+        remote: ApiClient(
+            baseUrl: 'http://h',
+            client: MockClient(
+                (req) async => _json({'data_status': 'live', 'sections': []}))),
         demo: DemoApi(),
         forceDemo: false,
         demoActive: active,
