@@ -48,6 +48,9 @@ async fn main() -> anyhow::Result<()> {
                 if let Err(e) = trace_worker::market_job::schedule(&pool, ctx.prices.is_some(), now).await {
                     tracing::warn!(error = %e, "could not schedule market snapshots");
                 }
+                if let Err(e) = trace_worker::metadata_job::schedule(&pool, ctx.metadata.is_some(), now).await {
+                    tracing::warn!(error = %e, "could not schedule token metadata");
+                }
                 match trace_worker::drain_with(&pool, now, &ctx).await {
                     Ok(n) if n > 0 => tracing::info!(ran = n, "jobs run"),
                     Ok(_) => {}

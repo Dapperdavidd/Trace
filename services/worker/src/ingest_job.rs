@@ -46,6 +46,8 @@ pub struct Ctx {
     pub prices: Option<crate::price_job::PriceCtx>,
     /// `None` disables Solana ingest jobs (they are not even leased).
     pub solana_source: Option<crate::solana_job::SolanaSourceFactory>,
+    /// EVM token metadata reader. None means the job is not leased.
+    pub metadata: Option<crate::metadata_job::SharedMetadataSource>,
 }
 
 impl Ctx {
@@ -56,6 +58,7 @@ impl Ctx {
             source: None,
             prices: None,
             solana_source: None,
+            metadata: None,
         }
     }
 
@@ -78,6 +81,13 @@ impl Ctx {
             rpc_urls.insert("solana".into(), u);
         }
         let solana_url = rpc_urls.get("solana").cloned();
+        let metadata_urls: HashMap<ChainId, String> = rpc_urls
+            .iter()
+            .filter_map(|(chain, url)| {
+                let chain: ChainId = chain.parse().ok()?;
+                chain.evm_chain_id().map(|_| (chain, url.clone()))
+            })
+            .collect();
         let urls = rpc_urls.clone();
         let source: SourceFactory = Box::new(move |d| {
             let url = urls.get(d.chain.as_str()).cloned().ok_or_else(|| {
@@ -98,6 +108,15 @@ impl Ctx {
                 })?;
                 Ok(Box::new(crate::solana_rpc::SolanaRpcSource::new(url)?))
             })),
+            metadata: if metadata_urls.is_empty() {
+                None
+            } else {
+                crate::metadata_job::EvmMetadataRpc::new(metadata_urls)
+                    .ok()
+                    .map(|source| {
+                        std::sync::Arc::new(source) as crate::metadata_job::SharedMetadataSource
+                    })
+            },
         }
     }
 

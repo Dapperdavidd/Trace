@@ -64,6 +64,7 @@ fn ctx(status: SupportStatus, with_url: bool, fail: bool) -> (Ctx, Arc<AtomicUsi
             source: Some(source),
             prices: None,
             solana_source: None,
+            metadata: None,
         },
         calls,
     )

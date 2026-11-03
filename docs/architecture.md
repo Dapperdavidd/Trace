@@ -33,6 +33,7 @@ The API and worker share one PostgreSQL database and run the same forward-only m
 | EVM ingestion | Enabled deployment and RPC | Raw events and normalized swaps | Registry status and reviewed fixtures |
 | Solana ingestion | Enabled program and RPC | Raw events and normalized swaps | Registry status and reviewed fixtures |
 | Price polling | Recent real tokens and provider | `price_points` | Freshness, confidence, decimals, and positive exact values |
+| EVM token metadata | Incomplete tokens and configured RPCs | Decimals, symbols, and names | Direct contract reads, validation, and retry state |
 | Market snapshots | Final swaps and accepted prices | Price and volume windows | Missing prices skip the snapshot; missing liquidity stays null |
 | Watchlist alerts | Final direct swaps | In-app buy and sell alerts | Stable-pair direction, preferences, pause, and deduplication |
 | Signal outcomes | Published sealed receipts | Fixed-horizon outcomes | First valid price after each horizon; missing liquidity is untradeable |
@@ -69,7 +70,7 @@ The API and worker container targets share one build stage and run as a non-root
 
 - Real signal publishing is not implemented.
 - Live liquidity and token-risk providers are not selected.
-- EVM and Solana token metadata still need real chain readers.
+- Solana mint decimals and metadata still need a real chain reader.
 - Historical swap and price backfill are not implemented.
 - Push and email alert delivery are not implemented.
 - Production hosting, Google OAuth credentials, app-store accounts, and release operations require owner decisions or credentials.

@@ -2,6 +2,7 @@ pub mod alert_job;
 pub mod ingest;
 pub mod ingest_job;
 pub mod market_job;
+pub mod metadata_job;
 pub mod outcomes;
 pub mod price_job;
 pub mod rpc_source;
@@ -73,6 +74,14 @@ pub async fn run_job_with(
         market_job::BUILD_MARKET_SNAPSHOTS => market_job::build(pool, now)
             .await
             .map(|r| tracing::info!(?r, "market snapshots built")),
+        metadata_job::FETCH_TOKEN_METADATA => match &ctx.metadata {
+            Some(source) => metadata_job::fetch_missing(pool, source.as_ref(), now)
+                .await
+                .map(|r| tracing::info!(?r, "token metadata fetched")),
+            None => Err(Failure::Permanent(
+                "token metadata RPC is not configured".into(),
+            )),
+        },
         ingest_job::INGEST_EVM => ingest_job::run_ingest(pool, ctx, job)
             .await
             .map(|r| tracing::info!(?r, "ingest step")),
@@ -105,6 +114,9 @@ pub async fn drain_with(
     if ctx.prices.is_some() {
         kinds.push(price_job::POLL_PRICES);
         kinds.push(market_job::BUILD_MARKET_SNAPSHOTS);
+    }
+    if ctx.metadata.is_some() {
+        kinds.push(metadata_job::FETCH_TOKEN_METADATA);
     }
     let mut n = 0;
     while let Some(job) = trace_jobs::lease(pool, now, Duration::minutes(5), &kinds).await? {

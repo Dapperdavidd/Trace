@@ -76,7 +76,7 @@ Web checks are `npm run typecheck`, `npm run lint`, `npm test`, and `npm run bui
 
 - `crates/` contains domain, database, adapters, accounting, intelligence, risk, pricing, signals, discovery, Shadow, and job-queue libraries.
 - `services/api` exposes the HTTP API.
-- `services/worker` runs ingestion, pricing, market snapshots, alerts, and signal outcome jobs.
+- `services/worker` runs ingestion, token metadata, pricing, market snapshots, alerts, and signal outcome jobs.
 - `migrations/` contains forward-only SQLx migrations.
 - `apps/web` and `apps/mobile` are the user clients.
 - `docs/` contains the API contract, architecture, ADRs, deployment notes, fixture policy, and coverage register.
