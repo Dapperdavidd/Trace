@@ -8,10 +8,21 @@ pub mod request_id;
 pub mod routes;
 pub mod state;
 
-use actix_web::{web, App, HttpServer};
+use actix_web::{middleware::DefaultHeaders, web, App, HttpServer};
 use std::net::TcpListener;
 
 pub use state::AppState;
+
+pub fn security_headers() -> DefaultHeaders {
+    DefaultHeaders::new()
+        .add(("x-content-type-options", "nosniff"))
+        .add(("x-frame-options", "DENY"))
+        .add(("referrer-policy", "no-referrer"))
+        .add((
+            "permissions-policy",
+            "camera=(), microphone=(), geolocation=(), payment=()",
+        ))
+}
 
 /// Build the route table. Shared by `main` and integration tests.
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -55,6 +66,7 @@ pub fn run(
             .app_data(data.clone())
             .app_data(error::json_config())
             .wrap(cors)
+            .wrap(security_headers())
             .wrap(rate_limit.clone())
             .wrap(request_id::RequestId)
             .configure(configure)

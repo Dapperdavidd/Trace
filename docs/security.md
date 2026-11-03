@@ -20,3 +20,9 @@ The first command must report that nothing depends on `sqlx-mysql`; the second m
 ## Sessions
 
 TRACE issues opaque 30-day session tokens and stores only SHA-256 hashes. Users can list active sessions, revoke one session, sign out the current session, or revoke every session on the account. Session lists expose only a coarse device label such as `Mac` or `iPhone`; the API does not store full user-agent strings or client IP addresses.
+
+## HTTP boundary
+
+The API restricts CORS to configured origins, limits JSON request bodies to 64 KiB, assigns request IDs, applies per-peer and per-session rate limits, and returns browser hardening headers for content sniffing, framing, referrers, and unused device capabilities.
+
+TLS terminates at production ingress. HSTS must be configured there because the API process receives proxied HTTP and cannot safely infer that the original client connection used HTTPS. The ingress must also apply a shared client-IP rate limit across replicas.
