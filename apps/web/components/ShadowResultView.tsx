@@ -29,7 +29,7 @@ export function ShadowResultView({ r, compact }: { r: ShadowResults; compact?: b
       </div>
       <div className="kv"><span>Total trades</span><b className="num">{r.trades}</b></div>
       <div className="kv"><span>Win rate</span><b className="num">{formatPlainPct(r.win_rate_pct, 0)}</b></div>
-      <div className="kv"><span>Skipped (could not be copied at a follower price)</span><b className="num">{r.skipped_unexecutable}</b></div>
+      <div className="kv"><span>Skipped (could not be mirrored at the delayed price)</span><b className="num">{r.skipped_unexecutable}</b></div>
       <div className="kv"><span>Fees and slippage</span><b className="num down">-{formatUsd(r.fees_and_slippage_usd).replace("-", "")}</b></div>
       {compact ? null : (
         <div className="cols-2" style={{ marginTop: 16 }}>
