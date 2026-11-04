@@ -308,8 +308,11 @@ async fn the_queue_runs_the_job_and_does_not_double_schedule(pool: PgPool) {
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(queued, 2, "one outcome job and one alert job");
-    assert_eq!(trace_worker::drain(&pool, now).await.unwrap(), 2);
+    assert_eq!(
+        queued, 3,
+        "one outcome job, one alert job, and one signal job"
+    );
+    assert_eq!(trace_worker::drain(&pool, now).await.unwrap(), 3);
     assert!(outcome(&pool, id, 3_600).await.is_some());
     let status: String =
         sqlx::query_scalar("SELECT status FROM worker_jobs WHERE kind='evaluate_signal_outcomes'")

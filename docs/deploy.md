@@ -6,7 +6,7 @@
                           /v1/ops/metrics (token) ◄── Prometheus ◄─┘ (reads the same database)
 ```
 
-Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worker` (queue: outcomes, ingestion, prices). Migrations run when either starts. They are forward-only.
+Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worker` (queue: ingestion, prices, snapshots, alerts, signals, and outcomes). Migrations run when either starts. They are forward-only.
 
 ## Environment
 

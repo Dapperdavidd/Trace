@@ -6,6 +6,7 @@ pub mod metadata_job;
 pub mod outcomes;
 pub mod price_job;
 pub mod rpc_source;
+pub mod signal_job;
 pub mod solana_ingest;
 pub mod solana_job;
 pub mod solana_rpc;
@@ -15,7 +16,11 @@ use sqlx::PgPool;
 use trace_jobs::{Failure, Job};
 
 pub const EVALUATE_OUTCOMES: &str = "evaluate_signal_outcomes";
-pub const KINDS: &[&str] = &[EVALUATE_OUTCOMES, alert_job::GENERATE_ALERTS];
+pub const KINDS: &[&str] = &[
+    EVALUATE_OUTCOMES,
+    alert_job::GENERATE_ALERTS,
+    signal_job::PUBLISH_SIGNALS,
+];
 
 /// Queue the periodic jobs. Keys are bucketed so repeated calls in the same
 /// window enqueue one job.
@@ -43,6 +48,7 @@ pub async fn schedule_periodic(
         3,
     )
     .await?;
+    signal_job::schedule(pool, now).await?;
     Ok(())
 }
 
@@ -60,6 +66,9 @@ pub async fn run_job_with(
         alert_job::GENERATE_ALERTS => alert_job::generate(pool, now)
             .await
             .map(|r| tracing::info!(?r, "wallet alerts generated")),
+        signal_job::PUBLISH_SIGNALS => signal_job::publish(pool, now)
+            .await
+            .map(|r| tracing::info!(?r, "research signals published")),
         solana_job::INGEST_SOLANA => solana_job::run_solana(pool, ctx, job)
             .await
             .map(|r| tracing::info!(?r, "solana ingest step")),

@@ -14,7 +14,7 @@ It has a Rust backend, PostgreSQL, a Next.js web app, and a Flutter mobile app. 
 | Real token prices | DefiLlama adapter available, off until configured |
 | Market snapshots | Real prices and finalized-swap volume; liquidity unavailable pending a reviewed source |
 | Watchlist alerts | Real finalized direct swaps, in-app only |
-| Signals | Outcome evaluation exists; real signal publishing is not built |
+| Signals | Real finalized buys can publish sealed research signals when liquidity and risk inputs are complete; outcomes use fixed horizons |
 | Shadow | Paper-only and gated by price and liquidity evidence |
 | Google sign-in | Implemented; production credentials and an end-to-end live check are still required |
 
@@ -32,7 +32,9 @@ export DATABASE_URL=postgres://trace:trace@localhost:5432/trace
 Start the API with clearly labelled demo data and development sign-in:
 
 ```bash
-TRACE_SEED_DEMO=true TRACE_DEV_AUTH=true cargo run -p trace-api
+TRACE_SEED_DEMO=true TRACE_DEV_AUTH=true \
+TRACE_CORS_ORIGINS=http://127.0.0.1:3000,http://localhost:3000 \
+cargo run -p trace-api
 ```
 
 Start the worker separately. Ingestion and pricing stay off unless their configuration is present:

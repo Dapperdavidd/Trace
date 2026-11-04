@@ -36,6 +36,7 @@ The API and worker share one PostgreSQL database and run the same forward-only m
 | EVM token metadata | Incomplete tokens and configured RPCs | Decimals, symbols, and names | Direct contract reads, validation, and retry state |
 | Market snapshots | Final swaps and accepted prices | Price and volume windows | Missing prices skip the snapshot; missing liquidity stays null |
 | Watchlist alerts | Final direct swaps | In-app buy and sell alerts | Stable-pair direction, preferences, pause, and deduplication |
+| Research signals | Three or more distinct finalized direct buyers | Sealed receipt and append-only lifecycle | Fresh snapshot, reviewed risk inputs, one-hour cooldown, unknown risk is watch-only |
 | Signal outcomes | Published sealed receipts | Fixed-horizon outcomes | First valid price after each horizon; missing liquidity is untradeable |
 
 Jobs use leases, bounded retries, deduplication keys, and dead-job states. Ingestion also uses PostgreSQL advisory locks so only one worker handles a protocol at a time.
@@ -68,7 +69,6 @@ The API and worker container targets share one build stage and run as a non-root
 
 ## Known gaps
 
-- Real signal publishing is not implemented.
 - Live liquidity and token-risk providers are not selected.
 - Solana ingestion stores consistent mint decimals from finalized transaction balances and audits conflicts. Names and symbols still need a real chain reader.
 - Historical swap and price backfill are not implemented.
