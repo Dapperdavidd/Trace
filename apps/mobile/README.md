@@ -10,11 +10,11 @@ Design source: the 14-screen mobile mockup. API source of truth:
 
 ## First run
 
-The `android/` and `ios/` folders are not committed. Generate them once:
+The Android and iOS projects are committed with the application id
+`com.dapper.trace`. Install packages, then run the app:
 
 ```sh
 cd apps/mobile
-flutter create . --platforms=ios,android
 flutter pub get
 ```
 
@@ -39,16 +39,23 @@ flutter run \
   --dart-define=TRACE_GOOGLE_SERVER_CLIENT_ID=<web-client-id-used-by-the-backend>
 ```
 
-Platform setup for `google_sign_in` (URL scheme on iOS, SHA-1 on Android) is
-standard and must be done after `flutter create`. The session token is stored with
-`flutter_secure_storage`. On iOS use `http://localhost:8080` or HTTPS; on Android
-cleartext HTTP to a non-localhost host needs a network security config.
+Google Sign-In still needs the production credentials: add the reversed iOS client
+id URL scheme and register the Android signing certificate fingerprints in Google
+Cloud. The session token is stored with `flutter_secure_storage`. On iOS use
+`http://localhost:8080` or HTTPS; production must use HTTPS.
 
 Tests (pure Dart logic plus API client with a mock HTTP client):
 
 ```sh
 flutter test
 flutter analyze
+```
+
+Build checks:
+
+```sh
+flutter build apk --debug --dart-define=TRACE_DEMO=true
+flutter build ios --simulator --dart-define=TRACE_DEMO=true
 ```
 
 ## Build-time flags
@@ -141,19 +148,7 @@ test/          unit tests
 
 ## Verification status
 
-Written without a Flutter or Dart toolchain. In the authoring environment
-`which flutter dart` found nothing and outbound access to the Dart SDK download
-host and pub.dev was blocked (HTTP 403 from the proxy), so no SDK could be
-installed.
-
-NOT run: `flutter pub get`, `flutter analyze`, `flutter test`, `flutter run`, any
-build, any device or emulator, any Google Sign-In flow, and no live call to the
-Rust backend. **No test in this repository has been executed.** The tests were
-written carefully and their expected values were checked by hand, but they may
-contain mistakes.
-
-Done by hand only: a scripted check that all `.dart` files are ASCII only and
-have balanced brackets, a scan for em dash characters, and manual review of
-imports, null safety and const usage. Expect to fix a few compile or lint issues
-on the first `flutter analyze`. Dependency versions in `pubspec.yaml` were
-chosen from memory and are unresolved.
+Verified on macOS with Flutter 3.47.0: package resolution, static analysis, unit
+and widget tests, and an iOS simulator build. CI repeats analysis and tests on
+Linux and builds the iOS simulator app on macOS. A physical-device Google
+Sign-In run remains blocked on the production OAuth client and signing setup.
