@@ -20,4 +20,4 @@ When an EVM RPC is configured, the worker reads `decimals()`, `symbol()`, and `n
 
 ## Consequences
 
-Ethereum token amounts can use on-chain decimals and user surfaces can show contract-provided names without trusting the price provider for identity. Base and BNB use the same reader when their RPC URLs and ingested tokens exist. Solana ingestion now preserves consistent decimals from finalized transaction balances; Solana names and symbols remain a separate implementation task.
+Ethereum token amounts can use on-chain decimals and user surfaces can show contract-provided names without trusting the price provider for identity. Base and BNB use the same reader when their RPC URLs and ingested tokens exist. Solana metadata is covered separately by ADR 0010.

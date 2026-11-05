@@ -81,6 +81,7 @@ impl Ctx {
             rpc_urls.insert("solana".into(), u);
         }
         let solana_url = rpc_urls.get("solana").cloned();
+        let metadata_solana_url = solana_url.clone();
         let metadata_urls: HashMap<ChainId, String> = rpc_urls
             .iter()
             .filter_map(|(chain, url)| {
@@ -108,10 +109,10 @@ impl Ctx {
                 })?;
                 Ok(Box::new(crate::solana_rpc::SolanaRpcSource::new(url)?))
             })),
-            metadata: if metadata_urls.is_empty() {
+            metadata: if metadata_urls.is_empty() && metadata_solana_url.is_none() {
                 None
             } else {
-                crate::metadata_job::EvmMetadataRpc::new(metadata_urls)
+                crate::metadata_job::RpcMetadataSource::new(metadata_urls, metadata_solana_url)
                     .ok()
                     .map(|source| {
                         std::sync::Arc::new(source) as crate::metadata_job::SharedMetadataSource

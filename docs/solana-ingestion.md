@@ -14,16 +14,18 @@ getSignaturesForAddress(program, until=cursor)   newest first, finalized
 
 * Only protocols the registry marks Enabled or Partial run. `raydium_amm_v4` is Disabled until three reviewed real fixtures exist (`docs/fixtures.md`).
 * Everything is read at `finalized`, so swaps are `final`. There is no reorg path.
-* The first run starts at the newest signature. There is no backfill.
+* The first live run starts at the newest signature. Explicit historical ranges use `trace-solana-backfill` and never move the live cursor.
 * More than `max_backlog` (1000) new signatures in one step is a gap. The oldest are not read, and an `ingest_gap` audit event names the signatures on each side. Raise the limit, shorten the poll interval, or run a dedicated indexer before relying on complete coverage of a busy program.
 * `max_per_step` (100) bounds work per job; the rest is picked up next step in order.
 * One worker per protocol (Postgres advisory lock).
+* Token decimals come from finalized transaction balances and are cross-checked against the SPL mint account. Name and symbol come from the mint's Metaplex metadata PDA when it exists.
 
 ## Limits to know
 
 * The parser attributes a swap to the transaction fee payer. Swaps routed through a relayer or aggregator whose fee payer is not the trader are attributed to the payer or skipped as not a simple swap.
 * The Raydium program id is in `services/worker/src/solana_job.rs` and must be checked on an explorer when enabling.
 * A public RPC will rate limit a busy program. Use a provider key in `TRACE_RPC_SOLANA`.
+* Token-2022 metadata stored only in mint extensions is not decoded yet. If no valid Metaplex account exists, name and symbol remain unavailable.
 
 ## Turning it on
 

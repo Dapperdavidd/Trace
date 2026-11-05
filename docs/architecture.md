@@ -36,7 +36,7 @@ The API and worker share one PostgreSQL database and run the same forward-only m
 | Solana historical backfill | Explicit finalized signature boundaries | Raw events and normalized swaps | Registry status, separate progress, and configured signature limit |
 | Price polling | Recent real tokens and provider | `price_points` | Freshness, confidence, decimals, and positive exact values |
 | Historical price backfill | Explicit asset, time range, and interval | `price_points` | Verified decimals, provider timestamps, confidence, and 30 minute tolerance |
-| EVM token metadata | Incomplete tokens and configured RPCs | Decimals, symbols, and names | Direct contract reads, validation, and retry state |
+| Chain token metadata | Incomplete tokens and configured RPCs | Decimals, symbols, and names | Direct EVM contract, SPL mint, and Metaplex account reads with validation |
 | Market snapshots | Final swaps and accepted prices | Price and volume windows | Missing prices skip the snapshot; missing liquidity stays null |
 | Watchlist alerts | Final direct swaps | In-app buy and sell alerts | Stable-pair direction, preferences, pause, and deduplication |
 | Research signals | Three or more distinct finalized direct buyers | Sealed receipt and append-only lifecycle | Fresh snapshot, reviewed risk inputs, one-hour cooldown, unknown risk is watch-only |
@@ -73,7 +73,7 @@ The API and worker container targets share one build stage and run as a non-root
 ## Known gaps
 
 - Live liquidity and token-risk providers are not selected.
-- Solana ingestion stores consistent mint decimals from finalized transaction balances and audits conflicts. Names and symbols still need a real chain reader.
+- Solana Token-2022 extension-only names and symbols are not decoded when no Metaplex account exists.
 - EVM block, Solana signature, and historical price backfill are available.
 - Push and email alert delivery are not implemented.
 - Production hosting, Google OAuth credentials, app-store accounts, and release operations require owner decisions or credentials.

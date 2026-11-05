@@ -7,6 +7,7 @@ use trace_jobs::Failure;
 use trace_worker::metadata_job::{fetch_missing, MetadataSource, TokenMetadata};
 
 const TOKEN: &str = "0x00000000000000000000000000000000000000f1";
+const SOL_MINT: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
 fn now() -> DateTime<Utc> {
     Utc.timestamp_opt(1_793_000_000, 0).unwrap()
@@ -88,4 +89,53 @@ async fn non_token_contract_is_marked_unavailable(pool: PgPool) {
     .await
     .unwrap();
     assert_eq!(state, "unavailable");
+}
+
+#[sqlx::test(migrator = "trace_database::MIGRATOR")]
+async fn solana_metadata_is_fetched_and_decimal_conflicts_are_audited(pool: PgPool) {
+    sqlx::query(
+        "INSERT INTO tokens (chain,contract_or_mint,decimals)
+         VALUES ('solana',$1,9)
+         ON CONFLICT (chain,contract_or_mint) DO UPDATE SET
+           decimals=9,symbol=NULL,name=NULL,metadata_status='unknown',metadata_checked_at=NULL",
+    )
+    .bind(SOL_MINT)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let calls = Arc::new(Mutex::new(vec![]));
+    let source = Stub {
+        result: Some(TokenMetadata {
+            decimals: 6,
+            symbol: Some("USDC".into()),
+            name: Some("USD Coin".into()),
+        }),
+        calls: calls.clone(),
+    };
+    let report = fetch_missing(&pool, &source, now()).await.unwrap();
+    assert_eq!((report.completed, report.conflicts), (1, 1));
+    assert_eq!(
+        calls.lock().unwrap().as_slice(),
+        &[(ChainId::Solana, SOL_MINT.to_string())]
+    );
+    let row: (Option<i16>, Option<String>, Option<String>) = sqlx::query_as(
+        "SELECT decimals,symbol,name FROM tokens
+         WHERE chain='solana' AND contract_or_mint=$1",
+    )
+    .bind(SOL_MINT)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(row.0, Some(9), "stored decimals are never overwritten");
+    assert_eq!(row.1.as_deref(), Some("USDC"));
+    assert_eq!(row.2.as_deref(), Some("USD Coin"));
+    let audit: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM audit_events
+         WHERE action='token_decimals_conflict' AND subject=$1",
+    )
+    .bind(format!("solana:{SOL_MINT}"))
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(audit, 1);
 }
