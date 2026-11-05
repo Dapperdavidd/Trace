@@ -119,11 +119,11 @@ Actions:
 1. Record the exact missing range or signature boundary from `detail`.
 2. Keep the UI coverage partial or stale for the affected protocol.
 3. Do not move the cursor backwards on a running production worker.
-4. Build or run a bounded, idempotent backfill against the recorded range in staging first.
+4. Run the bounded, idempotent EVM backfill against the recorded range in staging first.
 5. Compare inserted swaps, duplicates, skipped reasons, and raw-event hashes before production replay.
 6. Clear the incident only after the range is covered or the limitation is documented in the coverage register and UI.
 
-Historical backfill is not yet implemented as a production job, so a gap currently requires engineering work. It must never be hidden by changing the audit row.
+For EVM, request and inspect a range with `trace-backfill` as documented in `deploy.md`. The job reads finalized blocks in 200 block chunks, resumes after failures, and does not move the live cursor. Solana and historical price gaps still require engineering work. Never hide a gap by changing the audit row.
 
 ## Reorg audit
 

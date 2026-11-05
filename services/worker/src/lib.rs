@@ -1,4 +1,5 @@
 pub mod alert_job;
+pub mod backfill_job;
 pub mod ingest;
 pub mod ingest_job;
 pub mod market_job;
@@ -94,6 +95,9 @@ pub async fn run_job_with(
         ingest_job::INGEST_EVM => ingest_job::run_ingest(pool, ctx, job)
             .await
             .map(|r| tracing::info!(?r, "ingest step")),
+        backfill_job::BACKFILL_EVM => backfill_job::run(pool, ctx, job)
+            .await
+            .map(|r| tracing::info!(?r, "backfill step")),
         EVALUATE_OUTCOMES => outcomes::evaluate_due(pool, now)
             .await
             .map(|r| tracing::info!(?r, "signal outcomes evaluated"))
@@ -116,6 +120,7 @@ pub async fn drain_with(
     let mut kinds: Vec<&str> = KINDS.to_vec();
     if ctx.source.is_some() {
         kinds.push(ingest_job::INGEST_EVM);
+        kinds.push(backfill_job::BACKFILL_EVM);
     }
     if ctx.solana_source.is_some() {
         kinds.push(solana_job::INGEST_SOLANA);

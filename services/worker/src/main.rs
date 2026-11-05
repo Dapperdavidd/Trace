@@ -39,6 +39,9 @@ async fn main() -> anyhow::Result<()> {
                 if let Err(e) = trace_worker::ingest_job::schedule_ingest(&pool, &ctx, now).await {
                     tracing::warn!(error = %e, "could not schedule ingestion");
                 }
+                if let Err(e) = trace_worker::backfill_job::schedule(&pool, &ctx, now).await {
+                    tracing::warn!(error = %e, "could not schedule backfill");
+                }
                 if let Err(e) = trace_worker::solana_job::schedule_solana(&pool, &ctx, now).await {
                     tracing::warn!(error = %e, "could not schedule solana ingestion");
                 }

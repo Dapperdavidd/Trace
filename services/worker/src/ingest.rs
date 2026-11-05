@@ -129,55 +129,9 @@ pub async fn step(
 
     if next <= head.latest {
         let to = head.latest.min(next + cfg.max_range.max(1) - 1);
-        report.from = Some(next);
-        report.to = Some(to);
-        let routers = cfg.routers.clone();
-        let parse_cfg = Config {
-            chain: cfg.chain,
-            routers: &routers,
-        };
-        for mut b in src.bundles(next, to).await? {
-            if b.tx.block_number < next || b.tx.block_number > to {
-                report.out_of_range += 1;
-                continue;
-            }
-            // Finality is judged from the head we read, not the source's claim.
-            b.tx.finalized = head.finalized.is_some_and(|f| b.tx.block_number <= f);
-            let payload = raw_payload(&b.tx);
-            let digest = hex::encode(Sha256::digest(
-                serde_json::to_vec(&payload).unwrap_or_default(),
-            ));
-            let outcome = parse_tx(&parse_cfg, &b.tx, &b.pairs);
-            report.skipped += outcome.skipped.len();
-            if !outcome.swaps.is_empty() {
-                ingestion::store_raw_event(
-                    pool,
-                    &RawEvent {
-                        chain,
-                        tx_id: &b.tx.tx_hash,
-                        event_index: 0,
-                        source: "evm_rpc",
-                        payload: &payload,
-                        payload_sha256: &digest,
-                        fixture: false,
-                        observed_at: b.tx.block_time,
-                    },
-                )
-                .await?;
-            }
-            for mut s in outcome.swaps {
-                match ingestion::revision_plan(pool, chain, &s.tx_id, s.event_index as i32).await? {
-                    RevisionPlan::Live => report.duplicates += 1,
-                    RevisionPlan::Next(rev) => {
-                        s.finality_revision = rev;
-                        match ingestion::insert_swap(pool, &s).await? {
-                            InsertOutcome::Inserted => report.inserted += 1,
-                            InsertOutcome::Duplicate => report.duplicates += 1,
-                        }
-                    }
-                }
-            }
-        }
+        let reorged = report.reorged;
+        report = process_range(pool, src, cfg, head, next, to).await?;
+        report.reorged = reorged;
         // Advance only after every insert succeeded.
         let hash = src
             .block_hash(to)
@@ -190,5 +144,84 @@ pub async fn step(
         report.finalized = ingestion::finalize_up_to(pool, chain, f as i64).await?;
     }
     ingestion::record_successful_scan(pool, chain, &cfg.protocol, None).await?;
+    Ok(report)
+}
+
+/// Parse and persist one explicit inclusive range without reading or changing
+/// the live ingestion cursor. Backfill uses this entry point so historical
+/// progress cannot move the head-following cursor.
+pub async fn process_range(
+    pool: &sqlx::PgPool,
+    src: &dyn EvmSource,
+    cfg: &EvmIngestConfig,
+    head: Head,
+    from: u64,
+    to: u64,
+) -> Result<StepReport, IngestError> {
+    let chain = cfg.chain.as_str();
+    if !matches!(cfg.status, SupportStatus::Enabled | SupportStatus::Partial) {
+        return Err(IngestError::NotEnabled {
+            chain: chain.into(),
+            protocol: cfg.protocol.clone(),
+        });
+    }
+    if from > to || to > head.latest {
+        return Err(IngestError::Source(format!(
+            "invalid block range {from}..={to} at head {}",
+            head.latest
+        )));
+    }
+
+    let mut report = StepReport {
+        from: Some(from),
+        to: Some(to),
+        ..StepReport::default()
+    };
+    let routers = cfg.routers.clone();
+    let parse_cfg = Config {
+        chain: cfg.chain,
+        routers: &routers,
+    };
+    for mut b in src.bundles(from, to).await? {
+        if b.tx.block_number < from || b.tx.block_number > to {
+            report.out_of_range += 1;
+            continue;
+        }
+        b.tx.finalized = head.finalized.is_some_and(|f| b.tx.block_number <= f);
+        let payload = raw_payload(&b.tx);
+        let digest = hex::encode(Sha256::digest(
+            serde_json::to_vec(&payload).unwrap_or_default(),
+        ));
+        let outcome = parse_tx(&parse_cfg, &b.tx, &b.pairs);
+        report.skipped += outcome.skipped.len();
+        if !outcome.swaps.is_empty() {
+            ingestion::store_raw_event(
+                pool,
+                &RawEvent {
+                    chain,
+                    tx_id: &b.tx.tx_hash,
+                    event_index: 0,
+                    source: "evm_rpc",
+                    payload: &payload,
+                    payload_sha256: &digest,
+                    fixture: false,
+                    observed_at: b.tx.block_time,
+                },
+            )
+            .await?;
+        }
+        for mut s in outcome.swaps {
+            match ingestion::revision_plan(pool, chain, &s.tx_id, s.event_index as i32).await? {
+                RevisionPlan::Live => report.duplicates += 1,
+                RevisionPlan::Next(rev) => {
+                    s.finality_revision = rev;
+                    match ingestion::insert_swap(pool, &s).await? {
+                        InsertOutcome::Inserted => report.inserted += 1,
+                        InsertOutcome::Duplicate => report.duplicates += 1,
+                    }
+                }
+            }
+        }
+    }
     Ok(report)
 }

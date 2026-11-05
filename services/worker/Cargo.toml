@@ -8,6 +8,10 @@ publish.workspace = true
 name = "trace-worker"
 path = "src/main.rs"
 
+[[bin]]
+name = "trace-backfill"
+path = "src/bin/trace-backfill.rs"
+
 [lib]
 name = "trace_worker"
 path = "src/lib.rs"

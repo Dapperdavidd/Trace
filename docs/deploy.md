@@ -38,6 +38,25 @@ With `TRACE_ENV=production` the api refuses to start if any of these hold: dev a
 6. Ingestion stays idle until a protocol is Enabled in the registry **and** its RPC variable is set. Check the worker log for `ingestion is idle` or `ingestion active`.
 7. Sign-in: create a Google OAuth web client, authorise your web origin, set `GOOGLE_CLIENT_ID`, and sign in once end to end.
 
+## Historical EVM backfill
+
+Backfill is explicit and never starts automatically. The protocol must be Enabled or Partial and the worker must have its chain RPC configured. Request a finalized inclusive block range from the same release as the worker:
+
+```bash
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-backfill -- \
+  request ethereum uniswap_v2 19000000 19010000
+```
+
+The running worker processes at most 200 finalized blocks per job and stores progress separately from the live ingestion cursor. A failed range is retried without advancing progress. One request is limited to 2,000,000 blocks. Split larger work into reviewed ranges.
+
+```bash
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-backfill -- status
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-backfill -- status RUN_ID
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-backfill -- cancel RUN_ID
+```
+
+Test the range in staging first. Compare inserted swaps, duplicate counts, skipped reasons, and raw evidence before requesting the production range.
+
 ## Monitoring
 
 Scrape `/v1/ops/metrics` with `Authorization: Bearer $TRACE_OPS_TOKEN` (Prometheus text format, read from the database).

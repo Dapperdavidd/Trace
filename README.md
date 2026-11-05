@@ -45,6 +45,15 @@ TRACE_PRICE_PROVIDER=defillama \
 cargo run -p trace-worker
 ```
 
+Historical EVM ranges can be queued without moving the live cursor:
+
+```bash
+cargo run -p trace-worker --bin trace-backfill -- \
+  request ethereum uniswap_v2 FROM_BLOCK TO_BLOCK
+```
+
+The worker processes only finalized blocks and resumes from persisted progress. See `docs/deploy.md` for status and cancellation commands.
+
 Run the web app:
 
 ```bash
