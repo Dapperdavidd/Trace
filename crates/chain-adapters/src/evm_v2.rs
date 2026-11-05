@@ -230,12 +230,8 @@ pub fn parse_tx(cfg: &Config<'_>, tx: &TxContext, pairs: &dyn PairResolver) -> P
             },
             attribution,
             parser_version: PARSER_VERSION.into(),
-            raw_ref: format!(
-                "{}:{}:{}",
-                cfg.chain,
-                tx.tx_hash.to_ascii_lowercase(),
-                log.log_index
-            ),
+            // EVM ingestion stores one transaction-level raw row at event index 0.
+            raw_ref: format!("{}:{}:0", cfg.chain, tx.tx_hash.to_ascii_lowercase()),
             demo: false,
         });
     }

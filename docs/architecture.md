@@ -19,7 +19,7 @@ The API and worker share one PostgreSQL database and run the same forward-only m
 ## Evidence flow
 
 1. Enabled chain adapters read bounded ranges from configured RPC nodes.
-2. Raw provider payloads are stored for replay with content hashes.
+2. Raw provider payloads are stored for replay with content hashes. EVM evidence includes the verified pair-to-token mapping used by the parser.
 3. Parsers create chain-aware normalized swaps with explicit finality and attribution.
 4. Accepted price quotes are stored as exact USD-per-base-unit decimals.
 5. The market job derives partial price and volume snapshots from real swaps and accepted prices.

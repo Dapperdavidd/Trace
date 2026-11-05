@@ -158,7 +158,7 @@ Symptoms include a sudden change in skipped reasons, impossible amounts, receipt
 5. Replay into staging and compare deterministic outputs before production.
 6. Deploy the fixed parser, then run a bounded replay that writes a new finality or parser revision. Never overwrite old evidence in place.
 
-TRACE stores raw events for replay, but a production replay command is not built yet. Until it exists, keep the protocol disabled and treat replay as reviewed engineering work.
+TRACE stores raw events for replay. EVM rows captured before the pair-evidence format was introduced may not include the verified pair-to-token mapping and cannot be replayed without re-reading the pair contracts. A production replay command is not built yet. Until it exists, keep the protocol disabled and treat replay as reviewed engineering work.
 
 ## Retention check
 

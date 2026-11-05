@@ -183,6 +183,21 @@ async fn a_step_stores_swaps_and_advances_the_cursor(pool: PgPool) {
             .await
             .unwrap();
     assert_eq!(raw, 3, "raw evidence is kept for replay");
+    let evidence: serde_json::Value =
+        sqlx::query_scalar("SELECT payload FROM raw_chain_events WHERE tx_id=$1")
+            .bind(format!("0x{:064x}", 1))
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(evidence["pairs"][0]["address"], PAIR);
+    assert_eq!(evidence["pairs"][0]["token0"], T0);
+    assert_eq!(evidence["pairs"][0]["token1"], T1);
+    let raw_ref: String = sqlx::query_scalar("SELECT raw_ref FROM normalized_swaps WHERE tx_id=$1")
+        .bind(format!("0x{:064x}", 1))
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(raw_ref, format!("ethereum:0x{:064x}:0", 1));
 
     let again = step(&pool, &m, &cfg()).await.unwrap();
     assert_eq!(

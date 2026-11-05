@@ -80,13 +80,27 @@ pub struct StepReport {
     pub finalized: u64,
 }
 
-fn raw_payload(tx: &TxContext) -> serde_json::Value {
+fn raw_payload(bundle: &Bundle) -> serde_json::Value {
+    let tx = &bundle.tx;
+    let mut pairs: Vec<_> = bundle
+        .pairs
+        .iter()
+        .map(|(address, pair)| {
+            json!({
+                "address": address,
+                "token0": pair.token0,
+                "token1": pair.token1,
+                "protocol": pair.protocol,
+            })
+        })
+        .collect();
+    pairs.sort_by(|left, right| left["address"].as_str().cmp(&right["address"].as_str()));
     json!({
         "tx_hash": tx.tx_hash, "from": tx.from, "to": tx.to,
         "block_number": tx.block_number, "block_hash": tx.block_hash, "block_time": tx.block_time,
         "logs": tx.logs.iter().map(|l| json!({
             "address": l.address, "topics": l.topics, "data": l.data, "logIndex": l.log_index
-        })).collect::<Vec<_>>(),
+        })).collect::<Vec<_>>(), "pairs": pairs,
     })
 }
 
@@ -188,7 +202,7 @@ pub async fn process_range(
             continue;
         }
         b.tx.finalized = head.finalized.is_some_and(|f| b.tx.block_number <= f);
-        let payload = raw_payload(&b.tx);
+        let payload = raw_payload(&b);
         let digest = hex::encode(Sha256::digest(
             serde_json::to_vec(&payload).unwrap_or_default(),
         ));
