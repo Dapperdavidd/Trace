@@ -12,6 +12,10 @@ path = "src/main.rs"
 name = "trace-backfill"
 path = "src/bin/trace-backfill.rs"
 
+[[bin]]
+name = "trace-price-backfill"
+path = "src/bin/trace-price-backfill.rs"
+
 [lib]
 name = "trace_worker"
 path = "src/lib.rs"

@@ -105,6 +105,20 @@ async fn metrics_are_read_from_the_database_and_exclude_demo_rows(pool: PgPool) 
 
     sqlx::query("INSERT INTO tokens (chain, contract_or_mint) VALUES ('ethereum','0x000000000000000000000000000000000000d001')")
         .execute(&pool).await.unwrap();
+    let price_backfill_id = uuid::Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO price_backfill_runs
+         (id, chain, asset, from_time, to_time, next_time, interval_seconds, status, updated_at)
+         VALUES ($1,'ethereum','0x000000000000000000000000000000000000d001',
+                 $2,$3,$2,3600,'queued',$4)",
+    )
+    .bind(price_backfill_id)
+    .bind(now - Duration::hours(3))
+    .bind(now - Duration::hours(1))
+    .bind(now - Duration::seconds(45))
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("INSERT INTO price_points (chain, asset, observed_at, usd_per_base_unit, source, demo) VALUES ('ethereum','0x000000000000000000000000000000000000d001', now(), 1, 'demo_seed', TRUE)")
         .execute(&pool).await.unwrap();
 
@@ -160,6 +174,10 @@ async fn metrics_are_read_from_the_database_and_exclude_demo_rows(pool: PgPool) 
         .parse()
         .unwrap();
     assert!((55.0..120.0).contains(&backfill_age), "{backfill_age}");
+    assert!(m.contains("trace_price_backfill_runs{chain=\"ethereum\",status=\"queued\"} 1"));
+    assert!(m.contains(&format!(
+        "trace_price_backfill_remaining_points{{run_id=\"{price_backfill_id}\",chain=\"ethereum\",asset=\"0x000000000000000000000000000000000000d001\"}} 3"
+    )));
     assert!(
         !m.lines()
             .any(|l| l.starts_with("trace_price_latest_age_seconds ")),

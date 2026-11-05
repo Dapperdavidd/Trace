@@ -182,6 +182,71 @@ async fn metrics(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpRes
     }
 
     x.help(
+        "trace_price_backfill_runs",
+        "Historical price backfill runs by chain and status.",
+    );
+    for r in sqlx::query(
+        "SELECT chain, status, count(*) AS n FROM price_backfill_runs
+         GROUP BY chain, status ORDER BY chain, status",
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(db)?
+    {
+        x.gauge(
+            "trace_price_backfill_runs",
+            &[
+                ("chain", &r.get::<String, _>("chain")),
+                ("status", &r.get::<String, _>("status")),
+            ],
+            r.get::<i64, _>("n") as f64,
+        );
+    }
+
+    x.help(
+        "trace_price_backfill_remaining_points",
+        "Requested historical price points not yet processed for each pending run.",
+    );
+    for r in sqlx::query(
+        "SELECT id::text AS id, chain, asset,
+         floor(EXTRACT(EPOCH FROM (to_time-next_time))/interval_seconds)::bigint + 1 AS remaining
+         FROM price_backfill_runs WHERE status IN ('queued','running') ORDER BY created_at",
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(db)?
+    {
+        x.gauge(
+            "trace_price_backfill_remaining_points",
+            &[
+                ("run_id", &r.get::<String, _>("id")),
+                ("chain", &r.get::<String, _>("chain")),
+                ("asset", &r.get::<String, _>("asset")),
+            ],
+            r.get::<i64, _>("remaining").max(0) as f64,
+        );
+    }
+
+    x.help(
+        "trace_price_backfill_oldest_update_age_seconds",
+        "Seconds since the oldest pending historical price backfill was checked. Absent when none are pending.",
+    );
+    let price_backfill_age: Option<f64> = sqlx::query_scalar(
+        "SELECT EXTRACT(EPOCH FROM (now() - min(updated_at)))::float8
+         FROM price_backfill_runs WHERE status IN ('queued','running')",
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(db)?;
+    if let Some(age) = price_backfill_age {
+        x.gauge(
+            "trace_price_backfill_oldest_update_age_seconds",
+            &[],
+            age.max(0.0),
+        );
+    }
+
+    x.help(
         "trace_swaps",
         "Stored real swaps by chain and finality (demo rows excluded).",
     );

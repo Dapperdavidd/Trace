@@ -45,9 +45,8 @@ The checked endpoints were the [DefiLlama Coins API response](https://coins.llam
 
 The DefiLlama adapter also supports its documented `batchHistorical` endpoint. TRACE sends explicit asset and timestamp pairs, keeps the provider timestamp, and accepts a point only when it is within 30 minutes of the requested time. Historical points require token decimals already verified and stored by TRACE. The provider cannot teach decimals through this path.
 
-A captured WETH response for timestamps `1700000000` and `1700086400` is stored as a parser fixture. The returned points were 100 seconds after each requested timestamp. This proves the response shape and approximate-time handling, not independent price accuracy. A resumable worker job and second-source cross-check are still required before historical prices are automatically backfilled.
+A captured WETH response for timestamps `1700000000` and `1700086400` is stored as a parser fixture. The returned points were 100 seconds after each requested timestamp. This proves the response shape and approximate-time handling, not independent price accuracy. The resumable worker stores accepted points and counts every rejection. A second-source cross-check is still required before using historical prices as independently corroborated market truth.
 
 ## Not done
 
-* Historical backfill for tokens first seen before polling started. Outcomes for those stay `unpriced`.
 * A second provider for cross-checking.

@@ -19,6 +19,7 @@ pub const MAX_ASSETS: i64 = 200;
 #[derive(Clone)]
 pub struct PriceCtx {
     pub provider: Arc<dyn PriceProvider>,
+    pub historical: Option<Arc<dyn trace_pricing::HistoricalPriceProvider>>,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]

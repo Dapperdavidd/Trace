@@ -228,9 +228,13 @@ fn prices_from_env() -> Option<crate::price_job::PriceCtx> {
             let base = std::env::var("TRACE_PRICE_API_BASE")
                 .unwrap_or_else(|_| trace_pricing::defillama::DEFAULT_BASE.to_string());
             match trace_pricing::defillama::DefiLlama::new(&base) {
-                Ok(p) => Some(crate::price_job::PriceCtx {
-                    provider: std::sync::Arc::new(p),
-                }),
+                Ok(p) => {
+                    let provider = std::sync::Arc::new(p);
+                    Some(crate::price_job::PriceCtx {
+                        provider: provider.clone(),
+                        historical: Some(provider),
+                    })
+                }
                 Err(e) => {
                     tracing::error!(error = %e, "price provider could not start");
                     None

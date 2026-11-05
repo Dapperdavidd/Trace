@@ -280,6 +280,7 @@ async fn the_job_exists_only_where_a_provider_is_configured(pool: PgPool) {
     let mut ctx = Ctx::empty();
     ctx.prices = Some(PriceCtx {
         provider: p.clone(),
+        historical: None,
     });
     assert_eq!(
         trace_worker::drain_with(&pool, now(), &ctx).await.unwrap(),

@@ -54,6 +54,13 @@ cargo run -p trace-worker --bin trace-backfill -- \
 
 The worker processes only finalized blocks and resumes from persisted progress. See `docs/deploy.md` for status and cancellation commands.
 
+Historical token prices can be queued after token decimals are verified:
+
+```bash
+cargo run -p trace-worker --bin trace-price-backfill -- \
+  request CHAIN ASSET FROM_RFC3339 TO_RFC3339 INTERVAL_SECONDS
+```
+
 Run the web app:
 
 ```bash

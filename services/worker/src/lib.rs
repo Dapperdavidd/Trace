@@ -5,6 +5,7 @@ pub mod ingest_job;
 pub mod market_job;
 pub mod metadata_job;
 pub mod outcomes;
+pub mod price_backfill_job;
 pub mod price_job;
 pub mod rpc_source;
 pub mod signal_job;
@@ -81,6 +82,9 @@ pub async fn run_job_with(
                 "price provider is not configured".into(),
             )),
         },
+        price_backfill_job::BACKFILL_PRICES => price_backfill_job::run(pool, ctx, job)
+            .await
+            .map(|r| tracing::info!(?r, "price backfill step")),
         market_job::BUILD_MARKET_SNAPSHOTS => market_job::build(pool, now)
             .await
             .map(|r| tracing::info!(?r, "market snapshots built")),
@@ -128,6 +132,13 @@ pub async fn drain_with(
     if ctx.prices.is_some() {
         kinds.push(price_job::POLL_PRICES);
         kinds.push(market_job::BUILD_MARKET_SNAPSHOTS);
+        if ctx
+            .prices
+            .as_ref()
+            .is_some_and(|prices| prices.historical.is_some())
+        {
+            kinds.push(price_backfill_job::BACKFILL_PRICES);
+        }
     }
     if ctx.metadata.is_some() {
         kinds.push(metadata_job::FETCH_TOKEN_METADATA);

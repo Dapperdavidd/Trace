@@ -34,6 +34,7 @@ The API and worker share one PostgreSQL database and run the same forward-only m
 | EVM historical backfill | Explicit finalized block range | Raw events and normalized swaps | Separate resumable progress, 200 block chunks, shared ingestion lock |
 | Solana ingestion | Enabled program and RPC | Raw events and normalized swaps | Registry status and reviewed fixtures |
 | Price polling | Recent real tokens and provider | `price_points` | Freshness, confidence, decimals, and positive exact values |
+| Historical price backfill | Explicit asset, time range, and interval | `price_points` | Verified decimals, provider timestamps, confidence, and 30 minute tolerance |
 | EVM token metadata | Incomplete tokens and configured RPCs | Decimals, symbols, and names | Direct contract reads, validation, and retry state |
 | Market snapshots | Final swaps and accepted prices | Price and volume windows | Missing prices skip the snapshot; missing liquidity stays null |
 | Watchlist alerts | Final direct swaps | In-app buy and sell alerts | Stable-pair direction, preferences, pause, and deduplication |
@@ -72,6 +73,6 @@ The API and worker container targets share one build stage and run as a non-root
 
 - Live liquidity and token-risk providers are not selected.
 - Solana ingestion stores consistent mint decimals from finalized transaction balances and audits conflicts. Names and symbols still need a real chain reader.
-- Historical price backfill is not implemented. EVM swap backfill is available; Solana backfill is not.
+- EVM swap and historical price backfill are available. Solana backfill is not.
 - Push and email alert delivery are not implemented.
 - Production hosting, Google OAuth credentials, app-store accounts, and release operations require owner decisions or credentials.

@@ -57,6 +57,22 @@ DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-backfill -- c
 
 Test the range in staging first. Compare inserted swaps, duplicate counts, skipped reasons, and raw evidence before requesting the production range.
 
+## Historical price backfill
+
+Historical prices are also explicit and never start automatically. The token must already exist with verified decimals, and `TRACE_PRICE_PROVIDER=defillama` must be configured on the worker. Times use RFC 3339 and the interval is between 300 and 86400 seconds.
+
+```bash
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-price-backfill -- \
+  request ethereum 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 \
+  2026-10-01T00:00:00Z 2026-10-31T00:00:00Z 3600
+
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-price-backfill -- status
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-price-backfill -- status RUN_ID
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-price-backfill -- cancel RUN_ID
+```
+
+Each worker job requests at most 40 points. Provider or database failures do not advance progress. Missing, low-confidence, or distant points are counted as rejected rather than invented. One run is limited to 10,000 requested points.
+
 ## Monitoring
 
 Scrape `/v1/ops/metrics` with `Authorization: Bearer $TRACE_OPS_TOKEN` (Prometheus text format, read from the database).
@@ -79,6 +95,7 @@ Suggested alerts:
 | Dead jobs | `trace_jobs{status="dead"} > 0` | A job exhausted its attempts; read `worker_jobs.last_error` |
 | Data gap | `increase(trace_ingest_gaps[1h]) > 0` | A range was not read; coverage has a hole |
 | Backfill stalled | `trace_backfill_oldest_update_age_seconds > 600` | A requested historical range is not progressing |
+| Price backfill stalled | `trace_price_backfill_oldest_update_age_seconds > 600` | A requested historical price range is not progressing |
 | Prices stale | `trace_price_latest_age_seconds > 1800` | Price polling stopped (only if prices are on) |
 | Not ready | probe `/v1/health/ready` fails | Database unreachable |
 

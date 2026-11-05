@@ -48,6 +48,13 @@ async fn main() -> anyhow::Result<()> {
                 if let Err(e) = trace_worker::price_job::schedule_prices(&pool, ctx.prices.is_some(), now).await {
                     tracing::warn!(error = %e, "could not schedule price poll");
                 }
+                let historical_prices = ctx
+                    .prices
+                    .as_ref()
+                    .is_some_and(|prices| prices.historical.is_some());
+                if let Err(e) = trace_worker::price_backfill_job::schedule(&pool, historical_prices, now).await {
+                    tracing::warn!(error = %e, "could not schedule price backfill");
+                }
                 if let Err(e) = trace_worker::market_job::schedule(&pool, ctx.prices.is_some(), now).await {
                     tracing::warn!(error = %e, "could not schedule market snapshots");
                 }
