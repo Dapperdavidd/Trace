@@ -74,7 +74,6 @@ The API and worker container targets share one build stage and run as a non-root
 ## Known gaps
 
 - Live liquidity and token-risk providers are not selected.
-- External non-Metaplex Token-2022 metadata-pointer accounts are not fetched.
 - EVM block, Solana signature, and historical price backfill are available.
 - Push and email alert delivery are not implemented.
 - Production hosting, Google OAuth credentials, app-store accounts, and release operations require owner decisions or credentials.

@@ -25,6 +25,7 @@ const TOKEN_2022_PROGRAM: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
 const TOKEN_2022_MINT_ACCOUNT_TYPE: u8 = 1;
 const TOKEN_2022_METADATA_POINTER: u16 = 18;
 const TOKEN_2022_TOKEN_METADATA: u16 = 19;
+const TOKEN_METADATA_DISCRIMINATOR: [u8; 8] = [112, 132, 90, 90, 11, 88, 157, 87];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TokenMetadata {
@@ -335,12 +336,16 @@ fn skip_borsh_text(data: &[u8], offset: &mut usize, max: usize) -> Option<()> {
     Some(())
 }
 
-fn parse_token_2022_metadata(data: &[u8], expected_mint: &[u8; 32]) -> Option<(String, String)> {
+fn token_2022_metadata_pointer(data: &[u8]) -> Option<[u8; 32]> {
     let pointer = token_2022_extension(data, TOKEN_2022_METADATA_POINTER)?;
-    if pointer.len() != 64 || pointer.get(32..64)? != expected_mint {
-        return None;
-    }
-    let metadata = token_2022_extension(data, TOKEN_2022_TOKEN_METADATA)?;
+    let address: [u8; 32] = pointer.get(32..64)?.try_into().ok()?;
+    (pointer.len() == 64 && address != [0; 32]).then_some(address)
+}
+
+fn parse_token_metadata_value(
+    metadata: &[u8],
+    expected_mint: &[u8; 32],
+) -> Option<(String, String)> {
     if metadata.len() < 64 || metadata.get(32..64)? != expected_mint {
         return None;
     }
@@ -364,6 +369,34 @@ fn parse_token_2022_metadata(data: &[u8], expected_mint: &[u8; 32]) -> Option<(S
     (offset == metadata.len()).then_some((name, symbol))
 }
 
+fn parse_token_2022_metadata(data: &[u8], expected_mint: &[u8; 32]) -> Option<(String, String)> {
+    (token_2022_metadata_pointer(data)? == *expected_mint).then_some(())?;
+    let metadata = token_2022_extension(data, TOKEN_2022_TOKEN_METADATA)?;
+    parse_token_metadata_value(metadata, expected_mint)
+}
+
+fn parse_token_metadata_account(data: &[u8], expected_mint: &[u8; 32]) -> Option<(String, String)> {
+    let mut offset = 0usize;
+    while offset.checked_add(12)? <= data.len() {
+        let discriminator: [u8; 8] = data[offset..offset + 8].try_into().ok()?;
+        if discriminator == [0; 8] {
+            return None;
+        }
+        let length = usize::try_from(u32::from_le_bytes(
+            data[offset + 8..offset + 12].try_into().ok()?,
+        ))
+        .ok()?;
+        let start = offset + 12;
+        let end = start.checked_add(length)?;
+        let value = data.get(start..end)?;
+        if discriminator == TOKEN_METADATA_DISCRIMINATOR {
+            return parse_token_metadata_value(value, expected_mint);
+        }
+        offset = end;
+    }
+    None
+}
+
 #[async_trait]
 impl MetadataSource for SolanaMetadataRpc {
     async fn fetch(&self, chain: ChainId, token: &str) -> Result<Option<TokenMetadata>, Failure> {
@@ -379,23 +412,28 @@ impl MetadataSource for SolanaMetadataRpc {
         let Some(decimals) = parse_solana_mint(&owner, &mint_data) else {
             return Ok(None);
         };
-        let embedded = (owner == TOKEN_2022_PROGRAM)
-            .then(|| parse_token_2022_metadata(&mint_data, &mint))
+        let pointer = (owner == TOKEN_2022_PROGRAM)
+            .then(|| token_2022_metadata_pointer(&mint_data))
             .flatten();
-        let (name, symbol) = match embedded {
-            Some((name, symbol)) => (Some(name), Some(symbol)),
+        let canonical = match pointer {
+            Some(address) if address == mint => parse_token_2022_metadata(&mint_data, &mint),
+            Some(address) => match self.account(&bs58::encode(address).into_string()).await? {
+                Some((_, data)) => parse_token_metadata_account(&data, &mint),
+                None => None,
+            },
             None => match metadata_pda(&mint) {
                 Some(address) => match self.account(&address).await? {
                     Some((owner, data)) if owner == METADATA_PROGRAM => {
                         parse_metaplex(&data, &mint)
-                            .map(|(name, symbol)| (Some(name), Some(symbol)))
-                            .unwrap_or((None, None))
                     }
-                    _ => (None, None),
+                    _ => None,
                 },
-                None => (None, None),
+                None => None,
             },
         };
+        let (name, symbol) = canonical
+            .map(|(name, symbol)| (Some(name), Some(symbol)))
+            .unwrap_or((None, None));
         Ok(Some(TokenMetadata {
             decimals,
             symbol,
@@ -649,6 +687,31 @@ mod tests {
         let metadata_mint = 166 + 4 + pointer.len() + 4 + 32;
         wrong_metadata_mint[metadata_mint] ^= 1;
         assert_eq!(parse_token_2022_metadata(&wrong_metadata_mint, &mint), None);
+    }
+
+    #[test]
+    fn external_token_metadata_interface_account_must_point_back_to_mint() {
+        let mint = [9u8; 32];
+        let mut value = vec![0u8; 32];
+        value.extend(mint);
+        push_borsh_text(&mut value, "External Token");
+        push_borsh_text(&mut value, "XTK");
+        push_borsh_text(&mut value, "");
+        value.extend(0u32.to_le_bytes());
+
+        let mut account = TOKEN_METADATA_DISCRIMINATOR.to_vec();
+        account.extend(u32::try_from(value.len()).unwrap().to_le_bytes());
+        account.extend(&value);
+        assert_eq!(
+            parse_token_metadata_account(&account, &mint),
+            Some(("External Token".into(), "XTK".into()))
+        );
+
+        let mut wrong_mint = account.clone();
+        wrong_mint[12 + 32] ^= 1;
+        assert_eq!(parse_token_metadata_account(&wrong_mint, &mint), None);
+        account[0] ^= 1;
+        assert_eq!(parse_token_metadata_account(&account, &mint), None);
     }
 
     #[tokio::test]
