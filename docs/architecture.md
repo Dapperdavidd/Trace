@@ -41,8 +41,9 @@ The API and worker share one PostgreSQL database and run the same forward-only m
 | Watchlist alerts | Final direct swaps | In-app buy and sell alerts | Stable-pair direction, preferences, pause, and deduplication |
 | Research signals | Three or more distinct finalized direct buyers | Sealed receipt and append-only lifecycle | Fresh snapshot, reviewed risk inputs, one-hour cooldown, unknown risk is watch-only |
 | Signal outcomes | Published sealed receipts | Fixed-horizon outcomes | First valid price after each horizon; missing liquidity is untradeable |
+| Retention | Explicit per-table age settings | Bounded deletion of old operational rows | Off by default, minimum periods, fixture and unfinished-attempt protection |
 
-Jobs use leases, bounded retries, deduplication keys, and dead-job states. Ingestion also uses PostgreSQL advisory locks so only one worker handles a protocol at a time.
+Jobs use leases, bounded retries, deduplication keys, and dead-job states. Ingestion also uses PostgreSQL advisory locks so only one worker handles a protocol at a time. Retention is opt-in and deletes only one configured batch per table each day.
 
 ## Identity and money
 
