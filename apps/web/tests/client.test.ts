@@ -156,6 +156,24 @@ describe("api client: live responses", () => {
     expect(getToken()).toBeNull();
     expect(fetchImpl.mock.calls[0]?.[0]).toBe("http://api.test/v1/auth/logout-all");
   });
+
+  it("deletes the account and clears the local token", async () => {
+    setToken("tok123");
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    const c = createApiClient({ baseUrl: "http://api.test", demoMode: false, fetchImpl });
+    await c.deleteAccount();
+    expect(getToken()).toBeNull();
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe("http://api.test/v1/me");
+    expect((fetchImpl.mock.calls[0]?.[1] as RequestInit).method).toBe("DELETE");
+  });
+
+  it("keeps the local token when account deletion fails", async () => {
+    setToken("tok123");
+    const fetchImpl = vi.fn().mockResolvedValue(json({ code: "server_error", message: "Try again", request_id: "req-delete" }, 500));
+    const c = createApiClient({ baseUrl: "http://api.test", demoMode: false, fetchImpl });
+    await expect(c.deleteAccount()).rejects.toMatchObject({ code: "server_error", requestId: "req-delete" });
+    expect(getToken()).toBe("tok123");
+  });
 });
 
 describe("api client: demo fallback", () => {

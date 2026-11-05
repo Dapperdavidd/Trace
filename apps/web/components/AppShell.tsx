@@ -265,6 +265,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <main id="main" className="content" tabIndex={-1}>
             {children}
           </main>
+          <footer className="legal-footer">
+            <span>TRACE is watch-only research. Shadow is paper-only.</span>
+            <nav aria-label="Legal and account links">
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
+              <Link href="/account">Account</Link>
+            </nav>
+          </footer>
         </div>
       </div>
       <MobileNav pathname={pathname} />

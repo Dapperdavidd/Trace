@@ -88,6 +88,12 @@ ul { margin: 0; padding: 0; list-style: none; }
 .side-note strong { display: block; color: var(--emerald); margin-bottom: 4px; font-size: 13px; }
 
 .main { min-width: 0; display: flex; flex-direction: column; }
+.legal-footer {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px;
+}
+.legal-footer nav { display: flex; gap: 18px; }
+.legal-footer a:hover { color: var(--text); }
 .topbar {
   position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 18px;
   padding: 12px 20px; background: rgba(6, 11, 9, 0.88); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
@@ -353,6 +359,15 @@ ul { margin: 0; padding: 0; list-style: none; }
 .session-details small { color: var(--muted); }
 .btn-danger { color: #ffb0b0; border-color: rgba(255, 107, 107, 0.45); }
 .btn-danger:hover { background: rgba(255, 107, 107, 0.1); }
+.danger-action, .delete-confirm { display: grid; gap: 14px; }
+.danger-action .btn { justify-self: start; }
+.delete-confirm { padding: 14px; border: 1px solid rgba(255, 107, 107, 0.35); border-radius: 12px; background: rgba(255, 107, 107, 0.04); }
+.delete-confirm .field { max-width: 360px; }
+.confirm-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.legal-page { max-width: 800px; }
+.legal-copy { display: grid; gap: 12px; color: #cfe0d7; }
+.legal-copy h2 { margin-top: 8px; color: var(--text); font-size: 17px; }
+.legal-copy a { color: var(--emerald); text-decoration: underline; text-underline-offset: 3px; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 14px; }
 .scroll-x { overflow-x: auto; }
 

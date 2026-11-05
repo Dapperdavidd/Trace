@@ -46,6 +46,8 @@ export default function AccountPage() {
   const sessions = useApi(() => api.sessions(), [token], !!token);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<unknown>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
 
   const revoke = async (id: string) => {
     setBusyId(id);
@@ -65,6 +67,20 @@ export default function AccountPage() {
     setActionError(null);
     try {
       await api.logoutAll();
+      router.push("/");
+    } catch (error) {
+      setActionError(error);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (deleteText !== "DELETE") return;
+    setBusyId("delete");
+    setActionError(null);
+    try {
+      await api.deleteAccount();
       router.push("/");
     } catch (error) {
       setActionError(error);
@@ -106,6 +122,48 @@ export default function AccountPage() {
         <button className="btn btn-danger" type="button" disabled={busyId !== null} onClick={signOutAll}>
           {busyId === "all" ? "Signing out..." : "Sign out on all devices"}
         </button>
+      </Panel>
+      <Panel title="Delete account" sub="Permanently remove your TRACE account and its account-owned data.">
+        {!confirmDelete ? (
+          <div className="danger-action">
+            <p className="muted">This deletes your sessions, watchlist, alert preferences, alerts, and Shadow strategies. Public blockchain data is not part of your account and is not deleted.</p>
+            <button className="btn btn-danger" type="button" disabled={busyId !== null} onClick={() => setConfirmDelete(true)}>
+              Delete account
+            </button>
+          </div>
+        ) : (
+          <div className="delete-confirm" role="group" aria-labelledby="delete-confirm-title">
+            <strong id="delete-confirm-title">This cannot be undone</strong>
+            <p className="muted">Type DELETE to confirm permanent account deletion.</p>
+            <div className="field">
+              <label htmlFor="delete-confirmation">Confirmation</label>
+              <input
+                id="delete-confirmation"
+                className="input"
+                value={deleteText}
+                onChange={(event) => setDeleteText(event.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="confirm-actions">
+              <button
+                className="btn"
+                type="button"
+                disabled={busyId !== null}
+                onClick={() => {
+                  setConfirmDelete(false);
+                  setDeleteText("");
+                }}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-danger" type="button" disabled={deleteText !== "DELETE" || busyId !== null} onClick={deleteAccount}>
+                {busyId === "delete" ? "Deleting..." : "Delete permanently"}
+              </button>
+            </div>
+          </div>
+        )}
       </Panel>
     </div>
   );
