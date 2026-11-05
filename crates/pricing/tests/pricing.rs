@@ -140,6 +140,26 @@ fn captured_live_defillama_weth_response_matches_the_adapter() {
 }
 
 #[test]
+fn captured_defillama_historical_response_matches_the_adapter() {
+    let body: serde_json::Value = serde_json::from_str(include_str!(
+        "fixtures/defillama_weth_historical_2023-11-14.json"
+    ))
+    .unwrap();
+    let at = Utc.timestamp_opt(1_700_000_000, 0).unwrap();
+    let batch = parse_defillama_historical(
+        &body,
+        &[HistoricalRequest {
+            asset: eth(WETH),
+            at,
+        }],
+    );
+    assert!(batch.rejected.is_empty());
+    assert_eq!(batch.quotes[0].usd_per_token, d("1983.91"));
+    assert_eq!(batch.quotes[0].observed_at.timestamp(), 1_700_000_100);
+    assert_eq!(batch.quotes[0].confidence, Some(0.99));
+}
+
+#[test]
 fn solana_mints_match_exactly_and_unknown_assets_are_reported_missing() {
     let sol = AssetId::parse(ChainId::Solana, MINT).unwrap();
     let body = json!({ "coins": {
@@ -174,5 +194,52 @@ fn coin_keys_use_the_providers_chain_names() {
     assert_eq!(
         coin_key(&AssetId::parse(ChainId::Bnb, WETH).unwrap()),
         format!("bsc:{WETH}")
+    );
+}
+
+#[test]
+fn historical_prices_match_the_requested_asset_and_nearest_time() {
+    let requested_at = now() - Duration::days(30);
+    let request = HistoricalRequest {
+        asset: eth(WETH),
+        at: requested_at,
+    };
+    let body = json!({ "coins": { format!("ethereum:{WETH}"): {
+        "symbol": "WETH",
+        "prices": [
+            { "timestamp": (requested_at - Duration::minutes(10)).timestamp(), "price": 1983.91, "confidence": 0.99 },
+            { "timestamp": (requested_at + Duration::minutes(2)).timestamp(), "price": 1984.25, "confidence": 0.98 }
+        ]
+    } } });
+    let batch = parse_defillama_historical(&body, std::slice::from_ref(&request));
+    assert!(batch.rejected.is_empty());
+    assert_eq!(batch.quotes[0].usd_per_token, d("1984.25"));
+    assert_eq!(
+        batch.quotes[0].observed_at,
+        requested_at + Duration::minutes(2)
+    );
+    assert_eq!(batch.quotes[0].decimals, None);
+
+    let accepted = accept_historical(&batch.quotes[0], Some(18), requested_at).unwrap();
+    assert_eq!(
+        accepted.usd_per_base_unit,
+        d("1984.25") / d("1000000000000000000")
+    );
+    assert_eq!(accepted.learned_decimals, None);
+}
+
+#[test]
+fn historical_prices_need_reviewed_decimals_and_a_nearby_point() {
+    let requested_at = now() - Duration::days(30);
+    let mut historical = quote("100", None, 0, Some(0.99));
+    historical.observed_at = requested_at;
+    assert_eq!(
+        accept_historical(&historical, None, requested_at),
+        Err(Reason::DecimalsUnknown)
+    );
+    historical.observed_at = requested_at + Duration::minutes(31);
+    assert_eq!(
+        accept_historical(&historical, Some(18), requested_at),
+        Err(Reason::Stale)
     );
 }

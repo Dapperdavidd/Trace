@@ -23,6 +23,7 @@ use trace_domain::{AssetId, ChainId};
 pub mod defillama;
 
 pub const MAX_QUOTE_AGE_MINUTES: i64 = 15;
+pub const MAX_HISTORICAL_DISTANCE_MINUTES: i64 = 30;
 pub const MIN_CONFIDENCE: f64 = 0.8;
 
 #[derive(Debug, thiserror::Error)]
@@ -41,6 +42,12 @@ pub struct Quote {
     pub symbol: Option<String>,
     pub observed_at: DateTime<Utc>,
     pub confidence: Option<f64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HistoricalRequest {
+    pub asset: AssetId,
+    pub at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -79,6 +86,12 @@ pub struct Batch {
 pub trait PriceProvider: Send + Sync {
     fn name(&self) -> &'static str;
     async fn fetch(&self, assets: &[AssetId]) -> Result<Batch, PriceError>;
+}
+
+#[async_trait::async_trait]
+pub trait HistoricalPriceProvider: Send + Sync {
+    fn name(&self) -> &'static str;
+    async fn fetch_historical(&self, requests: &[HistoricalRequest]) -> Result<Batch, PriceError>;
 }
 
 fn pow10(d: u8) -> Decimal {
@@ -124,6 +137,104 @@ pub fn accept(
         learned_decimals: learned,
         symbol: q.symbol.clone(),
     })
+}
+
+/// Validate a historical quote without applying the current-price freshness
+/// rule. Historical points must still be close to the requested time and need
+/// reviewed token decimals from TRACE, not decimals learned from a provider.
+pub fn accept_historical(
+    q: &Quote,
+    known_decimals: Option<u8>,
+    requested_at: DateTime<Utc>,
+) -> Result<Accepted, Reason> {
+    if q.usd_per_token <= Decimal::ZERO {
+        return Err(Reason::BadPrice);
+    }
+    if (q.observed_at - requested_at).num_minutes().abs() > MAX_HISTORICAL_DISTANCE_MINUTES {
+        return Err(Reason::Stale);
+    }
+    if q.confidence
+        .is_some_and(|c| !(MIN_CONFIDENCE..=1.0).contains(&c))
+    {
+        return Err(Reason::LowConfidence);
+    }
+    let decimals = known_decimals.ok_or(Reason::DecimalsUnknown)?;
+    if decimals > 28 {
+        return Err(Reason::DecimalsUnknown);
+    }
+    let per_base = q.usd_per_token / pow10(decimals);
+    if per_base.is_zero() {
+        return Err(Reason::Underflow);
+    }
+    Ok(Accepted {
+        asset: q.asset.clone(),
+        observed_at: q.observed_at,
+        usd_per_base_unit: per_base,
+        learned_decimals: None,
+        symbol: q.symbol.clone(),
+    })
+}
+
+/// Parse a DefiLlama batchHistorical response. Each request is matched to the
+/// closest returned point for the same asset. Distance is enforced later by
+/// `accept_historical` so an approximate provider result is never hidden.
+pub fn parse_defillama_historical(body: &Value, requested: &[HistoricalRequest]) -> Batch {
+    let mut out = Batch::default();
+    let coins = body.get("coins").and_then(Value::as_object);
+    for request in requested {
+        let want = coin_key(&request.asset);
+        let entry = coins.and_then(|coins| {
+            coins.get(&want).or_else(|| {
+                (request.asset.chain != ChainId::Solana)
+                    .then(|| {
+                        coins
+                            .iter()
+                            .find(|(key, _)| key.eq_ignore_ascii_case(&want))
+                            .map(|(_, value)| value)
+                    })
+                    .flatten()
+            })
+        });
+        let symbol = entry
+            .and_then(|entry| entry.get("symbol"))
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        let closest = entry
+            .and_then(|entry| entry.get("prices"))
+            .and_then(Value::as_array)
+            .and_then(|prices| {
+                prices
+                    .iter()
+                    .filter_map(|point| {
+                        let timestamp = point.get("timestamp")?.as_i64()?;
+                        let observed_at = Utc.timestamp_opt(timestamp, 0).single()?;
+                        let price = point
+                            .get("price")?
+                            .as_number()
+                            .and_then(|n| Decimal::from_str(&n.to_string()).ok())?;
+                        Some((
+                            (observed_at - request.at).num_seconds().unsigned_abs(),
+                            observed_at,
+                            price,
+                            point.get("confidence").and_then(Value::as_f64),
+                        ))
+                    })
+                    .min_by_key(|point| point.0)
+            });
+        let Some((_, observed_at, usd_per_token, confidence)) = closest else {
+            out.rejected.push((request.asset.clone(), Reason::Missing));
+            continue;
+        };
+        out.quotes.push(Quote {
+            asset: request.asset.clone(),
+            usd_per_token,
+            decimals: None,
+            symbol,
+            observed_at,
+            confidence,
+        });
+    }
+    out
 }
 
 /// Provider key prefix for a chain.

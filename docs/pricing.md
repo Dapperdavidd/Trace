@@ -41,6 +41,12 @@ The prices differed by 0.1611 percent and both sources reported 18 decimals. Thi
 
 The checked endpoints were the [DefiLlama Coins API response](https://coins.llama.fi/prices/current/ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2) and the [CoinGecko WETH contract response](https://api.coingecko.com/api/v3/coins/ethereum/contract/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2).
 
+## Historical adapter
+
+The DefiLlama adapter also supports its documented `batchHistorical` endpoint. TRACE sends explicit asset and timestamp pairs, keeps the provider timestamp, and accepts a point only when it is within 30 minutes of the requested time. Historical points require token decimals already verified and stored by TRACE. The provider cannot teach decimals through this path.
+
+A captured WETH response for timestamps `1700000000` and `1700086400` is stored as a parser fixture. The returned points were 100 seconds after each requested timestamp. This proves the response shape and approximate-time handling, not independent price accuracy. A resumable worker job and second-source cross-check are still required before historical prices are automatically backfilled.
+
 ## Not done
 
 * Historical backfill for tokens first seen before polling started. Outcomes for those stay `unpriced`.

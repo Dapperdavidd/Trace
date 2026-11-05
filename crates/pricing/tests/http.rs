@@ -5,7 +5,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use trace_domain::{AssetId, ChainId};
 use trace_pricing::defillama::DefiLlama;
-use trace_pricing::{PriceProvider, Reason};
+use trace_pricing::{HistoricalPriceProvider, HistoricalRequest, PriceProvider, Reason};
 
 const WETH: &str = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 const USDC: &str = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
@@ -95,4 +95,28 @@ async fn an_unreachable_provider_error_does_not_leak_the_url() {
         .unwrap_err()
         .to_string();
     assert!(!e.contains("SECRET-KEY") && !e.contains("127.0.0.1"), "{e}");
+}
+
+#[tokio::test]
+async fn historical_requests_use_the_batch_endpoint() {
+    let at = chrono::Utc::now() - chrono::Duration::days(1);
+    let body = json!({ "coins": { format!("ethereum:{WETH}"): {
+        "symbol": "WETH", "prices": [{
+            "timestamp": at.timestamp(), "price": 2000.125, "confidence": 0.99
+        }]
+    } } });
+    let (url, mut rx) = serve(200, body.to_string()).await;
+    let batch = DefiLlama::new(&url)
+        .unwrap()
+        .fetch_historical(&[HistoricalRequest {
+            asset: assets()[0].clone(),
+            at,
+        }])
+        .await
+        .unwrap();
+    assert_eq!(batch.quotes.len(), 1);
+    assert_eq!(batch.quotes[0].usd_per_token.to_string(), "2000.125");
+    let line = rx.recv().await.unwrap();
+    assert!(line.starts_with("GET /batchHistorical?coins="), "{line}");
+    assert!(line.contains("ethereum%3A0xc02aaa39"), "{line}");
 }

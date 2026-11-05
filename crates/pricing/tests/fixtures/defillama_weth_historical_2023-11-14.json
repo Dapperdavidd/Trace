@@ -1,0 +1,19 @@
+{
+  "coins": {
+    "ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+      "symbol": "WETH",
+      "prices": [
+        {
+          "timestamp": 1700000100,
+          "price": 1983.91,
+          "confidence": 0.99
+        },
+        {
+          "timestamp": 1700086500,
+          "price": 2043.99,
+          "confidence": 0.99
+        }
+      ]
+    }
+  }
+}
