@@ -12,6 +12,8 @@ members = [
   "crates/discovery",
   "crates/jobs",
   "crates/pricing",
+  "crates/near",
+  "contracts/trace-mandates",
   "services/api",
   "services/worker",
   "tools/fixture-capture",
@@ -58,3 +60,4 @@ trace-shadow = { path = "crates/shadow" }
 trace-discovery = { path = "crates/discovery" }
 trace-jobs = { path = "crates/jobs" }
 trace-pricing = { path = "crates/pricing" }
+trace-near = { path = "crates/near" }
