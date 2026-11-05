@@ -91,6 +91,17 @@ async fn metrics_are_read_from_the_database_and_exclude_demo_rows(pool: PgPool) 
         .execute(&pool).await.unwrap();
     sqlx::query("INSERT INTO audit_events (id, actor, action, subject, detail) VALUES (gen_random_uuid(),'indexer','ingest_gap','solana:x','{}')")
         .execute(&pool).await.unwrap();
+    let backfill_id = uuid::Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO backfill_runs
+         (id, chain, protocol, from_height, to_height, next_height, status, updated_at)
+         VALUES ($1,'ethereum','uniswap_v2',100,499,300,'running',$2)",
+    )
+    .bind(backfill_id)
+    .bind(now - Duration::seconds(60))
+    .execute(&pool)
+    .await
+    .unwrap();
 
     sqlx::query("INSERT INTO tokens (chain, contract_or_mint) VALUES ('ethereum','0x000000000000000000000000000000000000d001')")
         .execute(&pool).await.unwrap();
@@ -133,6 +144,22 @@ async fn metrics_are_read_from_the_database_and_exclude_demo_rows(pool: PgPool) 
         m.contains("trace_ingest_cursor_height{chain=\"ethereum\",protocol=\"uniswap_v2\"} 12345")
     );
     assert!(m.contains("trace_ingest_gaps 1"));
+    assert!(m.contains(
+        "trace_backfill_runs{chain=\"ethereum\",protocol=\"uniswap_v2\",status=\"running\"} 1"
+    ));
+    assert!(m.contains(&format!(
+        "trace_backfill_remaining_blocks{{run_id=\"{backfill_id}\",chain=\"ethereum\",protocol=\"uniswap_v2\"}} 200"
+    )));
+    let backfill_age: f64 = m
+        .lines()
+        .find(|l| l.starts_with("trace_backfill_oldest_update_age_seconds "))
+        .unwrap()
+        .rsplit(' ')
+        .next()
+        .unwrap()
+        .parse()
+        .unwrap();
+    assert!((55.0..120.0).contains(&backfill_age), "{backfill_age}");
     assert!(
         !m.lines()
             .any(|l| l.starts_with("trace_price_latest_age_seconds ")),

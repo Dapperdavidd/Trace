@@ -117,6 +117,71 @@ async fn metrics(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpRes
     }
 
     x.help(
+        "trace_backfill_runs",
+        "Historical EVM backfill runs by chain, protocol, and status.",
+    );
+    for r in sqlx::query(
+        "SELECT chain, protocol, status, count(*) AS n FROM backfill_runs
+         GROUP BY chain, protocol, status ORDER BY chain, protocol, status",
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(db)?
+    {
+        x.gauge(
+            "trace_backfill_runs",
+            &[
+                ("chain", &r.get::<String, _>("chain")),
+                ("protocol", &r.get::<String, _>("protocol")),
+                ("status", &r.get::<String, _>("status")),
+            ],
+            r.get::<i64, _>("n") as f64,
+        );
+    }
+
+    x.help(
+        "trace_backfill_remaining_blocks",
+        "Blocks not yet processed for each pending historical EVM backfill.",
+    );
+    for r in sqlx::query(
+        "SELECT id::text AS id, chain, protocol, to_height - next_height + 1 AS remaining
+         FROM backfill_runs WHERE status IN ('queued','running') ORDER BY created_at",
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(db)?
+    {
+        x.gauge(
+            "trace_backfill_remaining_blocks",
+            &[
+                ("run_id", &r.get::<String, _>("id")),
+                ("chain", &r.get::<String, _>("chain")),
+                ("protocol", &r.get::<String, _>("protocol")),
+            ],
+            r.get::<i64, _>("remaining") as f64,
+        );
+    }
+
+    x.help(
+        "trace_backfill_oldest_update_age_seconds",
+        "Seconds since the oldest pending backfill last made or checked progress. Absent when none are pending.",
+    );
+    let backfill_age: Option<f64> = sqlx::query_scalar(
+        "SELECT EXTRACT(EPOCH FROM (now() - min(updated_at)))::float8
+         FROM backfill_runs WHERE status IN ('queued','running')",
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(db)?;
+    if let Some(age) = backfill_age {
+        x.gauge(
+            "trace_backfill_oldest_update_age_seconds",
+            &[],
+            age.max(0.0),
+        );
+    }
+
+    x.help(
         "trace_swaps",
         "Stored real swaps by chain and finality (demo rows excluded).",
     );

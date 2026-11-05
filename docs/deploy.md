@@ -78,6 +78,7 @@ Suggested alerts:
 | Never scanned | `trace_ingest_enabled_never_scanned > 0` | Enabled but the worker or RPC is not working |
 | Dead jobs | `trace_jobs{status="dead"} > 0` | A job exhausted its attempts; read `worker_jobs.last_error` |
 | Data gap | `increase(trace_ingest_gaps[1h]) > 0` | A range was not read; coverage has a hole |
+| Backfill stalled | `trace_backfill_oldest_update_age_seconds > 600` | A requested historical range is not progressing |
 | Prices stale | `trace_price_latest_age_seconds > 1800` | Price polling stopped (only if prices are on) |
 | Not ready | probe `/v1/health/ready` fails | Database unreachable |
 
