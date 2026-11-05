@@ -9,6 +9,7 @@ pub mod price_backfill_job;
 pub mod price_job;
 pub mod rpc_source;
 pub mod signal_job;
+pub mod solana_backfill_job;
 pub mod solana_ingest;
 pub mod solana_job;
 pub mod solana_rpc;
@@ -74,6 +75,9 @@ pub async fn run_job_with(
         solana_job::INGEST_SOLANA => solana_job::run_solana(pool, ctx, job)
             .await
             .map(|r| tracing::info!(?r, "solana ingest step")),
+        solana_backfill_job::BACKFILL_SOLANA => solana_backfill_job::run(pool, ctx, job)
+            .await
+            .map(|r| tracing::info!(?r, "solana backfill step")),
         price_job::POLL_PRICES => match &ctx.prices {
             Some(p) => price_job::poll(pool, p.provider.as_ref(), now)
                 .await
@@ -128,6 +132,7 @@ pub async fn drain_with(
     }
     if ctx.solana_source.is_some() {
         kinds.push(solana_job::INGEST_SOLANA);
+        kinds.push(solana_backfill_job::BACKFILL_SOLANA);
     }
     if ctx.prices.is_some() {
         kinds.push(price_job::POLL_PRICES);

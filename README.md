@@ -61,6 +61,13 @@ cargo run -p trace-worker --bin trace-price-backfill -- \
   request CHAIN ASSET FROM_RFC3339 TO_RFC3339 INTERVAL_SECONDS
 ```
 
+Finalized Solana history can be queued between explicit signature boundaries after the protocol is enabled:
+
+```bash
+cargo run -p trace-worker --bin trace-solana-backfill -- \
+  request PROTOCOL BEFORE_SIGNATURE UNTIL_SIGNATURE MAX_SIGNATURES
+```
+
 Run the web app:
 
 ```bash

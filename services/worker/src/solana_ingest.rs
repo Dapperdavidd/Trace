@@ -138,11 +138,65 @@ pub async fn step(
 
     // Oldest first, bounded per step.
     let batch: Vec<SigInfo> = collected.into_iter().rev().take(cfg.max_per_step).collect();
+    let processed = process_signatures(pool, src, cfg, &batch).await?;
+    report.failed_onchain = processed.failed_onchain;
+    report.fetched = processed.fetched;
+    report.inserted = processed.inserted;
+    report.duplicates = processed.duplicates;
+    report.skipped = processed.skipped;
+
+    // Advance only after every transaction in the batch was handled.
+    if let Some(last) = batch.last() {
+        ingestion::set_cursor(
+            pool,
+            "solana",
+            &cfg.protocol,
+            &last.signature,
+            Some(last.slot as i64),
+        )
+        .await?;
+    }
+    if report.gap {
+        sqlx::query("INSERT INTO audit_events (id, actor, action, subject, detail) VALUES ($1,'indexer','ingest_gap',$2,$3)")
+            .bind(uuid::Uuid::new_v4())
+            .bind(format!("solana:{}", cfg.protocol))
+            .bind(serde_json::json!({
+                "after_signature": cursor_sig,
+                "first_ingested_signature": oldest_collected,
+                "max_backlog": cfg.max_backlog,
+                "note": "signatures older than the first ingested one were not read",
+            }))
+            .execute(pool)
+            .await
+            .map_err(trace_database::DbError::from)?;
+    }
+    ingestion::record_successful_scan(pool, "solana", &cfg.protocol, None).await?;
+    Ok(report)
+}
+
+/// Fetch, parse, and persist an explicit ordered batch without reading or
+/// changing the live Solana cursor. Historical backfill uses this entry point.
+pub async fn process_signatures(
+    pool: &sqlx::PgPool,
+    src: &dyn SolanaSource,
+    cfg: &SolanaIngestConfig,
+    signatures: &[SigInfo],
+) -> Result<SolanaReport, IngestError> {
+    if !matches!(cfg.status, SupportStatus::Enabled | SupportStatus::Partial) {
+        return Err(IngestError::NotEnabled {
+            chain: "solana".into(),
+            protocol: cfg.protocol.clone(),
+        });
+    }
+    let mut report = SolanaReport {
+        collected: signatures.len(),
+        ..Default::default()
+    };
     let parse_cfg = Config {
         programs: cfg.programs,
         finalized: true,
     };
-    for s in &batch {
+    for s in signatures {
         if s.failed {
             report.failed_onchain += 1;
             continue;
@@ -210,32 +264,6 @@ pub async fn step(
         }
     }
 
-    // Advance only after every transaction in the batch was handled.
-    if let Some(last) = batch.last() {
-        ingestion::set_cursor(
-            pool,
-            "solana",
-            &cfg.protocol,
-            &last.signature,
-            Some(last.slot as i64),
-        )
-        .await?;
-    }
-    if report.gap {
-        sqlx::query("INSERT INTO audit_events (id, actor, action, subject, detail) VALUES ($1,'indexer','ingest_gap',$2,$3)")
-            .bind(uuid::Uuid::new_v4())
-            .bind(format!("solana:{}", cfg.protocol))
-            .bind(serde_json::json!({
-                "after_signature": cursor_sig,
-                "first_ingested_signature": oldest_collected,
-                "max_backlog": cfg.max_backlog,
-                "note": "signatures older than the first ingested one were not read",
-            }))
-            .execute(pool)
-            .await
-            .map_err(trace_database::DbError::from)?;
-    }
-    ingestion::record_successful_scan(pool, "solana", &cfg.protocol, None).await?;
     Ok(report)
 }
 

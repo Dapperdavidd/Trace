@@ -123,7 +123,7 @@ Actions:
 5. Compare inserted swaps, duplicates, skipped reasons, and raw-event hashes before production replay.
 6. Clear the incident only after the range is covered or the limitation is documented in the coverage register and UI.
 
-For EVM, request and inspect a range with `trace-backfill` as documented in `deploy.md`. The job reads finalized blocks in 200 block chunks, resumes after failures, and does not move the live cursor. Solana and historical price gaps still require engineering work. Never hide a gap by changing the audit row.
+For EVM, request and inspect a range with `trace-backfill` as documented in `deploy.md`. For Solana, use `trace-solana-backfill` with reviewed exclusive signature boundaries. Both jobs resume after failures and do not move the live cursor. Historical price gaps use `trace-price-backfill`. Never hide a gap by changing the audit row.
 
 ## Reorg audit
 

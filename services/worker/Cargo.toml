@@ -16,6 +16,10 @@ path = "src/bin/trace-backfill.rs"
 name = "trace-price-backfill"
 path = "src/bin/trace-price-backfill.rs"
 
+[[bin]]
+name = "trace-solana-backfill"
+path = "src/bin/trace-solana-backfill.rs"
+
 [lib]
 name = "trace_worker"
 path = "src/lib.rs"

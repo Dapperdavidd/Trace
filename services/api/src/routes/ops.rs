@@ -226,6 +226,24 @@ async fn metrics(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpRes
             r.get::<i64, _>("remaining").max(0) as f64,
         );
     }
+    x.help(
+        "trace_solana_backfill_oldest_update_age_seconds",
+        "Seconds since the oldest pending Solana backfill was checked. Absent when none are pending.",
+    );
+    let solana_backfill_age: Option<f64> = sqlx::query_scalar(
+        "SELECT EXTRACT(EPOCH FROM (now() - min(updated_at)))::float8
+         FROM solana_backfill_runs WHERE status IN ('queued','running')",
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(db)?;
+    if let Some(age) = solana_backfill_age {
+        x.gauge(
+            "trace_solana_backfill_oldest_update_age_seconds",
+            &[],
+            age.max(0.0),
+        );
+    }
 
     x.help(
         "trace_price_backfill_oldest_update_age_seconds",
@@ -243,6 +261,50 @@ async fn metrics(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpRes
             "trace_price_backfill_oldest_update_age_seconds",
             &[],
             age.max(0.0),
+        );
+    }
+
+    x.help(
+        "trace_solana_backfill_runs",
+        "Historical Solana signature backfill runs by protocol and status.",
+    );
+    for r in sqlx::query(
+        "SELECT protocol,status,count(*) AS n FROM solana_backfill_runs
+         GROUP BY protocol,status ORDER BY protocol,status",
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(db)?
+    {
+        x.gauge(
+            "trace_solana_backfill_runs",
+            &[
+                ("protocol", &r.get::<String, _>("protocol")),
+                ("status", &r.get::<String, _>("status")),
+            ],
+            r.get::<i64, _>("n") as f64,
+        );
+    }
+
+    x.help(
+        "trace_solana_backfill_remaining_limit",
+        "Unused signature allowance for each pending Solana backfill. This is a safety limit, not proof of signatures remaining.",
+    );
+    for r in sqlx::query(
+        "SELECT id::text AS id,protocol,max_signatures-processed AS remaining
+         FROM solana_backfill_runs WHERE status IN ('queued','running') ORDER BY created_at",
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(db)?
+    {
+        x.gauge(
+            "trace_solana_backfill_remaining_limit",
+            &[
+                ("run_id", &r.get::<String, _>("id")),
+                ("protocol", &r.get::<String, _>("protocol")),
+            ],
+            r.get::<i64, _>("remaining").max(0) as f64,
         );
     }
 

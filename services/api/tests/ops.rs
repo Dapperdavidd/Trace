@@ -119,6 +119,16 @@ async fn metrics_are_read_from_the_database_and_exclude_demo_rows(pool: PgPool) 
     .execute(&pool)
     .await
     .unwrap();
+    let solana_backfill_id = uuid::Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO solana_backfill_runs
+         (id,protocol,before_signature,until_signature,next_before,max_signatures,processed,status)
+         VALUES ($1,'raydium_amm_v4','new','old','middle',500,125,'running')",
+    )
+    .bind(solana_backfill_id)
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("INSERT INTO price_points (chain, asset, observed_at, usd_per_base_unit, source, demo) VALUES ('ethereum','0x000000000000000000000000000000000000d001', now(), 1, 'demo_seed', TRUE)")
         .execute(&pool).await.unwrap();
 
@@ -177,6 +187,12 @@ async fn metrics_are_read_from_the_database_and_exclude_demo_rows(pool: PgPool) 
     assert!(m.contains("trace_price_backfill_runs{chain=\"ethereum\",status=\"queued\"} 1"));
     assert!(m.contains(&format!(
         "trace_price_backfill_remaining_points{{run_id=\"{price_backfill_id}\",chain=\"ethereum\",asset=\"0x000000000000000000000000000000000000d001\"}} 3"
+    )));
+    assert!(
+        m.contains("trace_solana_backfill_runs{protocol=\"raydium_amm_v4\",status=\"running\"} 1")
+    );
+    assert!(m.contains(&format!(
+        "trace_solana_backfill_remaining_limit{{run_id=\"{solana_backfill_id}\",protocol=\"raydium_amm_v4\"}} 375"
     )));
     assert!(
         !m.lines()

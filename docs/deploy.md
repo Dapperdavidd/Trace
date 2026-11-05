@@ -73,6 +73,21 @@ DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-price-backfil
 
 Each worker job requests at most 40 points. Provider or database failures do not advance progress. Missing, low-confidence, or distant points are counted as rejected rather than invented. One run is limited to 10,000 requested points.
 
+## Historical Solana backfill
+
+Solana backfill uses two finalized transaction signatures as exclusive boundaries. `before-signature` is the newer boundary and `until-signature` is the older boundary. The protocol must be Enabled or Partial and `TRACE_RPC_SOLANA` must be configured. A Disabled protocol can be requested for planning, but the worker will not schedule it.
+
+```bash
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-solana-backfill -- \
+  request raydium_amm_v4 BEFORE_SIGNATURE UNTIL_SIGNATURE 10000
+
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-solana-backfill -- status
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-solana-backfill -- status RUN_ID
+DATABASE_URL="$DATABASE_URL" cargo run -p trace-worker --bin trace-solana-backfill -- cancel RUN_ID
+```
+
+The worker reads finalized signatures in pages of 100 and shares the live ingestion lock. Progress never moves the live cursor. If `max-signatures` is exhausted before the older boundary is proven reached, the run ends as `limit_reached`, not `completed`. Continue with a reviewed follow-up range starting at the reported `next_before` signature.
+
 ## Monitoring
 
 Scrape `/v1/ops/metrics` with `Authorization: Bearer $TRACE_OPS_TOKEN` (Prometheus text format, read from the database).
@@ -96,6 +111,7 @@ Suggested alerts:
 | Data gap | `increase(trace_ingest_gaps[1h]) > 0` | A range was not read; coverage has a hole |
 | Backfill stalled | `trace_backfill_oldest_update_age_seconds > 600` | A requested historical range is not progressing |
 | Price backfill stalled | `trace_price_backfill_oldest_update_age_seconds > 600` | A requested historical price range is not progressing |
+| Solana backfill stalled | `trace_solana_backfill_oldest_update_age_seconds > 600` | A requested finalized signature range is not progressing |
 | Prices stale | `trace_price_latest_age_seconds > 1800` | Price polling stopped (only if prices are on) |
 | Not ready | probe `/v1/health/ready` fails | Database unreachable |
 

@@ -40,7 +40,7 @@ pub fn deployments() -> &'static [SolanaDeployment] {
 pub type SolanaSourceFactory =
     Box<dyn Fn() -> Result<Box<dyn SolanaSource>, IngestError> + Send + Sync>;
 
-fn status(protocols: &[ProtocolCapability], d: &SolanaDeployment) -> SupportStatus {
+pub(crate) fn status(protocols: &[ProtocolCapability], d: &SolanaDeployment) -> SupportStatus {
     protocols
         .iter()
         .find(|p| p.chain == ChainId::Solana && p.protocol == d.protocol)
