@@ -25,7 +25,7 @@ getSignaturesForAddress(program, until=cursor)   newest first, finalized
 * The parser attributes a swap to the transaction fee payer. Swaps routed through a relayer or aggregator whose fee payer is not the trader are attributed to the payer or skipped as not a simple swap.
 * The Raydium program id is in `services/worker/src/solana_job.rs` and must be checked on an explorer when enabling.
 * A public RPC will rate limit a busy program. Use a provider key in `TRACE_RPC_SOLANA`.
-* Token-2022 metadata stored only in mint extensions is not decoded yet. If no valid Metaplex account exists, name and symbol remain unavailable.
+* Token-2022 names and symbols are read from an embedded metadata extension only when its metadata pointer targets the mint and the metadata points back to the same mint. External non-Metaplex metadata-pointer accounts are not fetched yet.
 
 ## Turning it on
 

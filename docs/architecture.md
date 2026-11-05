@@ -74,7 +74,7 @@ The API and worker container targets share one build stage and run as a non-root
 ## Known gaps
 
 - Live liquidity and token-risk providers are not selected.
-- Solana Token-2022 extension-only names and symbols are not decoded when no Metaplex account exists.
+- External non-Metaplex Token-2022 metadata-pointer accounts are not fetched.
 - EVM block, Solana signature, and historical price backfill are available.
 - Push and email alert delivery are not implemented.
 - Production hosting, Google OAuth credentials, app-store accounts, and release operations require owner decisions or credentials.

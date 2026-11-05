@@ -16,4 +16,4 @@ Existing decimals, symbols, and names are never overwritten. A different mint de
 
 ## Consequences
 
-Solana clients can display chain-sourced names and symbols without trusting a market-price provider. RPC URLs and keys stay out of errors. Tokens that store name and symbol only in Token-2022 mint extensions remain unavailable until that extension format is added. This limit is explicit and never replaced with a guessed symbol.
+Solana clients can display chain-sourced names and symbols without trusting a market-price provider. RPC URLs and keys stay out of errors. Token-2022 metadata stored inside the mint is accepted only after the metadata pointer and embedded metadata both identify the same mint. External non-Metaplex metadata-pointer accounts remain unavailable and are never replaced with a guessed symbol.

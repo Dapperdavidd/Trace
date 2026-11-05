@@ -21,6 +21,10 @@ const NAME: &str = "0x06fdde03";
 const METADATA_PROGRAM: &str = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
 const TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const TOKEN_2022_PROGRAM: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+// Stable on-chain discriminants from the official Token-2022 interface.
+const TOKEN_2022_MINT_ACCOUNT_TYPE: u8 = 1;
+const TOKEN_2022_METADATA_POINTER: u16 = 18;
+const TOKEN_2022_TOKEN_METADATA: u16 = 19;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TokenMetadata {
@@ -290,6 +294,76 @@ fn parse_solana_mint(owner: &str, data: &[u8]) -> Option<u8> {
         .then_some(data[44])
 }
 
+fn token_2022_extension(data: &[u8], wanted: u16) -> Option<&[u8]> {
+    if data.len() <= 166
+        || data.get(82..165)?.iter().any(|value| *value != 0)
+        || data[165] != TOKEN_2022_MINT_ACCOUNT_TYPE
+    {
+        return None;
+    }
+    let mut offset = 166usize;
+    while offset.checked_add(4)? <= data.len() {
+        let extension_type = u16::from_le_bytes(data[offset..offset + 2].try_into().ok()?);
+        let length = usize::from(u16::from_le_bytes(
+            data[offset + 2..offset + 4].try_into().ok()?,
+        ));
+        let start = offset + 4;
+        let end = start.checked_add(length)?;
+        let value = data.get(start..end)?;
+        if extension_type == wanted {
+            return Some(value);
+        }
+        if extension_type == 0 {
+            return None;
+        }
+        offset = end;
+    }
+    None
+}
+
+fn skip_borsh_text(data: &[u8], offset: &mut usize, max: usize) -> Option<()> {
+    let end = offset.checked_add(4)?;
+    let length =
+        usize::try_from(u32::from_le_bytes(data.get(*offset..end)?.try_into().ok()?)).ok()?;
+    if length > max {
+        return None;
+    }
+    let start = end;
+    let end = start.checked_add(length)?;
+    std::str::from_utf8(data.get(start..end)?).ok()?;
+    *offset = end;
+    Some(())
+}
+
+fn parse_token_2022_metadata(data: &[u8], expected_mint: &[u8; 32]) -> Option<(String, String)> {
+    let pointer = token_2022_extension(data, TOKEN_2022_METADATA_POINTER)?;
+    if pointer.len() != 64 || pointer.get(32..64)? != expected_mint {
+        return None;
+    }
+    let metadata = token_2022_extension(data, TOKEN_2022_TOKEN_METADATA)?;
+    if metadata.len() < 64 || metadata.get(32..64)? != expected_mint {
+        return None;
+    }
+    let mut offset = 64;
+    let name = borsh_text(metadata, &mut offset, 80)?;
+    let symbol = borsh_text(metadata, &mut offset, 20)?;
+    skip_borsh_text(metadata, &mut offset, 2_048)?;
+    let count_end = offset.checked_add(4)?;
+    let additional = usize::try_from(u32::from_le_bytes(
+        metadata.get(offset..count_end)?.try_into().ok()?,
+    ))
+    .ok()?;
+    if additional > 64 {
+        return None;
+    }
+    offset = count_end;
+    for _ in 0..additional {
+        skip_borsh_text(metadata, &mut offset, 128)?;
+        skip_borsh_text(metadata, &mut offset, 1_024)?;
+    }
+    (offset == metadata.len()).then_some((name, symbol))
+}
+
 #[async_trait]
 impl MetadataSource for SolanaMetadataRpc {
     async fn fetch(&self, chain: ChainId, token: &str) -> Result<Option<TokenMetadata>, Failure> {
@@ -305,14 +379,22 @@ impl MetadataSource for SolanaMetadataRpc {
         let Some(decimals) = parse_solana_mint(&owner, &mint_data) else {
             return Ok(None);
         };
-        let (name, symbol) = match metadata_pda(&mint) {
-            Some(address) => match self.account(&address).await? {
-                Some((owner, data)) if owner == METADATA_PROGRAM => parse_metaplex(&data, &mint)
-                    .map(|(name, symbol)| (Some(name), Some(symbol)))
-                    .unwrap_or((None, None)),
-                _ => (None, None),
+        let embedded = (owner == TOKEN_2022_PROGRAM)
+            .then(|| parse_token_2022_metadata(&mint_data, &mint))
+            .flatten();
+        let (name, symbol) = match embedded {
+            Some((name, symbol)) => (Some(name), Some(symbol)),
+            None => match metadata_pda(&mint) {
+                Some(address) => match self.account(&address).await? {
+                    Some((owner, data)) if owner == METADATA_PROGRAM => {
+                        parse_metaplex(&data, &mint)
+                            .map(|(name, symbol)| (Some(name), Some(symbol)))
+                            .unwrap_or((None, None))
+                    }
+                    _ => (None, None),
+                },
+                None => (None, None),
             },
-            None => (None, None),
         };
         Ok(Some(TokenMetadata {
             decimals,
@@ -521,6 +603,52 @@ mod tests {
         mint_account[45] = 1;
         assert_eq!(parse_solana_mint(TOKEN_PROGRAM, &mint_account), Some(6));
         assert_eq!(parse_solana_mint("wrong-owner", &mint_account), None);
+    }
+
+    fn push_tlv(data: &mut Vec<u8>, extension: u16, value: &[u8]) {
+        data.extend(extension.to_le_bytes());
+        data.extend(u16::try_from(value.len()).unwrap().to_le_bytes());
+        data.extend(value);
+    }
+
+    fn push_borsh_text(data: &mut Vec<u8>, value: &str) {
+        data.extend(u32::try_from(value.len()).unwrap().to_le_bytes());
+        data.extend(value.as_bytes());
+    }
+
+    #[test]
+    fn token_2022_metadata_requires_a_two_way_mint_pointer() {
+        let mint = [7u8; 32];
+        let mut account = vec![0u8; 166];
+        account[44] = 9;
+        account[45] = 1;
+        account[165] = TOKEN_2022_MINT_ACCOUNT_TYPE;
+
+        let mut pointer = vec![0u8; 32];
+        pointer.extend(mint);
+        push_tlv(&mut account, TOKEN_2022_METADATA_POINTER, &pointer);
+
+        let mut metadata = vec![0u8; 32];
+        metadata.extend(mint);
+        push_borsh_text(&mut metadata, "Extension Token");
+        push_borsh_text(&mut metadata, "EXT");
+        push_borsh_text(&mut metadata, "https://example.invalid");
+        metadata.extend(0u32.to_le_bytes());
+        push_tlv(&mut account, TOKEN_2022_TOKEN_METADATA, &metadata);
+
+        assert_eq!(
+            parse_token_2022_metadata(&account, &mint),
+            Some(("Extension Token".into(), "EXT".into()))
+        );
+
+        let mut wrong_pointer = account.clone();
+        wrong_pointer[166 + 4 + 32] ^= 1;
+        assert_eq!(parse_token_2022_metadata(&wrong_pointer, &mint), None);
+
+        let mut wrong_metadata_mint = account;
+        let metadata_mint = 166 + 4 + pointer.len() + 4 + 32;
+        wrong_metadata_mint[metadata_mint] ^= 1;
+        assert_eq!(parse_token_2022_metadata(&wrong_metadata_mint, &mint), None);
     }
 
     #[tokio::test]
