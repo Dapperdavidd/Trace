@@ -1,13 +1,23 @@
 # TRACE
 
-TRACE is a watch-only crypto research product for discovering on-chain activity, studying wallets and tokens, and testing Shadow strategies with paper money.
+TRACE is a NEAR-native agentic trading intelligence product. It discovers
+on-chain activity, studies wallets and tokens, proves strategies with Shadow,
+and expresses user-owned agent authority through NEAR mandates and NEAR
+Intents.
 
-It has a Rust backend, PostgreSQL, a Next.js web app, and a Flutter mobile app. TRACE has no custody, signing, live trade execution, real-money trade mirroring, Send, Buy, or Swap. Those surfaces are labelled Coming later.
+It has a Rust backend, PostgreSQL, a deployable NEAR contract, a Next.js web
+app, and a Flutter mobile app. TRACE has no custody and holds no wallet keys.
+The API can prepare a wallet-signable mandate call and dry quote, but cannot
+sign, deposit or submit funds. Live execution stays unavailable until the NEAR
+deployment is verified and independently reviewed.
 
 ## Current coverage
 
 | Capability | Status |
 | --- | --- |
+| NEAR agent mandates | Contract builds to WebAssembly; deployment account required |
+| NEAR Intents | Live asset discovery and dry quote adapter; no server submission |
+| NEAR agent delegation | Implemented behind a production-off safety switch pending deployment and review |
 | Ethereum Uniswap V2 ingestion | Enabled with reviewed real fixtures |
 | Solana Raydium AMM v4 | Disabled pending reviewed real fixtures |
 | Base and BNB protocols | Disabled pending deployments and fixtures |
@@ -17,6 +27,10 @@ It has a Rust backend, PostgreSQL, a Next.js web app, and a Flutter mobile app. 
 | Signals | Real finalized buys can publish sealed research signals when liquidity and risk inputs are complete; outcomes use fixed horizons |
 | Shadow | Paper-only and gated by price and liquidity evidence |
 | Google sign-in | Implemented; production credentials and an end-to-end live check are still required |
+
+NEAR is the authorization, evidence and cross-chain execution control plane.
+Ethereum and Solana are markets TRACE observes. See
+[`docs/near-architecture.md`](docs/near-architecture.md).
 
 The code registry and [coverage register](docs/coverage-register.md) are the source of truth for protocol support. Disabled or unsupported activity is never guessed.
 

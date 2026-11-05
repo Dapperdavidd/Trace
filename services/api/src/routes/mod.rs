@@ -5,6 +5,7 @@ pub mod chains;
 pub mod common;
 pub mod discovery;
 pub mod health;
+pub mod near;
 pub mod openapi;
 pub mod ops;
 pub mod shadow;

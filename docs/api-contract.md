@@ -7,7 +7,7 @@ decimal strings. Every analytic response carries the honesty envelope below. Err
 Every route may return HTTP 429 with code `rate_limited`, a request ID, and a `Retry-After` header. Sign-in has a stricter per-peer limit than general API traffic.
 
 ```ts
-type Chain = "solana" | "ethereum" | "base" | "bnb";
+type Chain = "near" | "solana" | "ethereum" | "base" | "bnb";
 type DataStatus = "live" | "stale" | "unavailable" | "partial" | "demo";
 interface Envelope { data_status: DataStatus; as_of: string /* ISO UTC */; demo: boolean; coverage_note?: string }
 interface TokenRef { chain: Chain; address: string; symbol: string | null; name: string | null }
@@ -51,12 +51,34 @@ type RiskState = "pass" | "warn" | "block" | "unknown";
 - `GET /shadow-strategies/{id}/results` -> `Envelope & { starting_usd, ending_usd, return_pct, trades: number, win_rate_pct, skipped_unexecutable: number, fees_and_slippage_usd, baseline: {...}, assumptions: {...} }`
 - Paper only. Nothing here signs or broadcasts.
 
+## NEAR agent control plane
+
+- `GET /near` reports the configured NEAR network, contract, agent, storage and
+  execution boundaries. `deployment_verified: false` means no live authority.
+- `GET /near/assets` returns the current asset list directly from NEAR Intents.
+- `POST /near/mandates` creates a mandate draft attached to one owned Shadow
+  strategy. It returns a wallet-signable `create_mandate` contract call only
+  when `TRACE_NEAR_CONTRACT_ID` is configured. A draft is never active.
+- Mandates name the owner and agent NEAR accounts, mode, allowed chains and
+  NEAR Intents asset IDs, exact USD trade and daily limits, slippage limit and
+  expiry. `delegated` is refused unless deployment explicitly enables it.
+- `GET /near/mandates` lists drafts and verified anchor fields. Missing anchor
+  evidence is shown as unavailable, never inferred.
+- `POST /near/intents/preview` accepts an owned mandate and exact-input quote
+  request. Both assets and slippage must fit the mandate. TRACE always sends
+  `dry: true`, retains the signed quote response and never deposits or submits.
+- Full evidence stays in TRACE storage. The NEAR contract stores policy and a
+  SHA-256 evidence commitment for each execution receipt.
+
 ## Briefings and coverage
 - `GET /briefings` -> `Envelope & { sections: [{ title, items: [{ text, link? }] }] }`
 - `GET /chains` (implemented): chain and protocol coverage truth.
 
-## Out of scope for MVP (UI must show "Coming later", never fake it)
-Spendable wallet creation, send, receive, buy, swap, real-money trade mirroring, natural-language "Ask TRACE".
+## Out of scope until contract deployment and review
+
+Custody, server-held wallet keys, unrestricted agent spending and silent trade
+submission. User-approved execution may be added only after an anchored mandate
+can be verified from NEAR. Natural-language "Ask TRACE" remains unavailable.
 
 
 ## Settled in milestone 5 (previously ambiguous)

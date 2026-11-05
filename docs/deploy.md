@@ -2,8 +2,9 @@
 
 ```
  browser / app ──► TLS proxy ──► trace-api ──► PostgreSQL ◄── trace-worker ──► RPC nodes, price API
-                                    │                              │
-                          /v1/ops/metrics (token) ◄── Prometheus ◄─┘ (reads the same database)
+       │                            │    │                         │
+ NEAR wallet ──► mandate contract ◄─┘    └──► NEAR Intents        │
+                          /v1/ops/metrics ◄── Prometheus ◄─────────┘
 ```
 
 Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worker` (queue: ingestion, prices, snapshots, alerts, signals, and outcomes). Migrations run when either starts. They are forward-only.
@@ -19,6 +20,12 @@ Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worke
 | `TRACE_BIND_ADDR` | api | no | Default `127.0.0.1:8080`; the image sets `0.0.0.0:8080` |
 | `TRACE_DB_MAX_CONNECTIONS` | api | no | Default 10. The worker needs at least 2 |
 | `TRACE_OPS_TOKEN` | api | no | 24+ characters. Without it `/v1/ops/metrics` returns 404 |
+| `TRACE_NEAR_NETWORK` | api | no | Defaults to `testnet`; set `mainnet` only after review |
+| `TRACE_NEAR_CONTRACT_ID` | api | for anchoring | Deployed TRACE mandate contract account |
+| `TRACE_NEAR_AGENT_ACCOUNT_ID` | api | for mandates | Named agent account allowed by generated policies |
+| `TRACE_NEAR_DELEGATION_ENABLED` | api | never before review | Enables delegated mandate drafts; defaults off |
+| `TRACE_NEAR_INTENTS_BASE_URL` | api | no | Defaults to the official 1Click endpoint |
+| `TRACE_NEAR_INTENTS_API_KEY` | api | no | Partner key for 1Click; keep in the secret store |
 | `TRACE_RPC_ETHEREUM` | worker | for ingestion | RPC URL; treat as a secret |
 | `TRACE_RPC_SOLANA` | worker | for ingestion | RPC URL; treat as a secret |
 | `TRACE_PRICE_PROVIDER` | worker | for prices | `defillama`. Off when unset |
@@ -26,7 +33,11 @@ Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worke
 | `TRACE_DEV_AUTH` | api | never in prod | Accepts `dev:<email>` as sign-in |
 | `TRACE_SEED_DEMO` | api | never in prod | Seeds labelled fake data |
 
-With `TRACE_ENV=production` the api refuses to start if any of these hold: dev auth on, demo seeding on, no `GOOGLE_CLIENT_ID`, a CORS origin that is `*`, localhost or not https, an ops token under 24 characters, or the development database password. It lists every problem, not only the first.
+With `TRACE_ENV=production` the api refuses to start if any of these hold: dev
+auth on, demo seeding on, no `GOOGLE_CLIENT_ID`, a CORS origin that is `*`,
+localhost or not https, an ops token under 24 characters, the development
+database password, or delegation enabled without both NEAR contract and agent
+accounts. It lists every problem, not only the first.
 
 ## Order of work
 
@@ -37,6 +48,10 @@ With `TRACE_ENV=production` the api refuses to start if any of these hold: dev a
 5. Start `api`, check `GET /v1/health/ready`, then start `worker`.
 6. Ingestion stays idle until a protocol is Enabled in the registry **and** its RPC variable is set. Check the worker log for `ingestion is idle` or `ingestion active`.
 7. Sign-in: create a Google OAuth web client, authorise your web origin, set `GOOGLE_CLIENT_ID`, and sign in once end to end.
+8. Deploy `trace-mandates-contract` to a dedicated NEAR testnet account, set
+   `TRACE_NEAR_CONTRACT_ID`, and verify the deployed WebAssembly hash.
+9. Create a dedicated NEAR agent account. Keep delegation off while testing
+   approval-required mandates and dry Intents quotes.
 
 ## Historical EVM backfill
 

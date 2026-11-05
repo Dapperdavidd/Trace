@@ -21,6 +21,36 @@ pub const ROUTES: &[(&str, &str, &str, bool)] = &[
         false,
     ),
     (
+        "get",
+        "/v1/near",
+        "NEAR control-plane deployment and capability truth",
+        false,
+    ),
+    (
+        "get",
+        "/v1/near/assets",
+        "Assets currently reported by NEAR Intents",
+        true,
+    ),
+    (
+        "post",
+        "/v1/near/mandates",
+        "Create a user-owned NEAR agent mandate draft",
+        true,
+    ),
+    (
+        "get",
+        "/v1/near/mandates",
+        "List NEAR agent mandates and anchor state",
+        true,
+    ),
+    (
+        "post",
+        "/v1/near/intents/preview",
+        "Request and retain a dry NEAR Intents quote",
+        true,
+    ),
+    (
         "post",
         "/v1/auth/google",
         "Exchange a Google ID token for an app session",
@@ -215,7 +245,7 @@ pub fn document() -> Value {
     }
     json!({
         "openapi": "3.0.3",
-        "info": { "title": "TRACE API", "version": "0.1.0", "description": "Discovery-first crypto research API. Watch-only; no signing, no custody." },
+        "info": { "title": "TRACE API", "version": "0.1.0", "description": "NEAR-native agentic trading intelligence. The API prepares policy and dry quotes but holds no keys and signs no transactions." },
         "servers": [{ "url": "http://localhost:8080" }],
         "paths": paths,
         "components": {

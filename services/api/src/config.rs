@@ -15,6 +15,13 @@ pub struct Config {
     pub env: String,
     /// Bearer token for `/v1/ops/metrics`. The endpoint is off when unset.
     pub ops_token: Option<String>,
+    /// NEAR is the control plane. Contract and agent IDs remain optional until deployment.
+    pub near_network: String,
+    pub near_contract_id: Option<String>,
+    pub near_agent_account_id: Option<String>,
+    pub near_delegation_enabled: bool,
+    pub near_intents_base_url: String,
+    pub near_intents_api_key: Option<String>,
 }
 
 impl Config {
@@ -39,6 +46,20 @@ impl Config {
             seed_demo: std::env::var("TRACE_SEED_DEMO").is_ok_and(|v| v == "true"),
             env: std::env::var("TRACE_ENV").unwrap_or_else(|_| "development".into()),
             ops_token: std::env::var("TRACE_OPS_TOKEN")
+                .ok()
+                .filter(|v| !v.is_empty()),
+            near_network: std::env::var("TRACE_NEAR_NETWORK").unwrap_or_else(|_| "testnet".into()),
+            near_contract_id: std::env::var("TRACE_NEAR_CONTRACT_ID")
+                .ok()
+                .filter(|v| !v.is_empty()),
+            near_agent_account_id: std::env::var("TRACE_NEAR_AGENT_ACCOUNT_ID")
+                .ok()
+                .filter(|v| !v.is_empty()),
+            near_delegation_enabled: std::env::var("TRACE_NEAR_DELEGATION_ENABLED")
+                .is_ok_and(|v| v == "true"),
+            near_intents_base_url: std::env::var("TRACE_NEAR_INTENTS_BASE_URL")
+                .unwrap_or_else(|_| "https://1click.chaindefuser.com".into()),
+            near_intents_api_key: std::env::var("TRACE_NEAR_INTENTS_API_KEY")
                 .ok()
                 .filter(|v| !v.is_empty()),
         })
@@ -84,6 +105,16 @@ impl Config {
         }
         if self.database_url.contains("trace:trace@") {
             p.push("DATABASE_URL uses the development password".into());
+        }
+        if self.near_delegation_enabled {
+            if self.near_contract_id.is_none() {
+                p.push("TRACE_NEAR_DELEGATION_ENABLED=true without TRACE_NEAR_CONTRACT_ID".into());
+            }
+            if self.near_agent_account_id.is_none() {
+                p.push(
+                    "TRACE_NEAR_DELEGATION_ENABLED=true without TRACE_NEAR_AGENT_ACCOUNT_ID".into(),
+                );
+            }
         }
         p
     }

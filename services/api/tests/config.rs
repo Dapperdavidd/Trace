@@ -13,6 +13,12 @@ fn prod() -> Config {
         seed_demo: false,
         env: "production".into(),
         ops_token: Some(TOKEN.into()),
+        near_network: "mainnet".into(),
+        near_contract_id: None,
+        near_agent_account_id: None,
+        near_delegation_enabled: false,
+        near_intents_base_url: "https://1click.chaindefuser.com".into(),
+        near_intents_api_key: None,
     }
 }
 
@@ -58,4 +64,13 @@ fn development_is_never_blocked() {
     c.google_client_id = None;
     c.cors_origins = vec!["http://localhost:3000".into()];
     assert!(c.production_problems().is_empty());
+}
+
+#[test]
+fn production_requires_near_accounts_before_delegation() {
+    let mut c = prod();
+    c.near_delegation_enabled = true;
+    let problems = c.production_problems().join("\n");
+    assert!(problems.contains("TRACE_NEAR_CONTRACT_ID"));
+    assert!(problems.contains("TRACE_NEAR_AGENT_ACCOUNT_ID"));
 }

@@ -1,6 +1,28 @@
 use crate::auth::{Disabled, IdTokenVerifier};
 use sqlx::PgPool;
 use std::sync::Arc;
+use trace_near::IntentsClient;
+
+#[derive(Clone)]
+pub struct NearState {
+    pub network: Arc<str>,
+    pub contract_id: Option<Arc<str>>,
+    pub agent_account_id: Option<Arc<str>>,
+    pub delegation_enabled: bool,
+    pub intents: Arc<IntentsClient>,
+}
+
+impl Default for NearState {
+    fn default() -> Self {
+        Self {
+            network: Arc::from("testnet"),
+            contract_id: None,
+            agent_account_id: None,
+            delegation_enabled: false,
+            intents: Arc::new(IntentsClient::new(None)),
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -10,6 +32,7 @@ pub struct AppState {
     pub demo: bool,
     /// Bearer token for the ops endpoints. `None` disables them.
     pub ops_token: Option<Arc<str>>,
+    pub near: NearState,
 }
 
 impl AppState {
@@ -21,6 +44,7 @@ impl AppState {
             verifier: Arc::new(Disabled),
             demo: false,
             ops_token: None,
+            near: NearState::default(),
         }
     }
 
@@ -40,6 +64,12 @@ impl AppState {
             verifier,
             demo: false,
             ops_token: None,
+            near: NearState::default(),
         }
+    }
+
+    pub fn with_near(mut self, near: NearState) -> Self {
+        self.near = near;
+        self
     }
 }

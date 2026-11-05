@@ -1,5 +1,5 @@
 use std::net::TcpListener;
-use trace_api::{config::Config, run, AppState};
+use trace_api::{config::Config, run, state::NearState, AppState};
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -47,9 +47,21 @@ async fn main() -> anyhow::Result<()> {
             std::sync::Arc::new(trace_api::auth::Disabled)
         }
     };
+    let near = NearState {
+        network: cfg.near_network.clone().into(),
+        contract_id: cfg.near_contract_id.clone().map(Into::into),
+        agent_account_id: cfg.near_agent_account_id.clone().map(Into::into),
+        delegation_enabled: cfg.near_delegation_enabled,
+        intents: std::sync::Arc::new(trace_near::IntentsClient::with_base_url(
+            cfg.near_intents_base_url.clone(),
+            cfg.near_intents_api_key.clone(),
+        )),
+    };
     run(
         listener,
-        AppState::with_verifier(pool, verifier).with_ops_token(cfg.ops_token.clone()),
+        AppState::with_verifier(pool, verifier)
+            .with_ops_token(cfg.ops_token.clone())
+            .with_near(near),
         cfg.cors_origins,
     )?
     .await?;

@@ -29,6 +29,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/v1")
             .configure(routes::health::configure)
+            .configure(routes::near::configure)
             .configure(routes::chains::configure)
             .configure(routes::account::configure)
             .configure(routes::watchlists::configure)

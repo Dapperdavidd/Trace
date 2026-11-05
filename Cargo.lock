@@ -4196,6 +4196,7 @@ dependencies = [
  "trace-discovery",
  "trace-domain",
  "trace-intelligence",
+ "trace-near",
  "trace-risk",
  "trace-shadow",
  "trace-signals",
