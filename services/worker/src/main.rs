@@ -13,6 +13,7 @@ async fn main() -> anyhow::Result<()> {
     let pool = trace_database::connect(&url, 5).await?;
     trace_database::migrate(&pool).await?;
     let ctx = trace_worker::ingest_job::Ctx::from_env();
+    let retention = trace_worker::retention_job::Policy::from_env()?;
     let targets = ctx.targets();
     if targets.is_empty() && trace_worker::solana_job::targets(&ctx).is_empty() {
         tracing::info!("no protocol is enabled with an RPC URL configured; ingestion is idle");
@@ -25,6 +26,9 @@ async fn main() -> anyhow::Result<()> {
     }
     if ctx.prices.is_none() {
         tracing::info!("TRACE_PRICE_PROVIDER is not set; price polling is off");
+    }
+    if retention.is_none() {
+        tracing::info!("retention is off; no TRACE_RETENTION_*_DAYS setting is configured");
     }
     tracing::info!("trace-worker started");
     let mut tick = tokio::time::interval(Duration::from_secs(30));
@@ -63,6 +67,9 @@ async fn main() -> anyhow::Result<()> {
                 }
                 if let Err(e) = trace_worker::metadata_job::schedule(&pool, ctx.metadata.is_some(), now).await {
                     tracing::warn!(error = %e, "could not schedule token metadata");
+                }
+                if let Err(e) = trace_worker::retention_job::schedule(&pool, retention.as_ref(), now).await {
+                    tracing::warn!(error = %e, "could not schedule retention");
                 }
                 match trace_worker::drain_with(&pool, now, &ctx).await {
                     Ok(n) if n > 0 => tracing::info!(ran = n, "jobs run"),

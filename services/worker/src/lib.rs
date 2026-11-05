@@ -7,6 +7,7 @@ pub mod metadata_job;
 pub mod outcomes;
 pub mod price_backfill_job;
 pub mod price_job;
+pub mod retention_job;
 pub mod rpc_source;
 pub mod signal_job;
 pub mod solana_backfill_job;
@@ -23,6 +24,7 @@ pub const KINDS: &[&str] = &[
     EVALUATE_OUTCOMES,
     alert_job::GENERATE_ALERTS,
     signal_job::PUBLISH_SIGNALS,
+    retention_job::PRUNE_RETENTION,
 ];
 
 /// Queue the periodic jobs. Keys are bucketed so repeated calls in the same
@@ -100,6 +102,9 @@ pub async fn run_job_with(
                 "token metadata RPC is not configured".into(),
             )),
         },
+        retention_job::PRUNE_RETENTION => retention_job::run(pool, job, now)
+            .await
+            .map(|report| tracing::info!(?report, "retention rows pruned")),
         ingest_job::INGEST_EVM => ingest_job::run_ingest(pool, ctx, job)
             .await
             .map(|r| tracing::info!(?r, "ingest step")),

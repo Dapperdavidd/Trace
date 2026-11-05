@@ -117,6 +117,19 @@ Suggested alerts:
 
 Logs are JSON on stdout. Errors never contain RPC URLs or keys.
 
+### Retention
+
+Retention is disabled unless at least one policy setting is present. The worker runs one bounded batch per configured table each day. Fixture rows are never removed, unfinished job attempts are never removed, and invalid or overly aggressive settings stop the worker at startup.
+
+| Setting | Minimum | Meaning |
+|---|---:|---|
+| `TRACE_RETENTION_RAW_EVENT_DAYS` | 30 | Age for non-fixture raw chain payloads |
+| `TRACE_RETENTION_JOB_ATTEMPT_DAYS` | 7 | Age for finished job-attempt records |
+| `TRACE_RETENTION_AUDIT_EVENT_DAYS` | 90 | Age for audit records |
+| `TRACE_RETENTION_BATCH_SIZE` | 1 | Rows removed from each configured table per daily run, default 1000 and maximum 10000 |
+
+Set only the tables covered by the approved production policy. Keep raw events long enough to replay every supported parser window. Backups can retain deleted rows separately, so their expiry policy must be configured with the selected database host.
+
 Incident diagnosis and recovery procedures are in [runbook.md](runbook.md).
 
 ## Not done

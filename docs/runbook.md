@@ -160,6 +160,12 @@ Symptoms include a sudden change in skipped reasons, impossible amounts, receipt
 
 TRACE stores raw events for replay, but a production replay command is not built yet. Until it exists, keep the protocol disabled and treat replay as reviewed engineering work.
 
+## Retention check
+
+Retention is off unless one or more `TRACE_RETENTION_*_DAYS` settings are present. Before enabling it, record the approved periods, confirm a recent backup, and compare the oldest and newest rows in each selected table. The worker deletes bounded daily batches and never deletes fixture raw events or unfinished job attempts.
+
+After changing a period, watch the `retention rows pruned` worker log and check remaining age ranges. Restore from a backup rather than improvising destructive SQL if a policy was configured incorrectly.
+
 ## Prices stale
 
 Symptoms:
