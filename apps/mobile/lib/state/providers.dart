@@ -86,6 +86,15 @@ final briefingProvider = FutureProvider.autoDispose<BriefingResponse>(
 final coverageProvider = FutureProvider.autoDispose<CoverageResponse>(
     (ref) => ref.watch(apiProvider).coverage());
 
+final nearStatusProvider = FutureProvider.autoDispose<NearStatus>(
+    (ref) => ref.watch(apiProvider).nearStatus());
+
+final nearAssetsProvider = FutureProvider.autoDispose<NearAssetsResponse>(
+    (ref) => ref.watch(apiProvider).nearAssets());
+
+final nearMandatesProvider = FutureProvider.autoDispose<NearMandatesResponse>(
+    (ref) => ref.watch(apiProvider).nearMandates());
+
 final shadowResultsProvider = FutureProvider.autoDispose
     .family<ShadowResults, String>(
         (ref, id) => ref.watch(apiProvider).shadowResults(id));

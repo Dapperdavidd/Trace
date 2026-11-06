@@ -231,4 +231,16 @@ class ApiClient implements TraceApi {
   @override
   Future<CoverageResponse> coverage() async =>
       CoverageResponse.fromJson(await _getMap('/chains'));
+
+  @override
+  Future<NearStatus> nearStatus() async =>
+      NearStatus.fromJson(await _getMap('/near'));
+
+  @override
+  Future<NearAssetsResponse> nearAssets() async =>
+      NearAssetsResponse.fromJson(await _getMap('/near/assets'));
+
+  @override
+  Future<NearMandatesResponse> nearMandates() async =>
+      NearMandatesResponse.fromJson(await _getMap('/near/mandates'));
 }

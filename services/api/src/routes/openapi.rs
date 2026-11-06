@@ -46,6 +46,12 @@ pub const ROUTES: &[(&str, &str, &str, bool)] = &[
     ),
     (
         "post",
+        "/v1/near/mandates/{id}/anchor",
+        "Verify a finalized NEAR mandate transaction",
+        true,
+    ),
+    (
+        "post",
         "/v1/near/intents/preview",
         "Request and retain a dry NEAR Intents quote",
         true,

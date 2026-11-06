@@ -47,6 +47,11 @@ class MoreScreen extends ConsumerWidget {
           children: [
             const SectionTitle('Research'),
             item(
+                Icons.hub_outlined,
+                'NEAR Agents',
+                'Control Shadow agents and verify their authority',
+                () => context.push('/near')),
+            item(
                 Icons.wb_sunny_outlined,
                 'Daily Briefing',
                 'A simple summary of what matters',

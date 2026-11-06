@@ -18,6 +18,7 @@ trace-database.workspace = true
 trace-chain-adapters.workspace = true
 actix-web.workspace = true
 actix-cors.workspace = true
+base64.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 serde.workspace = true

@@ -1026,3 +1026,132 @@ class CoverageResponse {
         note: str(j['note']),
       );
 }
+
+// ---------------------------------------------------------------------------
+// NEAR agent control plane
+// ---------------------------------------------------------------------------
+
+class NearServiceStatus {
+  const NearServiceStatus({
+    required this.configured,
+    this.accountId,
+    this.deploymentVerified = false,
+    this.delegationEnabled = false,
+  });
+  final bool configured;
+  final String? accountId;
+  final bool deploymentVerified;
+  final bool delegationEnabled;
+
+  factory NearServiceStatus.fromJson(Map<String, dynamic> j) =>
+      NearServiceStatus(
+        configured: boolOr(j['configured']),
+        accountId: strOrNull(j['account_id']),
+        deploymentVerified: boolOr(j['deployment_verified']),
+        delegationEnabled: boolOr(j['delegation_enabled']),
+      );
+}
+
+class NearStatus {
+  const NearStatus({
+    required this.env,
+    required this.network,
+    required this.isControlPlane,
+    required this.contract,
+    required this.agent,
+  });
+  final Envelope env;
+  final String network;
+  final bool isControlPlane;
+  final NearServiceStatus contract;
+  final NearServiceStatus agent;
+
+  factory NearStatus.fromJson(Map<String, dynamic> j) => NearStatus(
+        env: Envelope.fromJson(j),
+        network: strOrNull(j['network']) ?? 'unavailable',
+        isControlPlane: boolOr(j['near_is_control_plane']),
+        contract: NearServiceStatus.fromJson(asMap(j['contract'])),
+        agent: NearServiceStatus.fromJson(asMap(j['agent'])),
+      );
+}
+
+class NearAsset {
+  const NearAsset({
+    required this.assetId,
+    required this.blockchain,
+    required this.symbol,
+    required this.decimals,
+  });
+  final String assetId;
+  final String blockchain;
+  final String symbol;
+  final int decimals;
+
+  factory NearAsset.fromJson(Map<String, dynamic> j) => NearAsset(
+        assetId: str(j['assetId']),
+        blockchain: str(j['blockchain']),
+        symbol: str(j['symbol']),
+        decimals: intOr(j['decimals']),
+      );
+}
+
+class NearAssetsResponse {
+  const NearAssetsResponse({required this.env, required this.items});
+  final Envelope env;
+  final List<NearAsset> items;
+
+  factory NearAssetsResponse.fromJson(Map<String, dynamic> j) =>
+      NearAssetsResponse(
+        env: Envelope.fromJson(j),
+        items: mapList(j['items'], NearAsset.fromJson),
+      );
+}
+
+class NearMandate {
+  const NearMandate({
+    required this.id,
+    required this.ownerAccount,
+    required this.agentAccount,
+    required this.mode,
+    required this.status,
+    required this.maxTradeUsd,
+    required this.maxDailyUsd,
+    required this.allowedChains,
+    this.anchorTxHash,
+  });
+  final String id;
+  final String ownerAccount;
+  final String agentAccount;
+  final String mode;
+  final String status;
+  final String maxTradeUsd;
+  final String maxDailyUsd;
+  final List<String> allowedChains;
+  final String? anchorTxHash;
+
+  bool get isAnchored => status == 'anchored';
+
+  factory NearMandate.fromJson(Map<String, dynamic> j) => NearMandate(
+        id: str(j['id']),
+        ownerAccount: str(j['owner_near_account']),
+        agentAccount: str(j['agent_near_account']),
+        mode: str(j['mode']),
+        status: str(j['status']),
+        maxTradeUsd: str(j['max_trade_usd']),
+        maxDailyUsd: str(j['max_daily_usd']),
+        allowedChains: strList(j['allowed_chains']),
+        anchorTxHash: strOrNull(j['anchor_tx_hash']),
+      );
+}
+
+class NearMandatesResponse {
+  const NearMandatesResponse({required this.env, required this.items});
+  final Envelope env;
+  final List<NearMandate> items;
+
+  factory NearMandatesResponse.fromJson(Map<String, dynamic> j) =>
+      NearMandatesResponse(
+        env: Envelope.fromJson(j),
+        items: mapList(j['items'], NearMandate.fromJson),
+      );
+}

@@ -14,6 +14,7 @@ fn prod() -> Config {
         env: "production".into(),
         ops_token: Some(TOKEN.into()),
         near_network: "mainnet".into(),
+        near_rpc_url: "https://rpc.mainnet.near.org".into(),
         near_contract_id: None,
         near_agent_account_id: None,
         near_delegation_enabled: false,

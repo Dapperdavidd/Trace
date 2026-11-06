@@ -6,6 +6,8 @@
 
 mod intents;
 mod mandate;
+mod rpc;
 
 pub use intents::{Asset, IntentsClient, IntentsError, QuotePreview, QuoteRequest, QuoteResponse};
 pub use mandate::{AgentMandate, AssetPermission, MandateError, MandateMode, MandateStatus};
+pub use rpc::{NearRpcClient, NearRpcError, TransactionStatus};

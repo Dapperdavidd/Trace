@@ -2,7 +2,7 @@
   "name": "trace-web",
   "version": "0.1.0",
   "private": true,
-  "description": "TRACE web client: watch-only crypto research and paper trading.",
+  "description": "TRACE web client: NEAR-native agentic trading intelligence.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hot-labs/near-connect": "^0.12.0",
     "next": "15.5.28",
     "react": "19.1.1",
     "react-dom": "19.1.1"

@@ -1,6 +1,6 @@
 export type NavIcon =
   | "home" | "trend" | "users" | "shadow" | "radar" | "star" | "brief" | "compare" | "ask"
-  | "timeline" | "bell" | "wallet" | "send" | "receive" | "swap" | "clock";
+  | "timeline" | "bell" | "wallet" | "send" | "receive" | "swap" | "clock" | "near";
 
 export interface NavItem {
   href: string;
@@ -11,6 +11,7 @@ export interface NavItem {
 
 export const MAIN_NAV: NavItem[] = [
   { href: "/", label: "Home", icon: "home" },
+  { href: "/near", label: "NEAR Agents", icon: "near" },
   { href: "/top-movers", label: "Top Movers", icon: "trend" },
   { href: "/smart-wallets", label: "Smart Wallets", icon: "users" },
   { href: "/shadow-trades", label: "Shadow Trades", icon: "shadow" },

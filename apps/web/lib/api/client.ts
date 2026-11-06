@@ -41,6 +41,12 @@ import type {
   MoverWindow,
   MoversResponse,
   MyWallets,
+  CreateNearMandateBody,
+  NearAnchorResult,
+  NearAssetsResponse,
+  NearMandateCreated,
+  NearMandatesResponse,
+  NearStatus,
   PatchWatchlistBody,
   ShadowResults,
   ShadowStrategyBody,
@@ -390,6 +396,45 @@ export function createApiClient(options: ClientOptions = {}) {
         method: "GET",
         path: `/shadow-strategies/${enc(id)}/results`,
         guard: guardShadowResults as Guard<ShadowResults>,
+      }),
+
+    /* NEAR agent control plane */
+    nearStatus: () =>
+      request<NearStatus>({
+        method: "GET",
+        path: "/near",
+        guard: guardAny as Guard<NearStatus>,
+        allowDemo: false,
+      }),
+    nearAssets: () =>
+      request<NearAssetsResponse>({
+        method: "GET",
+        path: "/near/assets",
+        guard: guardAny as Guard<NearAssetsResponse>,
+        allowDemo: false,
+      }),
+    nearMandates: () =>
+      request<NearMandatesResponse>({
+        method: "GET",
+        path: "/near/mandates",
+        guard: guardAny as Guard<NearMandatesResponse>,
+        allowDemo: false,
+      }),
+    createNearMandate: (body: CreateNearMandateBody) =>
+      request<NearMandateCreated>({
+        method: "POST",
+        path: "/near/mandates",
+        body,
+        guard: guardIdCreated as Guard<NearMandateCreated>,
+        allowDemo: false,
+      }),
+    confirmNearAnchor: (id: string, body: { tx_hash: string; signer_account_id: string }) =>
+      request<NearAnchorResult>({
+        method: "POST",
+        path: `/near/mandates/${enc(id)}/anchor`,
+        body,
+        guard: guardIdCreated as Guard<NearAnchorResult>,
+        allowDemo: false,
       }),
 
     /* briefings and coverage */

@@ -17,6 +17,7 @@ pub struct Config {
     pub ops_token: Option<String>,
     /// NEAR is the control plane. Contract and agent IDs remain optional until deployment.
     pub near_network: String,
+    pub near_rpc_url: String,
     pub near_contract_id: Option<String>,
     pub near_agent_account_id: Option<String>,
     pub near_delegation_enabled: bool,
@@ -49,6 +50,13 @@ impl Config {
                 .ok()
                 .filter(|v| !v.is_empty()),
             near_network: std::env::var("TRACE_NEAR_NETWORK").unwrap_or_else(|_| "testnet".into()),
+            near_rpc_url: std::env::var("TRACE_NEAR_RPC_URL").unwrap_or_else(|_| {
+                if std::env::var("TRACE_NEAR_NETWORK").as_deref() == Ok("mainnet") {
+                    "https://rpc.mainnet.near.org".into()
+                } else {
+                    "https://rpc.testnet.near.org".into()
+                }
+            }),
             near_contract_id: std::env::var("TRACE_NEAR_CONTRACT_ID")
                 .ok()
                 .filter(|v| !v.is_empty()),

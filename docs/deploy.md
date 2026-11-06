@@ -21,6 +21,7 @@ Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worke
 | `TRACE_DB_MAX_CONNECTIONS` | api | no | Default 10. The worker needs at least 2 |
 | `TRACE_OPS_TOKEN` | api | no | 24+ characters. Without it `/v1/ops/metrics` returns 404 |
 | `TRACE_NEAR_NETWORK` | api | no | Defaults to `testnet`; set `mainnet` only after review |
+| `TRACE_NEAR_RPC_URL` | api | no | Defaults to the public RPC for the configured network; use a production provider for launch |
 | `TRACE_NEAR_CONTRACT_ID` | api | for anchoring | Deployed TRACE mandate contract account |
 | `TRACE_NEAR_AGENT_ACCOUNT_ID` | api | for mandates | Named agent account allowed by generated policies |
 | `TRACE_NEAR_DELEGATION_ENABLED` | api | never before review | Enables delegated mandate drafts; defaults off |

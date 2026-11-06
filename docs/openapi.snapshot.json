@@ -958,6 +958,51 @@
         "summary": "Create a user-owned NEAR agent mandate draft"
       }
     },
+    "/v1/near/mandates/{id}/anchor": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Missing, expired or revoked session"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Verify a finalized NEAR mandate transaction"
+      }
+    },
     "/v1/openapi.json": {
       "get": {
         "responses": {

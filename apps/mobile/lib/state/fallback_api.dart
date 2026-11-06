@@ -151,4 +151,13 @@ class FallbackApi implements TraceApi {
 
   @override
   Future<CoverageResponse> coverage() => _run((a) => a.coverage());
+
+  @override
+  Future<NearStatus> nearStatus() => _run((a) => a.nearStatus());
+
+  @override
+  Future<NearAssetsResponse> nearAssets() => _run((a) => a.nearAssets());
+
+  @override
+  Future<NearMandatesResponse> nearMandates() => _run((a) => a.nearMandates());
 }

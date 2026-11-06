@@ -12,6 +12,7 @@ import 'screens/coming_later_screens.dart';
 import 'screens/home_screen.dart';
 import 'screens/more_screen.dart';
 import 'screens/movers_screen.dart';
+import 'screens/near_screen.dart';
 import 'screens/research_screens.dart';
 import 'screens/shadow_screens.dart';
 import 'screens/token_screen.dart';
@@ -121,6 +122,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
       GoRoute(path: '/trade', builder: (_, __) => const TradeScreen()),
       GoRoute(path: '/alerts', builder: (_, __) => const AlertsScreen()),
+      GoRoute(path: '/near', builder: (_, __) => const NearScreen()),
       GoRoute(
           path: '/account-sessions',
           builder: (_, __) => const AccountSessionsScreen()),

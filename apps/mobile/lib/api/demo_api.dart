@@ -767,4 +767,41 @@ class DemoApi implements TraceApi {
             },
         ],
       });
+
+  @override
+  Future<NearStatus> nearStatus() async => NearStatus.fromJson({
+        ..._env(note: 'Demo only. No NEAR contract or agent is connected.'),
+        'near_is_control_plane': true,
+        'network': 'testnet',
+        'contract': {
+          'configured': false,
+          'account_id': null,
+          'deployment_verified': false,
+        },
+        'agent': {
+          'configured': false,
+          'account_id': null,
+          'delegation_enabled': false,
+        },
+      });
+
+  @override
+  Future<NearAssetsResponse> nearAssets() async => NearAssetsResponse.fromJson({
+        ..._env(note: 'Fictional NEAR Intents assets for interface preview.'),
+        'items': [
+          {
+            'assetId': 'nep141:wrap.testnet',
+            'decimals': 24,
+            'blockchain': 'near',
+            'symbol': 'wNEAR DEMO',
+          },
+        ],
+      });
+
+  @override
+  Future<NearMandatesResponse> nearMandates() async =>
+      NearMandatesResponse.fromJson({
+        ..._env(note: 'No real authority exists in demo mode.'),
+        'items': <Object>[],
+      });
 }

@@ -4179,6 +4179,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "async-trait",
+ "base64 0.22.1",
  "chrono",
  "hex",
  "jsonwebtoken",
@@ -4310,6 +4311,7 @@ dependencies = [
 name = "trace-near"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "chrono",
  "reqwest",
  "rust_decimal",

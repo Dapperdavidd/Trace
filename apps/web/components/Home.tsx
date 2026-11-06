@@ -64,12 +64,10 @@ function Hero() {
       <h1 id="hero-title">
         Discover what is moving, <em>and why.</em>
       </h1>
-      <p>Follow capable wallets, research coins in plain language, and test ideas with paper money. Watch-only: TRACE never holds your funds.</p>
+      <p>Follow capable wallets, prove ideas in Shadow, then control agents with user-owned NEAR mandates. TRACE never holds your wallet keys.</p>
       <div className="hero-cta">
         <Link href="/top-movers" className="btn btn-primary">Explore Top Movers</Link>
-        <button type="button" className="btn" disabled aria-disabled="true" title="Connecting a wallet is coming later. TRACE is watch-only for now.">
-          Connect Wallet <ComingLaterBadge />
-        </button>
+        <Link href="/near" className="btn">Connect NEAR Wallet</Link>
         <button type="button" className="btn" disabled aria-disabled="true" title="Creating a wallet is coming later. TRACE does not hold funds yet.">
           Create New Wallet <ComingLaterBadge />
         </button>
@@ -109,12 +107,12 @@ function Hero() {
 
 function QuickCards({ movers, wallets }: { movers: MoverItem[] | null; wallets: DiscoveredWallet[] | null }) {
   const risky = movers ? movers.filter((m) => m.risk === "warn" || m.risk === "block").length : null;
-  const cards: Array<{ href: string; title: string; sub: string; icon: "trend" | "users" | "radar" | "shadow" | "brief"; color: string; bg: string }> = [
+  const cards: Array<{ href: string; title: string; sub: string; icon: "trend" | "users" | "radar" | "shadow" | "near"; color: string; bg: string }> = [
     { href: "/top-movers", title: "Top Movers", sub: movers ? `${movers.length} coins gaining attention` : "Coins gaining attention", icon: "trend", color: "#4be3a6", bg: "rgba(75,227,166,0.14)" },
     { href: "/smart-wallets", title: "Smart Wallets", sub: wallets ? `${wallets.length} wallets to review` : "Wallets worth reviewing", icon: "users", color: "#7aa8ff", bg: "rgba(122,168,255,0.14)" },
     { href: "/risk-radar", title: "Risk Radar", sub: risky === null ? "Check risks first" : `${risky} with risk flags`, icon: "radar", color: "#ff7b7b", bg: "rgba(255,107,107,0.14)" },
     { href: "/shadow-trades", title: "Shadow Trades", sub: "Test with paper money", icon: "shadow", color: "#a78bfa", bg: "rgba(167,139,250,0.16)" },
-    { href: "/briefing", title: "Daily Briefing", sub: "Your market summary", icon: "brief", color: "#4be3a6", bg: "rgba(75,227,166,0.14)" },
+    { href: "/near", title: "NEAR Agents", sub: "Your rules, verified on-chain", icon: "near", color: "#4be3a6", bg: "rgba(75,227,166,0.14)" },
   ];
   return (
     <div className="quick">

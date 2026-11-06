@@ -64,6 +64,9 @@ type RiskState = "pass" | "warn" | "block" | "unknown";
   expiry. `delegated` is refused unless deployment explicitly enables it.
 - `GET /near/mandates` lists drafts and verified anchor fields. Missing anchor
   evidence is shown as unavailable, never inferred.
+- `POST /near/mandates/{id}/anchor` accepts a transaction hash and signer. TRACE
+  queries NEAR RPC at finality and verifies the signer, receiver, method and
+  exact stored arguments before changing a draft to `anchored`.
 - `POST /near/intents/preview` accepts an owned mandate and exact-input quote
   request. Both assets and slippage must fit the mandate. TRACE always sends
   `dry: true`, retains the signed quote response and never deposits or submits.

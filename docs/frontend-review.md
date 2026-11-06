@@ -34,6 +34,7 @@ The designs contain balances, real trading, automated mirroring, and AI chat act
 | Receive | Yes | static coming-later state | No address is invented. |
 | Swap | Yes | static coming-later state | No transaction can be submitted. |
 | Ask TRACE | Yes | static coming-later state | Example questions are disabled. |
+| NEAR Agents | Yes | loading, empty, error, offline, partial, unavailable | Connects a NEAR wallet, prepares an owner-signed mandate, and accepts authority only after the API verifies the finalized transaction. |
 
 Web captures are in [`docs/screens/web`](screens/web).
 
@@ -60,6 +61,7 @@ Web captures are in [`docs/screens/web`](screens/web).
 | Wallet | Yes | static coming-later state | No balance or custody action. |
 | Trade and Swap | Yes | static coming-later state | Real-money controls are disabled. |
 | Ask TRACE | Yes | static coming-later state | Input and examples remain disabled. |
+| NEAR Agents | Yes | loading, empty, error, offline, demo, partial, unavailable | Shows control-plane status, live intent assets, and anchored mandates. Native wallet signing remains unavailable and is labelled clearly. |
 
 Mobile captures are in [`docs/screens/mobile`](screens/mobile).
 
@@ -69,3 +71,4 @@ Mobile captures are in [`docs/screens/mobile`](screens/mobile).
 - The supplied designs use real-money mirroring language in a few places. The implemented product uses Shadow and describes it as a paper simulation.
 - Live market charts are not available from the API contract, so the UI does not fabricate them.
 - Dark mode is the only design mode in the supplied references. Both clients consistently use it and support increased text size and keyboard or screen-reader navigation.
+- NEAR agent authority is a new product surface that was not present in the supplied references. It follows the same card hierarchy, emerald status language, and cautious data states.

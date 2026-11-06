@@ -1,7 +1,7 @@
 use crate::auth::{Disabled, IdTokenVerifier};
 use sqlx::PgPool;
 use std::sync::Arc;
-use trace_near::IntentsClient;
+use trace_near::{IntentsClient, NearRpcClient};
 
 #[derive(Clone)]
 pub struct NearState {
@@ -10,6 +10,7 @@ pub struct NearState {
     pub agent_account_id: Option<Arc<str>>,
     pub delegation_enabled: bool,
     pub intents: Arc<IntentsClient>,
+    pub rpc: Arc<NearRpcClient>,
 }
 
 impl Default for NearState {
@@ -20,6 +21,7 @@ impl Default for NearState {
             agent_account_id: None,
             delegation_enabled: false,
             intents: Arc::new(IntentsClient::new(None)),
+            rpc: Arc::new(NearRpcClient::new("https://rpc.testnet.near.org")),
         }
     }
 }

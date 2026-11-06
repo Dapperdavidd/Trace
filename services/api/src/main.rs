@@ -56,6 +56,7 @@ async fn main() -> anyhow::Result<()> {
             cfg.near_intents_base_url.clone(),
             cfg.near_intents_api_key.clone(),
         )),
+        rpc: std::sync::Arc::new(trace_near::NearRpcClient::new(cfg.near_rpc_url.clone())),
     };
     run(
         listener,

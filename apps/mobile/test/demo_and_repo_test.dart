@@ -28,6 +28,9 @@ void main() {
             .env,
         (await api.shadowResults('demo-shadow-1')).env,
         (await api.briefings()).env,
+        (await api.nearStatus()).env,
+        (await api.nearAssets()).env,
+        (await api.nearMandates()).env,
       ];
       for (final e in envs) {
         expect(e.isDemo, isTrue);

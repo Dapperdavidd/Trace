@@ -360,5 +360,37 @@ void main() {
       expect(b.sections.single.items[0].link, '/market');
       expect(b.sections.single.items[1].link, isNull);
     });
+    test('NEAR authority stays unverified unless explicitly anchored', () {
+      final status = NearStatus.fromJson(const {
+        'data_status': 'partial',
+        'near_is_control_plane': true,
+        'network': 'testnet',
+        'contract': {'configured': true, 'account_id': 'trace.testnet'},
+        'agent': {'configured': true, 'account_id': 'agent.testnet'},
+      });
+      expect(status.isControlPlane, isTrue);
+      expect(status.contract.configured, isTrue);
+      expect(status.contract.deploymentVerified, isFalse);
+      expect(status.agent.delegationEnabled, isFalse);
+
+      final mandates = NearMandatesResponse.fromJson(const {
+        'data_status': 'partial',
+        'items': [
+          {
+            'id': 'm1',
+            'owner_near_account': 'dapper.testnet',
+            'agent_near_account': 'agent.testnet',
+            'mode': 'approval_required',
+            'status': 'draft',
+            'max_trade_usd': '10.00',
+            'max_daily_usd': '25.00',
+            'allowed_chains': ['ethereum', 'solana'],
+          }
+        ],
+      });
+      expect(mandates.items.single.isAnchored, isFalse);
+      expect(mandates.items.single.maxTradeUsd, '10.00');
+      expect(mandates.items.single.allowedChains, ['ethereum', 'solana']);
+    });
   });
 }

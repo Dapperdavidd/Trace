@@ -5,12 +5,29 @@
 
 use std::path::Path;
 
+fn canonicalize(value: serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(object) => {
+            let sorted: std::collections::BTreeMap<_, _> = object
+                .into_iter()
+                .map(|(key, value)| (key, canonicalize(value)))
+                .collect();
+            serde_json::Value::Object(sorted.into_iter().collect())
+        }
+        serde_json::Value::Array(items) => {
+            serde_json::Value::Array(items.into_iter().map(canonicalize).collect())
+        }
+        scalar => scalar,
+    }
+}
+
 fn path() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/openapi.snapshot.json")
 }
 
 fn current() -> String {
-    serde_json::to_string_pretty(&trace_api::routes::openapi::document()).unwrap() + "\n"
+    serde_json::to_string_pretty(&canonicalize(trace_api::routes::openapi::document())).unwrap()
+        + "\n"
 }
 
 #[test]

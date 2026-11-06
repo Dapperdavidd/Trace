@@ -332,6 +332,102 @@ export interface ShadowResults extends Envelope {
   assumptions: Record<string, string | number | null>;
 }
 
+/* --------------------------- NEAR agent control plane ------------------------- */
+
+export interface NearStatus extends Envelope {
+  near_is_control_plane: true;
+  network: "mainnet" | "testnet";
+  contract: { configured: boolean; account_id: string | null; deployment_verified: boolean };
+  agent: { configured: boolean; account_id: string | null; delegation_enabled: boolean };
+  intents: {
+    asset_discovery: boolean;
+    dry_quote_previews: boolean;
+    server_side_signing: false;
+    server_side_submission: false;
+  };
+  storage: { mandates: string; receipt_commitments: string; full_evidence: string };
+}
+
+export interface NearAsset {
+  assetId: string;
+  decimals: number;
+  blockchain: string;
+  symbol: string;
+  contractAddress: string | null;
+}
+
+export interface NearAssetsResponse extends Envelope {
+  source: "near_intents_1click";
+  items: NearAsset[];
+}
+
+export interface NearAssetPermission {
+  chain: string;
+  asset_id: string;
+}
+
+export interface NearTransaction {
+  receiverId: string;
+  actions: Array<{
+    type: "FunctionCall";
+    params: { methodName: string; args: Record<string, unknown>; gas: string; deposit: string };
+  }>;
+}
+
+export interface CreateNearMandateBody {
+  shadow_strategy_id: string;
+  owner_near_account: string;
+  agent_near_account?: string;
+  mode: "paper" | "approval_required" | "delegated";
+  allowed_chains: string[];
+  allowed_assets: NearAssetPermission[];
+  max_trade_usd: string;
+  max_daily_usd: string;
+  max_slippage_bps: number;
+  expires_at: string;
+}
+
+export interface NearMandateCreated {
+  id: string;
+  status: "draft";
+  commitment: string;
+  near_transaction: NearTransaction | null;
+  owner_signature_required: true;
+  note: string;
+}
+
+export interface NearMandate {
+  id: string;
+  shadow_strategy_id: string;
+  owner_near_account: string;
+  agent_near_account: string;
+  mode: "paper" | "approval_required" | "delegated";
+  status: "draft" | "anchored" | "paused" | "revoked" | "expired";
+  allowed_chains: string[];
+  allowed_assets: NearAssetPermission[];
+  max_trade_usd: string;
+  max_daily_usd: string;
+  max_slippage_bps: number;
+  expires_at: string;
+  commitment: string;
+  near_contract_id: string | null;
+  anchor_tx_hash: string | null;
+  anchored_at: string | null;
+  created_at: string;
+}
+
+export interface NearMandatesResponse extends Envelope {
+  items: NearMandate[];
+}
+
+export interface NearAnchorResult {
+  id: string;
+  status: "anchored";
+  anchor_tx_hash: string;
+  anchor_verified: true;
+  as_of: string;
+}
+
 /* ------------------------------ Briefings, chains ----------------------------- */
 
 export interface BriefingItem {

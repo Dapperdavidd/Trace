@@ -1,4 +1,5 @@
 use actix_web::{web, HttpRequest, HttpResponse};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use chrono::{DateTime, Duration, Utc};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 use serde::Deserialize;
@@ -7,7 +8,8 @@ use sqlx::Row;
 use std::collections::{BTreeSet, HashSet};
 use std::str::FromStr;
 use trace_near::{
-    AgentMandate, AssetPermission, IntentsError, MandateMode, MandateStatus, QuoteRequest,
+    AgentMandate, AssetPermission, IntentsError, MandateMode, MandateStatus, NearRpcError,
+    QuoteRequest,
 };
 use uuid::Uuid;
 
@@ -22,6 +24,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/near/assets", web::get().to(assets))
         .route("/near/mandates", web::post().to(create_mandate))
         .route("/near/mandates", web::get().to(list_mandates))
+        .route("/near/mandates/{id}/anchor", web::post().to(confirm_anchor))
         .route("/near/intents/preview", web::post().to(preview_intent));
 }
 
@@ -216,13 +219,18 @@ async fn create_mandate(
     let allowed_assets = serde_json::to_value(&mandate.allowed_assets)
         .map_err(|error| ApiError::Internal(error.into()))?;
     let contract_id = state.near.contract_id.as_deref();
+    let transaction = contract_id.map(|contract| create_transaction(contract, &mandate));
+    let contract_args = transaction
+        .as_ref()
+        .map(|value| value["actions"][0]["params"]["args"].clone())
+        .unwrap_or_else(|| json!({}));
 
     sqlx::query(
         "INSERT INTO near_agent_mandates
          (id,user_id,shadow_strategy_id,owner_near_account,agent_near_account,mode,status,
           allowed_chains,allowed_assets,max_trade_usd,max_daily_usd,max_slippage_bps,
-          expires_at,nonce,commitment,near_contract_id)
-         VALUES ($1,$2,$3,$4,$5,$6,'draft',$7,$8,$9,$10,$11,$12,$13,$14,$15)",
+          expires_at,nonce,commitment,near_contract_id,contract_args)
+         VALUES ($1,$2,$3,$4,$5,$6,'draft',$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)",
     )
     .bind(id)
     .bind(user.user_id)
@@ -239,6 +247,7 @@ async fn create_mandate(
     .bind(i64::try_from(nonce).map_err(|error| ApiError::Internal(error.into()))?)
     .bind(&commitment)
     .bind(contract_id)
+    .bind(contract_args)
     .execute(&state.pool)
     .await
     .map_err(|error| match &error {
@@ -248,7 +257,6 @@ async fn create_mandate(
         _ => ApiError::Internal(error.into()),
     })?;
 
-    let transaction = contract_id.map(|contract| create_transaction(contract, &mandate));
     Ok(HttpResponse::Created().json(json!({
         "id": id,
         "status": "draft",
@@ -271,11 +279,11 @@ fn create_transaction(contract_id: &str, mandate: &AgentMandate) -> Value {
             .to_string()
     };
     json!({
-        "receiver_id": contract_id,
+        "receiverId": contract_id,
         "actions": [{
             "type": "FunctionCall",
             "params": {
-                "method_name": "create_mandate",
+                "methodName": "create_mandate",
                 "args": { "mandate": {
                     "id": mandate.id,
                     "owner": mandate.owner_near_account,
@@ -301,6 +309,129 @@ fn create_transaction(contract_id: &str, mandate: &AgentMandate) -> Value {
             }
         }]
     })
+}
+
+#[derive(Deserialize)]
+struct ConfirmAnchorBody {
+    tx_hash: String,
+    signer_account_id: String,
+}
+
+async fn confirm_anchor(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    id: web::Path<Uuid>,
+    body: web::Json<ConfirmAnchorBody>,
+) -> Result<HttpResponse, ApiError> {
+    let user = authenticate(&req, &state.pool).await?;
+    if body.tx_hash.len() < 32 || body.tx_hash.len() > 64 {
+        return Err(ApiError::BadRequest("tx_hash is not plausible.".into()));
+    }
+    let row = sqlx::query(
+        "SELECT owner_near_account,status,near_contract_id,contract_args
+         FROM near_agent_mandates WHERE id=$1 AND user_id=$2",
+    )
+    .bind(*id)
+    .bind(user.user_id)
+    .fetch_optional(&state.pool)
+    .await?
+    .ok_or(ApiError::NotFound)?;
+    let owner: String = row.get("owner_near_account");
+    if body.signer_account_id != owner {
+        return Err(ApiError::BadRequest(
+            "signer_account_id must match the mandate owner.".into(),
+        ));
+    }
+    let current_status: String = row.get("status");
+    if current_status != "draft" {
+        return Err(ApiError::Conflict(format!(
+            "only a draft can be anchored; mandate is {current_status}"
+        )));
+    }
+    let contract_id: String = row
+        .get::<Option<String>, _>("near_contract_id")
+        .ok_or_else(|| ApiError::Unavailable("NEAR contract is not configured".into()))?;
+    let expected_args: Value = row.get("contract_args");
+    if expected_args
+        .as_object()
+        .is_none_or(|value| value.is_empty())
+    {
+        return Err(ApiError::Conflict(
+            "draft has no deployable contract arguments".into(),
+        ));
+    }
+
+    let outcome = state
+        .near
+        .rpc
+        .transaction_status(&body.tx_hash, &body.signer_account_id)
+        .await
+        .map_err(map_rpc_error)?;
+    if !outcome.succeeded_finally() {
+        return Err(ApiError::Conflict(
+            "NEAR transaction is not finalized successfully.".into(),
+        ));
+    }
+    let transaction = outcome
+        .transaction
+        .as_object()
+        .ok_or_else(|| ApiError::Unavailable("NEAR RPC omitted transaction details".into()))?;
+    if transaction.get("hash").and_then(Value::as_str) != Some(body.tx_hash.as_str())
+        || transaction.get("signer_id").and_then(Value::as_str) != Some(owner.as_str())
+        || transaction.get("receiver_id").and_then(Value::as_str) != Some(contract_id.as_str())
+    {
+        return Err(ApiError::Conflict(
+            "NEAR transaction identity does not match this mandate.".into(),
+        ));
+    }
+    let actions = transaction
+        .get("actions")
+        .and_then(Value::as_array)
+        .ok_or_else(|| ApiError::Unavailable("NEAR RPC omitted transaction actions".into()))?;
+    let function_call = actions
+        .iter()
+        .find_map(|action| action.get("FunctionCall"))
+        .ok_or_else(|| {
+            ApiError::Conflict("transaction did not call the mandate contract".into())
+        })?;
+    if function_call.get("method_name").and_then(Value::as_str) != Some("create_mandate") {
+        return Err(ApiError::Conflict(
+            "transaction called the wrong contract method".into(),
+        ));
+    }
+    let encoded_args = function_call
+        .get("args")
+        .and_then(Value::as_str)
+        .ok_or_else(|| ApiError::Unavailable("NEAR RPC omitted function arguments".into()))?;
+    let actual_args: Value = serde_json::from_slice(
+        &BASE64
+            .decode(encoded_args)
+            .map_err(|_| ApiError::Unavailable("NEAR RPC returned invalid arguments".into()))?,
+    )
+    .map_err(|_| ApiError::Unavailable("NEAR RPC returned invalid arguments".into()))?;
+    if actual_args != expected_args {
+        return Err(ApiError::Conflict(
+            "on-chain mandate arguments do not match the reviewed draft".into(),
+        ));
+    }
+
+    sqlx::query(
+        "UPDATE near_agent_mandates
+         SET status='anchored',anchor_tx_hash=$1,anchored_at=now(),updated_at=now()
+         WHERE id=$2 AND user_id=$3 AND status='draft'",
+    )
+    .bind(&body.tx_hash)
+    .bind(*id)
+    .bind(user.user_id)
+    .execute(&state.pool)
+    .await?;
+    Ok(HttpResponse::Ok().json(json!({
+        "id": *id,
+        "status": "anchored",
+        "anchor_tx_hash": body.tx_hash,
+        "anchor_verified": true,
+        "as_of": Utc::now(),
+    })))
 }
 
 async fn list_mandates(
@@ -462,4 +593,9 @@ fn map_intents_error(error: IntentsError) -> ApiError {
             ApiError::Unavailable("NEAR Intents quote service is unavailable".into())
         }
     }
+}
+
+fn map_rpc_error(error: NearRpcError) -> ApiError {
+    tracing::warn!(error = ?error, "NEAR RPC unavailable while verifying mandate anchor");
+    ApiError::Unavailable("NEAR RPC could not verify the transaction".into())
 }

@@ -35,4 +35,7 @@ abstract class TraceApi {
 
   Future<BriefingResponse> briefings();
   Future<CoverageResponse> coverage();
+  Future<NearStatus> nearStatus();
+  Future<NearAssetsResponse> nearAssets();
+  Future<NearMandatesResponse> nearMandates();
 }

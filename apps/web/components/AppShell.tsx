@@ -47,8 +47,8 @@ function Sidebar({ pathname }: { pathname: string }) {
       <Logo />
       <NavLinks pathname={pathname} />
       <div className="side-note">
-        <strong>Watch-only research</strong>
-        TRACE does not hold funds, sign transactions or place trades. Paper trades are simulations.
+        <strong>NEAR-controlled agents</strong>
+        TRACE never holds wallet keys. NEAR mandates define what an agent may do, and owner approval is required by default.
       </div>
     </aside>
   );
@@ -104,7 +104,7 @@ function AccountMenu() {
                 {me.data?.email}
               </div>
               <div className="menu-head" style={{ borderBottom: 0, paddingTop: 0 }}>
-                Watch-only account. No spendable wallet.
+                App account. NEAR wallet authority remains separate and user-owned.
               </div>
               <Link role="menuitem" href="/watchlist" onClick={() => setOpen(false)}>Watchlist</Link>
               <Link role="menuitem" href="/alerts" onClick={() => setOpen(false)}>Alerts</Link>
@@ -173,6 +173,7 @@ function Topbar() {
       <nav className="topnav" aria-label="Quick links">
         <Link href="/top-movers">Explore</Link>
         <Link href="/smart-wallets">Research</Link>
+        <Link href="/near">NEAR Agents</Link>
         <Link href="/shadow-trades">Shadow</Link>
         <span className="soon" title="Wallet is coming later">Wallet (coming later)</span>
         <Link href="/">Dashboard</Link>
@@ -237,8 +238,8 @@ function MobileNav({ pathname }: { pathname: string }) {
             </div>
             <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
             <div className="side-note" style={{ marginTop: 14 }}>
-              <strong>Watch-only research</strong>
-              TRACE does not hold funds, sign transactions or place trades.
+              <strong>NEAR-controlled agents</strong>
+              TRACE never holds keys. Your NEAR wallet approves mandates and transactions.
             </div>
           </div>
         </>
@@ -266,7 +267,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {children}
           </main>
           <footer className="legal-footer">
-            <span>TRACE is watch-only research. Shadow is paper-only.</span>
+            <span>TRACE is research, not financial advice. Shadow is paper-only. NEAR mandates are user-owned.</span>
             <nav aria-label="Legal and account links">
               <Link href="/privacy">Privacy</Link>
               <Link href="/terms">Terms</Link>

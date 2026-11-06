@@ -31,3 +31,4 @@ export const IconUser = (p: P) => <Svg {...p}><circle cx="12" cy="8" r="4" /><pa
 export const IconMenu = (p: P) => <Svg {...p}><path d="M4 7h16M4 12h16M4 17h16" /></Svg>;
 export const IconClose = (p: P) => <Svg {...p}><path d="M6 6l12 12M18 6L6 18" /></Svg>;
 export const IconLock = (p: P) => <Svg {...p}><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 018 0v3" /></Svg>;
+export const IconNear = (p: P) => <Svg {...p}><path d="M4 19V5l5.4 6.3L15.8 4c1.5-1.7 4.2-.6 4.2 1.7V19l-5.4-6.3L8.2 20C6.7 21.7 4 20.6 4 18.3" /></Svg>;
