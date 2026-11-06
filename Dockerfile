@@ -6,6 +6,7 @@ FROM rust:1-bookworm AS build
 WORKDIR /src
 COPY rust-toolchain.toml Cargo.toml Cargo.lock ./
 COPY crates crates
+COPY contracts contracts
 COPY services services
 COPY tools tools
 COPY migrations migrations

@@ -12,10 +12,27 @@ To verify the exception:
 
 ```sh
 cargo tree --target all -i sqlx-mysql
-cargo audit --ignore RUSTSEC-2023-0071
+cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2026-0387
 ```
 
-The first command must report that nothing depends on `sqlx-mysql`; the second must pass.
+The first command must report that nothing depends on `sqlx-mysql`; the audit
+command is completed after checking the second exception below.
+
+`RUSTSEC-2026-0387` is also ignored for the locked `crypto-bigint 0.5` copy.
+It is reachable only through NEAR SDK's native unit-test runtime. It is absent
+from the mandate contract's normal dependency graph and from the
+`wasm32-unknown-unknown` build. Remove the exception when NEAR SDK updates its
+test dependency.
+
+Verify that boundary with:
+
+```sh
+cargo tree -p trace-mandates-contract --edges normal -i crypto-bigint@0.5.5
+cargo tree --target wasm32-unknown-unknown -p trace-mandates-contract -i crypto-bigint@0.5.5
+cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2026-0387
+```
+
+Both tree commands must report that nothing depends on the affected version.
 
 ## Sessions
 
