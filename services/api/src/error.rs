@@ -15,6 +15,8 @@ pub enum ApiError {
     #[error("unauthorized")]
     Unauthorized,
     #[error("{0}")]
+    Forbidden(String),
+    #[error("{0}")]
     Conflict(String),
     #[error("{0}")]
     LimitReached(String),
@@ -32,6 +34,7 @@ impl ApiError {
             ApiError::BadRequest(_) => "bad_request",
             ApiError::NotFound => "not_found",
             ApiError::Unauthorized => "unauthorized",
+            ApiError::Forbidden(_) => "forbidden",
             ApiError::Conflict(_) => "conflict",
             ApiError::LimitReached(_) => "limit_reached",
             ApiError::Unavailable(_) => "dependency_unavailable",
@@ -49,6 +52,7 @@ impl ResponseError for ApiError {
             ApiError::BadRequest(_) | ApiError::Domain(_) => StatusCode::BAD_REQUEST,
             ApiError::NotFound => StatusCode::NOT_FOUND,
             ApiError::Unauthorized => StatusCode::UNAUTHORIZED,
+            ApiError::Forbidden(_) => StatusCode::FORBIDDEN,
             ApiError::Conflict(_) => StatusCode::CONFLICT,
             ApiError::LimitReached(_) => StatusCode::UNPROCESSABLE_ENTITY,
             ApiError::Unavailable(_) => StatusCode::SERVICE_UNAVAILABLE,

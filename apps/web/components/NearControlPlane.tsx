@@ -13,6 +13,7 @@ import type {
 } from "@/lib/api/types";
 import { readLocal, SHADOW_IDS_KEY } from "@/lib/local";
 import { ErrorState, EmptyState, PageHead, Panel, SkeletonRows, StatusBadge } from "./ui";
+import { AgentConnections } from "./AgentConnections";
 
 type WalletState = { wallet: NearWalletBase; accountId: string } | null;
 
@@ -366,6 +367,7 @@ export function NearControlPlane() {
           </Panel>
         </div>
       )}
+      <AgentConnections />
     </div>
   );
 }

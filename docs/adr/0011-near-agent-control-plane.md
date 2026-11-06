@@ -26,6 +26,9 @@ NEAR is TRACE's control plane:
 - owners can pause a mandate and revocation is permanent;
 - NEAR Intents supplies cross-chain asset discovery and quote previews;
 - TRACE's API never submits funds or signed intents on behalf of a user;
+- external agents receive revocable observe or propose credentials and never
+  an execute credential;
+- every external proposal is validated against an active anchored mandate;
 - Ethereum and Solana remain observation and destination networks, not the
   authorization source.
 

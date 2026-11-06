@@ -482,9 +482,9 @@ async fn list_mandates(
 }
 
 #[derive(Deserialize)]
-struct PreviewBody {
-    mandate_id: Uuid,
-    quote: QuoteRequest,
+pub(crate) struct PreviewBody {
+    pub mandate_id: Uuid,
+    pub quote: QuoteRequest,
 }
 
 async fn preview_intent(
@@ -493,12 +493,21 @@ async fn preview_intent(
     body: web::Json<PreviewBody>,
 ) -> Result<HttpResponse, ApiError> {
     let user = authenticate(&req, &state.pool).await?;
+    preview_for_user(&state, user.user_id, body.into_inner(), None).await
+}
+
+pub(crate) async fn preview_for_user(
+    state: &AppState,
+    user_id: Uuid,
+    body: PreviewBody,
+    agent_connection_id: Option<Uuid>,
+) -> Result<HttpResponse, ApiError> {
     let row = sqlx::query(
         "SELECT status,allowed_assets,max_trade_usd,max_slippage_bps,expires_at
          FROM near_agent_mandates WHERE id=$1 AND user_id=$2",
     )
     .bind(body.mandate_id)
-    .bind(user.user_id)
+    .bind(user_id)
     .fetch_optional(&state.pool)
     .await?
     .ok_or(ApiError::NotFound)?;
@@ -557,16 +566,17 @@ async fn preview_intent(
         serde_json::to_value(&preview).map_err(|error| ApiError::Internal(error.into()))?;
     sqlx::query(
         "INSERT INTO near_intent_previews
-         (id,user_id,mandate_id,correlation_id,request,response,response_signature)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)",
+         (id,user_id,mandate_id,correlation_id,request,response,response_signature,agent_connection_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
     )
     .bind(id)
-    .bind(user.user_id)
+    .bind(user_id)
     .bind(body.mandate_id)
     .bind(&preview.correlation_id)
     .bind(request_value)
     .bind(response_value)
     .bind(&preview.signature)
+    .bind(agent_connection_id)
     .execute(&state.pool)
     .await?;
 

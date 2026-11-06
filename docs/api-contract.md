@@ -76,6 +76,20 @@ type RiskState = "pass" | "warn" | "block" | "unknown";
 - Full evidence stays in TRACE storage. The NEAR contract stores policy and a
   SHA-256 evidence commitment for each execution receipt.
 
+### External agent connections
+
+- `POST /agent-connections` creates a revocable credential with `observe` or
+  `propose` scope. The plaintext token is returned once and only its SHA-256
+  hash is retained.
+- `GET /agent-connections` lists connection metadata without secrets.
+  `DELETE /agent-connections/{id}` revokes one credential.
+- `GET /agent/context` returns watched wallets, status-labelled recent alerts
+  and active anchored NEAR mandates. It never returns wallet or session keys.
+- `POST /agent/intents/preview` lets an agent with `propose` scope prepare a dry
+  NEAR Intents quote under the same asset, value, slippage and expiry checks as
+  the account route.
+- Agent credentials cannot sign, deposit, submit or execute transactions.
+
 ## Briefings and coverage
 - `GET /briefings` -> `Envelope & { sections: [{ title, items: [{ text, link? }] }] }`
 - `GET /chains` (implemented): chain and protocol coverage truth.

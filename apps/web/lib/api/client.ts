@@ -27,6 +27,8 @@ import {
 import type {
   AddWatchlistBody,
   AccountSessionsResponse,
+  AgentConnectionCreated,
+  AgentConnectionsResponse,
   AlertPreferences,
   AlertsResponse,
   ApiErrorBody,
@@ -473,6 +475,32 @@ export function createApiClient(options: ClientOptions = {}) {
         path: `/near/mandates/${enc(id)}/anchor`,
         body,
         guard: guardIdCreated as Guard<NearAnchorResult>,
+        allowDemo: false,
+      }),
+    agentConnections: () =>
+      request<AgentConnectionsResponse>({
+        method: "GET",
+        path: "/agent-connections",
+        guard: guardAny as Guard<AgentConnectionsResponse>,
+        allowDemo: false,
+      }),
+    createAgentConnection: (body: {
+      name: string;
+      scopes: Array<"observe" | "propose">;
+      expires_in_days: number;
+    }) =>
+      request<AgentConnectionCreated>({
+        method: "POST",
+        path: "/agent-connections",
+        body,
+        guard: guardIdCreated as Guard<AgentConnectionCreated>,
+        allowDemo: false,
+      }),
+    revokeAgentConnection: (id: string) =>
+      request<void>({
+        method: "DELETE",
+        path: `/agent-connections/${enc(id)}`,
+        guard: guardAny as Guard<void>,
         allowDemo: false,
       }),
 

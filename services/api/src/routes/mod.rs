@@ -1,4 +1,5 @@
 pub mod account;
+pub mod agents;
 pub mod alerts;
 pub mod briefings;
 pub mod chains;

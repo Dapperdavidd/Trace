@@ -433,6 +433,34 @@ export interface NearAnchorResult {
   as_of: string;
 }
 
+export interface AgentConnection {
+  id: string;
+  name: string;
+  token_hint: string;
+  scopes: Array<"observe" | "propose">;
+  created_at: string;
+  expires_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+  status: "active" | "expired" | "revoked";
+  execution_authority: false;
+}
+
+export interface AgentConnectionsResponse {
+  items: AgentConnection[];
+}
+
+export interface AgentConnectionCreated {
+  id: string;
+  name: string;
+  scopes: Array<"observe" | "propose">;
+  expires_at: string;
+  token: string;
+  token_visible_once: true;
+  execution_authority: false;
+  note: string;
+}
+
 /* ------------------------------ Briefings, chains ----------------------------- */
 
 export interface BriefingItem {

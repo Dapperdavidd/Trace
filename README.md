@@ -18,6 +18,7 @@ deployment is verified and independently reviewed.
 | NEAR agent mandates | Contract builds to WebAssembly; deployment account required |
 | NEAR Intents | Live asset discovery and dry quote adapter; no server submission |
 | NEAR agent delegation | Implemented behind a production-off safety switch pending deployment and review |
+| External agent gateway | Revocable observe and propose credentials; no execute scope; NEAR mandate remains authoritative |
 | Ethereum Uniswap V2 ingestion | Enabled with reviewed real fixtures |
 | Solana Raydium AMM v4 | Disabled pending reviewed real fixtures |
 | Base and BNB protocols | Disabled pending deployments and fixtures |

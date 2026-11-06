@@ -37,6 +37,18 @@ A TRACE passkey authenticates an account. It does not authorize an on-chain
 trade. Agent authority is a separate NEAR mandate signed by the user's NEAR
 wallet, with limits and revocation enforced by the NEAR contract.
 
+## External agents
+
+External agents receive separate `trca_` credentials, never a user's app
+session. Tokens are shown once, stored as SHA-256 hashes, expire within 90 days
+and can be revoked independently. Scope is limited to `observe` and `propose`.
+There is intentionally no `execute` scope.
+
+The agent context returns watched public addresses, status-labelled alerts and
+active NEAR mandate policy. It does not return passkeys, app sessions, wallet
+keys or signing material. A proposal is checked against the anchored mandate
+and stored as a dry NEAR Intents preview. It is not a transaction.
+
 ## HTTP boundary
 
 The API restricts CORS to configured origins, limits JSON request bodies to 64 KiB, assigns request IDs, applies per-peer and per-session rate limits, and returns browser hardening headers for content sniffing, framing, referrers, and unused device capabilities.

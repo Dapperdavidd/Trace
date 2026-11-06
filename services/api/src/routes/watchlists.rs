@@ -44,7 +44,7 @@ fn clean_alias(a: Option<String>) -> Result<Option<String>, ApiError> {
 }
 
 /// Monitoring state derived from real coverage and observed activity, never assumed.
-async fn items_for(
+pub(crate) async fn items_for(
     state: &AppState,
     user_id: Uuid,
     only: Option<Uuid>,

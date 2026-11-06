@@ -58,6 +58,36 @@ pub const ROUTES: &[(&str, &str, &str, bool)] = &[
     ),
     (
         "post",
+        "/v1/agent-connections",
+        "Create a revocable external agent credential",
+        true,
+    ),
+    (
+        "get",
+        "/v1/agent-connections",
+        "List external agent credentials without secrets",
+        true,
+    ),
+    (
+        "delete",
+        "/v1/agent-connections/{id}",
+        "Revoke an external agent credential",
+        true,
+    ),
+    (
+        "get",
+        "/v1/agent/context",
+        "Read scoped TRACE context as an external agent",
+        true,
+    ),
+    (
+        "post",
+        "/v1/agent/intents/preview",
+        "Prepare a NEAR-governed intent proposal as an external agent",
+        true,
+    ),
+    (
+        "post",
         "/v1/auth/google",
         "Exchange a Google ID token for an app session",
         false,

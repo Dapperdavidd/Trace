@@ -167,6 +167,38 @@ describe("api client: live responses", () => {
     expect(getToken()).toBe("signed-in");
   });
 
+  it("creates and revokes a least-privilege agent connection", async () => {
+    setToken("account-session");
+    const created = {
+      id: "agent-1",
+      name: "Research agent",
+      scopes: ["observe", "propose"],
+      expires_at: "2026-12-06T00:00:00Z",
+      token: "trca_once",
+      token_visible_once: true,
+      execution_authority: false,
+      note: "NEAR remains authoritative.",
+    };
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(json(created))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const c = createApiClient({ baseUrl: "http://api.test", demoMode: false, fetchImpl });
+
+    await expect(c.createAgentConnection({
+      name: "Research agent",
+      scopes: ["observe", "propose"],
+      expires_in_days: 30,
+    })).resolves.toEqual(created);
+    await expect(c.revokeAgentConnection("agent-1")).resolves.toBeUndefined();
+    expect(JSON.parse(fetchImpl.mock.calls[0]![1]!.body as string)).toEqual({
+      name: "Research agent",
+      scopes: ["observe", "propose"],
+      expires_in_days: 30,
+    });
+    expect(fetchImpl.mock.calls[1]![0]).toBe("http://api.test/v1/agent-connections/agent-1");
+    expect((fetchImpl.mock.calls[1]![1] as RequestInit).method).toBe("DELETE");
+  });
+
   it("lists and revokes account sessions", async () => {
     setToken("tok123");
     const sessions = {

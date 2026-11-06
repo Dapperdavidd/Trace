@@ -22,6 +22,12 @@ cross-chain execution policy and verifiable evidence.
 The API can read supported assets and request dry quotes. It cannot transfer a
 deposit, sign an intent or access a wallet key. A quote is not an execution.
 
+External AI agents use separate revocable credentials. They may observe watched
+addresses and labelled alerts, and a credential with `propose` scope may prepare
+a dry quote. There is no `execute` scope. Every proposal is checked against an
+active anchored NEAR mandate, so the external agent is a planner and NEAR
+remains the authority.
+
 The contract enforces:
 
 - owner and agent NEAR account IDs;
