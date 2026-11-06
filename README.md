@@ -19,6 +19,7 @@ deployment is verified and independently reviewed.
 | NEAR Intents | Live asset discovery and dry quote adapter; no server submission |
 | NEAR agent delegation | Implemented behind a production-off safety switch pending deployment and review |
 | External agent gateway | Revocable observe and propose credentials; no execute scope; NEAR mandate remains authoritative |
+| MCP agent bridge | Compatible agents can read context and request dry NEAR-governed proposals |
 | Ethereum Uniswap V2 ingestion | Enabled with reviewed real fixtures |
 | Solana Raydium AMM v4 | Disabled pending reviewed real fixtures |
 | Base and BNB protocols | Disabled pending deployments and fixtures |
@@ -33,6 +34,10 @@ deployment is verified and independently reviewed.
 NEAR is the authorization, evidence and cross-chain execution control plane.
 Ethereum and Solana are markets TRACE observes. See
 [`docs/near-architecture.md`](docs/near-architecture.md).
+
+MCP-compatible agents can connect through the least-privilege bridge in
+[`integrations/trace-mcp`](integrations/trace-mcp). The bridge has no execute
+tool and never receives wallet keys.
 
 The code registry and [coverage register](docs/coverage-register.md) are the source of truth for protocol support. Disabled or unsupported activity is never guessed.
 

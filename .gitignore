@@ -2,6 +2,7 @@
 .env
 *.log
 node_modules/
+dist/
 .next/
 .dart_tool/
 build/

@@ -28,6 +28,10 @@ a dry quote. There is no `execute` scope. Every proposal is checked against an
 active anchored NEAR mandate, so the external agent is a planner and NEAR
 remains the authority.
 
+The optional MCP bridge maps those two capabilities to `trace_context` and
+`trace_preview_intent`. It adds no authority of its own and can be disconnected
+by revoking its agent credential.
+
 The contract enforces:
 
 - owner and agent NEAR account IDs;

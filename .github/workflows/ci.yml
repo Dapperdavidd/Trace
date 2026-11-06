@@ -45,6 +45,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           exit 1
       - run: cargo test --workspace
+      # The API contract must not drift silently.
       - run: cargo test -p trace-api --test openapi_snapshot
       - uses: rustsec/audit-check@v2.0.0
         with:
@@ -66,6 +67,24 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --audit-level=high
+
+  agent-bridge:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: integrations/trace-mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: integrations/trace-mcp/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
       - run: npm test
       - run: npm run build
       - run: npm audit --audit-level=high
