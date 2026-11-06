@@ -67,6 +67,18 @@ class WelcomeScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    const _PasskeyPanel(),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Row(children: [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Muted('Alternative sign-in', size: 12),
+                        ),
+                        Expanded(child: Divider()),
+                      ]),
+                    ),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
@@ -129,7 +141,7 @@ class WelcomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     const Muted(
-                        'Creating or connecting a spendable wallet is not available yet. Signing in never gives TRACE access to funds.',
+                        'Creating or connecting a spendable wallet is not available yet. A passkey signs you into TRACE but never gives TRACE access to funds.',
                         size: 12),
                     const Disclaimer(),
                   ],
@@ -139,6 +151,100 @@ class WelcomeScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PasskeyPanel extends ConsumerStatefulWidget {
+  const _PasskeyPanel();
+
+  @override
+  ConsumerState<_PasskeyPanel> createState() => _PasskeyPanelState();
+}
+
+class _PasskeyPanelState extends ConsumerState<_PasskeyPanel> {
+  final username = TextEditingController();
+  final displayName = TextEditingController();
+  bool creating = false;
+
+  @override
+  void dispose() {
+    username.dispose();
+    displayName.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = ref.watch(sessionProvider);
+    final notifier = ref.read(sessionProvider.notifier);
+    return TraceCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Row(children: [
+          Icon(Icons.fingerprint, color: TraceColors.emerald),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text('Passkey',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          ),
+          Pill('PRIMARY'),
+        ]),
+        const SizedBox(height: 8),
+        const Muted(
+            'Use Face ID, Touch ID, fingerprint or your device PIN. Biometrics never leave your device.'),
+        const SizedBox(height: 12),
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(value: false, label: Text('Sign in')),
+            ButtonSegment(value: true, label: Text('Create account')),
+          ],
+          selected: {creating},
+          onSelectionChanged: session.busy
+              ? null
+              : (value) => setState(() => creating = value.first),
+        ),
+        const SizedBox(height: 12),
+        if (creating) ...[
+          TextField(
+            controller: displayName,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.name],
+            maxLength: 80,
+            decoration: const InputDecoration(labelText: 'Display name'),
+          ),
+          const SizedBox(height: 8),
+        ],
+        TextField(
+          controller: username,
+          autocorrect: false,
+          enableSuggestions: false,
+          textCapitalization: TextCapitalization.none,
+          autofillHints: const [AutofillHints.username],
+          decoration: const InputDecoration(labelText: 'Username'),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: session.busy
+                ? null
+                : () {
+                    final handle = username.text.trim().toLowerCase();
+                    if (creating) {
+                      notifier.registerPasskey(handle, displayName.text.trim());
+                    } else {
+                      notifier.signInWithPasskey(handle);
+                    }
+                  },
+            icon: const Icon(Icons.fingerprint),
+            label: Text(session.busy
+                ? 'Waiting for your device'
+                : creating
+                    ? 'Create account with passkey'
+                    : 'Sign in with passkey'),
+          ),
+        ),
+      ]),
     );
   }
 }

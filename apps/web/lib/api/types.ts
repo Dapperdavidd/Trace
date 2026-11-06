@@ -47,14 +47,19 @@ export interface ApiErrorBody {
 export interface AuthSession {
   access_token: string;
   expires_at: string;
-  user: { id: string; email: string; name: string };
+  user: { id: string; username?: string | null; email: string | null; name: string | null };
 }
 
 export interface Me {
   id: string;
-  email: string;
-  name: string;
+  email: string | null;
+  name: string | null;
   wallets: { watch_only: number; connected: 0 };
+}
+
+export interface PasskeyOptions<T = Record<string, unknown>> {
+  ceremony_id: string;
+  options: T;
 }
 
 export interface MyWallets {

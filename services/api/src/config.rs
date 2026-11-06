@@ -7,6 +7,9 @@ pub struct Config {
     pub db_max_connections: u32,
     pub cors_origins: Vec<String>,
     pub google_client_id: Option<String>,
+    /// Stable WebAuthn identity. Changing the RP id invalidates every passkey.
+    pub passkey_rp_id: String,
+    pub passkey_rp_origin: String,
     /// Local development only. Accepts `dev:<email>` as an ID token.
     pub dev_auth: bool,
     /// Seed and refresh clearly-labelled demo data. Off by default.
@@ -43,6 +46,10 @@ impl Config {
             google_client_id: std::env::var("GOOGLE_CLIENT_ID")
                 .ok()
                 .filter(|v| !v.is_empty()),
+            passkey_rp_id: std::env::var("TRACE_PASSKEY_RP_ID")
+                .unwrap_or_else(|_| "localhost".into()),
+            passkey_rp_origin: std::env::var("TRACE_PASSKEY_RP_ORIGIN")
+                .unwrap_or_else(|_| "http://localhost:3000".into()),
             dev_auth: std::env::var("TRACE_DEV_AUTH").is_ok_and(|v| v == "true"),
             seed_demo: std::env::var("TRACE_SEED_DEMO").is_ok_and(|v| v == "true"),
             env: std::env::var("TRACE_ENV").unwrap_or_else(|_| "development".into()),
@@ -90,8 +97,15 @@ impl Config {
         if self.seed_demo {
             p.push("TRACE_SEED_DEMO=true would seed fake data into a production database".into());
         }
-        if self.google_client_id.is_none() {
-            p.push("GOOGLE_CLIENT_ID is not set, so nobody can sign in".into());
+        if self.passkey_rp_id == "localhost" {
+            p.push("TRACE_PASSKEY_RP_ID still uses localhost".into());
+        }
+        if !self
+            .passkey_rp_origin
+            .to_ascii_lowercase()
+            .starts_with("https://")
+        {
+            p.push("TRACE_PASSKEY_RP_ORIGIN must be https in production".into());
         }
         if self.cors_origins.is_empty() {
             p.push("TRACE_CORS_ORIGINS is empty".into());

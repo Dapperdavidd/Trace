@@ -1,6 +1,7 @@
 use std::net::TcpListener;
 use trace_api::{config::Config, run, state::NearState, AppState};
 use tracing_subscriber::EnvFilter;
+use webauthn_rs::prelude::{Url, WebauthnBuilder};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -58,11 +59,16 @@ async fn main() -> anyhow::Result<()> {
         )),
         rpc: std::sync::Arc::new(trace_near::NearRpcClient::new(cfg.near_rpc_url.clone())),
     };
+    let passkey_origin = Url::parse(&cfg.passkey_rp_origin)?;
+    let passkeys = WebauthnBuilder::new(&cfg.passkey_rp_id, &passkey_origin)?
+        .rp_name("TRACE")
+        .build()?;
     run(
         listener,
         AppState::with_verifier(pool, verifier)
             .with_ops_token(cfg.ops_token.clone())
-            .with_near(near),
+            .with_near(near)
+            .with_passkeys(passkeys),
         cfg.cors_origins,
     )?
     .await?;

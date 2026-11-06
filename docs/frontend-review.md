@@ -28,7 +28,7 @@ The designs contain balances, real trading, automated mirroring, and AI chat act
 | Watchlist | Yes | loading, empty, error, offline, demo, partial | Monitoring status is explicit. |
 | Alerts | Yes | loading, empty, error, offline, demo | API errors include request IDs. |
 | Search | Yes | loading, empty, error, offline, demo | Results are limited to listed coins and public wallets. |
-| Sign in | Yes | loading, API error, unconfigured, development-only | Google 503 is explained. Local sign-in requires the explicit dev flag. |
+| Sign in | Yes | loading, API error, unsupported browser, development-only | Passkeys are primary. Google is an optional alternative and local sign-in requires the explicit dev flag. |
 | Wallet | Yes | static coming-later state | No balance is invented. |
 | Send | Yes | static coming-later state | No action is enabled. |
 | Receive | Yes | static coming-later state | No address is invented. |
@@ -42,7 +42,7 @@ Web captures are in [`docs/screens/web`](screens/web).
 
 | Screen | Matches design | States covered | Notes |
 | --- | --- | --- | --- |
-| Welcome | Yes | signed out, unconfigured Google, development-only, demo | Watch-only promise replaces wallet creation claims. |
+| Welcome | Yes | signed out, passkey error, unconfigured Google, development-only, demo | Passkeys are primary. Watch-only promise replaces wallet creation claims. |
 | Home | Yes | loading, empty, error, offline, demo, unavailable | Research and paper results lead the screen. |
 | Top Movers | Yes | loading, empty, error, offline, demo | 44 point filters and tap targets. |
 | Token Research | Yes | loading, empty, error, offline, demo, unavailable | Exact decimal amounts and evidence labels. |

@@ -2,6 +2,16 @@ use crate::auth::{Disabled, IdTokenVerifier};
 use sqlx::PgPool;
 use std::sync::Arc;
 use trace_near::{IntentsClient, NearRpcClient};
+use webauthn_rs::prelude::{Url, Webauthn, WebauthnBuilder};
+
+fn local_passkeys() -> Webauthn {
+    let origin = Url::parse("http://localhost:3000").expect("local passkey origin");
+    WebauthnBuilder::new("localhost", &origin)
+        .expect("local passkey relying party")
+        .rp_name("TRACE")
+        .build()
+        .expect("local passkey configuration")
+}
 
 #[derive(Clone)]
 pub struct NearState {
@@ -35,6 +45,7 @@ pub struct AppState {
     /// Bearer token for the ops endpoints. `None` disables them.
     pub ops_token: Option<Arc<str>>,
     pub near: NearState,
+    pub passkeys: Arc<Webauthn>,
 }
 
 impl AppState {
@@ -47,6 +58,7 @@ impl AppState {
             demo: false,
             ops_token: None,
             near: NearState::default(),
+            passkeys: Arc::new(local_passkeys()),
         }
     }
 
@@ -67,11 +79,17 @@ impl AppState {
             demo: false,
             ops_token: None,
             near: NearState::default(),
+            passkeys: Arc::new(local_passkeys()),
         }
     }
 
     pub fn with_near(mut self, near: NearState) -> Self {
         self.near = near;
+        self
+    }
+
+    pub fn with_passkeys(mut self, passkeys: Webauthn) -> Self {
+        self.passkeys = Arc::new(passkeys);
         self
     }
 }

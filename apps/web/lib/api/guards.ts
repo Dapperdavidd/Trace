@@ -97,10 +97,11 @@ export const guardAlerts: Guard<unknown> = (v): v is unknown =>
   isRecord(v) && arrayOf(v.items, (i) => isRecord(i) && typeof i.id === "string" && typeof i.title === "string");
 
 export const guardAuth: Guard<unknown> = (v): v is unknown =>
-  isRecord(v) && typeof v.access_token === "string" && isRecord(v.user) && typeof v.user.email === "string";
+  isRecord(v) && typeof v.access_token === "string" && isRecord(v.user) &&
+  (typeof v.user.email === "string" || v.user.email === null);
 
 export const guardMe: Guard<unknown> = (v): v is unknown =>
-  isRecord(v) && typeof v.id === "string" && typeof v.email === "string";
+  isRecord(v) && typeof v.id === "string" && (typeof v.email === "string" || v.email === null);
 
 export const guardSessions: Guard<unknown> = (v): v is unknown =>
   isRecord(v) &&

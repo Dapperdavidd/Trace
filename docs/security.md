@@ -21,6 +21,22 @@ The first command must report that nothing depends on `sqlx-mysql`; the second m
 
 TRACE issues opaque 30-day session tokens and stores only SHA-256 hashes. Users can list active sessions, revoke one session, sign out the current session, or revoke every session on the account. Session lists expose only a coarse device label such as `Mac` or `iPhone`; the API does not store full user-agent strings or client IP addresses.
 
+## Passkeys
+
+Passkeys are the primary account entry path on web and mobile. TRACE stores the
+public credential and authenticator counter, never the private key. Registration
+and authentication ceremony state stays on the server, expires after five
+minutes and can be consumed only once.
+
+The relying-party ID and origin are explicit deployment configuration. A
+production API rejects a localhost relying-party ID or a non-HTTPS origin.
+Native apps also require the platform association files for the same web
+domain before passkeys can be verified on physical devices.
+
+A TRACE passkey authenticates an account. It does not authorize an on-chain
+trade. Agent authority is a separate NEAR mandate signed by the user's NEAR
+wallet, with limits and revocation enforced by the NEAR contract.
+
 ## HTTP boundary
 
 The API restricts CORS to configured origins, limits JSON request bodies to 64 KiB, assigns request IDs, applies per-peer and per-session rate limits, and returns browser hardening headers for content sniffing, framing, referrers, and unused device capabilities.

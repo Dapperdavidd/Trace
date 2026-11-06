@@ -91,7 +91,7 @@ function AccountMenu() {
     <div className="menu-wrap" ref={ref}>
       <button type="button" className="avatar-btn" aria-haspopup="menu" aria-expanded={open} aria-label="Account menu" onClick={() => setOpen((o) => !o)}>
         <span className="avatar" style={{ background: "linear-gradient(135deg,#4be3a6,#2fcf8f)" }}>
-          {token && me.data ? me.data.name.slice(0, 1).toUpperCase() : <IconUser size={18} />}
+          {token && me.data ? (me.data.name ?? "T").slice(0, 1).toUpperCase() : <IconUser size={18} />}
         </span>
       </button>
       {open ? (
@@ -118,7 +118,7 @@ function AccountMenu() {
                 <b>Guest</b>
                 Sign in to save a watchlist.
               </div>
-              <Link role="menuitem" href="/sign-in" onClick={() => setOpen(false)}>Sign in with Google</Link>
+              <Link role="menuitem" href="/sign-in" onClick={() => setOpen(false)}>Sign in securely</Link>
             </>
           )}
         </div>

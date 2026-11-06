@@ -8,6 +8,7 @@ pub mod health;
 pub mod near;
 pub mod openapi;
 pub mod ops;
+pub mod passkeys;
 pub mod shadow;
 pub mod signals;
 pub mod tokens;

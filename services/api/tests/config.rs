@@ -9,6 +9,8 @@ fn prod() -> Config {
         db_max_connections: 10,
         cors_origins: vec!["https://app.example.com".into()],
         google_client_id: Some("id.apps.googleusercontent.com".into()),
+        passkey_rp_id: "app.example.com".into(),
+        passkey_rp_origin: "https://app.example.com".into(),
         dev_auth: false,
         seed_demo: false,
         env: "production".into(),
@@ -34,6 +36,8 @@ fn production_refuses_every_development_shortcut() {
     c.dev_auth = true;
     c.seed_demo = true;
     c.google_client_id = None;
+    c.passkey_rp_id = "localhost".into();
+    c.passkey_rp_origin = "http://localhost:3000".into();
     c.cors_origins = vec![
         "*".into(),
         "http://localhost:3000".into(),
@@ -45,7 +49,8 @@ fn production_refuses_every_development_shortcut() {
     for needle in [
         "TRACE_DEV_AUTH",
         "TRACE_SEED_DEMO",
-        "GOOGLE_CLIENT_ID",
+        "TRACE_PASSKEY_RP_ID",
+        "TRACE_PASSKEY_RP_ORIGIN",
         "'*'",
         "localhost",
         "not https",

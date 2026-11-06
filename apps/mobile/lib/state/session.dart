@@ -1,8 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:passkeys/authenticator.dart';
+import 'package:passkeys/types.dart';
 
 import '../api/api_error.dart';
+import '../api/models.dart';
+import '../core/json_utils.dart';
 import '../core/config.dart';
 import 'providers.dart';
 
@@ -103,18 +109,66 @@ class SessionController extends Notifier<SessionState> {
         return;
       }
       final res = await ref.read(apiProvider).googleSignIn(idToken);
-      ref.read(apiClientProvider).accessToken = res.accessToken;
-      await _write(_tokenKey, res.accessToken);
-      await _write(_nameKey, res.user.name);
-      await _write(_emailKey, res.user.email);
-      state = SessionState(SessionPhase.signedIn,
-          name: res.user.name, email: res.user.email);
+      await _saveSession(res);
     } on ApiException catch (e) {
       state = state.copyWith(busy: false, error: e.message);
     } catch (_) {
       state = state.copyWith(
           busy: false, error: 'Sign-in failed. Please try again.');
     }
+  }
+
+  Future<void> registerPasskey(String username, String displayName) async {
+    await _passkeyFlow(username, displayName: displayName);
+  }
+
+  Future<void> signInWithPasskey(String username) async {
+    await _passkeyFlow(username);
+  }
+
+  Future<void> _passkeyFlow(String username, {String? displayName}) async {
+    state = state.copyWith(busy: true, clearError: true);
+    try {
+      final api = ref.read(apiProvider);
+      final authenticator = PasskeyAuthenticator();
+      late final AuthResult result;
+      if (displayName != null) {
+        final started = await api.passkeyRegisterOptions(username, displayName);
+        final ceremonyId = str(started['ceremony_id']);
+        final request = RegisterRequestType.fromJson(asMap(started['options']));
+        final credential = await authenticator.register(request);
+        result = await api.passkeyRegisterFinish(
+            ceremonyId, asMap(jsonDecode(credential.toJsonString())));
+      } else {
+        final started = await api.passkeyAuthenticateOptions(username);
+        final ceremonyId = str(started['ceremony_id']);
+        final request =
+            AuthenticateRequestType.fromJson(asMap(started['options']));
+        final credential = await authenticator.authenticate(request);
+        result = await api.passkeyAuthenticateFinish(
+            ceremonyId, asMap(jsonDecode(credential.toJsonString())));
+      }
+      await _saveSession(result);
+    } on ApiException catch (e) {
+      state = state.copyWith(
+          busy: false,
+          error:
+              '${e.message}${e.requestId == null ? '' : ' Request id: ${e.requestId}'}');
+    } catch (e) {
+      state = state.copyWith(
+          busy: false,
+          error:
+              'Passkey authentication failed. Check this app is associated with the TRACE domain and try again.');
+    }
+  }
+
+  Future<void> _saveSession(AuthResult res) async {
+    ref.read(apiClientProvider).accessToken = res.accessToken;
+    await _write(_tokenKey, res.accessToken);
+    await _write(_nameKey, res.user.name);
+    await _write(_emailKey, res.user.email);
+    state = SessionState(SessionPhase.signedIn,
+        name: res.user.name, email: res.user.email);
   }
 
   Future<void> signInForDevelopment() async {
@@ -124,12 +178,7 @@ class SessionController extends Notifier<SessionState> {
       final res = await ref
           .read(apiProvider)
           .googleSignIn('dev:mobile-local@trace.test');
-      ref.read(apiClientProvider).accessToken = res.accessToken;
-      await _write(_tokenKey, res.accessToken);
-      await _write(_nameKey, res.user.name);
-      await _write(_emailKey, res.user.email);
-      state = SessionState(SessionPhase.signedIn,
-          name: res.user.name, email: res.user.email);
+      await _saveSession(res);
     } on ApiException catch (e) {
       state = state.copyWith(
           busy: false,

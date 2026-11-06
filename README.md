@@ -26,7 +26,8 @@ deployment is verified and independently reviewed.
 | Watchlist alerts | Real finalized direct swaps, in-app only |
 | Signals | Real finalized buys can publish sealed research signals when liquidity and risk inputs are complete; outcomes use fixed horizons |
 | Shadow | Paper-only and gated by price and liquidity evidence |
-| Google sign-in | Implemented; production credentials and an end-to-end live check are still required |
+| Passkey sign-in | Implemented on web and mobile; production domain association and physical-device checks remain |
+| Google sign-in | Optional alternative; production credentials and an end-to-end live check remain |
 
 NEAR is the authorization, evidence and cross-chain execution control plane.
 Ethereum and Solana are markets TRACE observes. See

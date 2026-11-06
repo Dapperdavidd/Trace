@@ -32,6 +32,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .configure(routes::near::configure)
             .configure(routes::chains::configure)
             .configure(routes::account::configure)
+            .configure(routes::passkeys::configure)
             .configure(routes::watchlists::configure)
             .configure(routes::alerts::configure)
             .configure(routes::discovery::configure)

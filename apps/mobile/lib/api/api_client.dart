@@ -88,6 +88,41 @@ class ApiClient implements TraceApi {
       asMap(await _send('POST', '/auth/google', body: {'id_token': idToken})));
 
   @override
+  Future<Map<String, dynamic>> passkeyRegisterOptions(
+          String username, String displayName) async =>
+      _getPostMap('/auth/passkeys/register/options', {
+        'username': username,
+        'display_name': displayName,
+      });
+
+  @override
+  Future<AuthResult> passkeyRegisterFinish(
+          String ceremonyId, Map<String, dynamic> credential) async =>
+      AuthResult.fromJson(await _getPostMap('/auth/passkeys/register/finish', {
+        'ceremony_id': ceremonyId,
+        'credential': credential,
+      }));
+
+  @override
+  Future<Map<String, dynamic>> passkeyAuthenticateOptions(String username) =>
+      _getPostMap('/auth/passkeys/authenticate/options', {
+        'username': username,
+      });
+
+  @override
+  Future<AuthResult> passkeyAuthenticateFinish(
+          String ceremonyId, Map<String, dynamic> credential) async =>
+      AuthResult.fromJson(
+          await _getPostMap('/auth/passkeys/authenticate/finish', {
+        'ceremony_id': ceremonyId,
+        'credential': credential,
+      }));
+
+  Future<Map<String, dynamic>> _getPostMap(
+          String path, Map<String, dynamic> body) async =>
+      asMap(await _send('POST', path, body: body));
+
+  @override
   Future<void> logout() async {
     await _send('POST', '/auth/logout');
   }

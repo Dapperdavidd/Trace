@@ -8,6 +8,12 @@ Visual language: Emerald Green on Charcoal Black (see `lib/core/tokens.dart`).
 Design source: the 14-screen mobile mockup. API source of truth:
 `docs/api-contract.md` (base path `/v1`).
 
+Passkeys are the primary account sign-in. The client calls TRACE's WebAuthn
+endpoints and native Android/iOS credential APIs. Physical-device use requires
+the final RP domain to publish Digital Asset Links for the Android application
+ID and an Apple App Site Association `webcredentials` entry for the iOS App ID.
+Those identifiers must match the signed release apps.
+
 ## First run
 
 The Android and iOS projects are committed with the application id
@@ -30,7 +36,7 @@ Run with demo fixtures only (no network calls at all):
 flutter run --dart-define=TRACE_DEMO=true
 ```
 
-Google Sign-In (optional, otherwise the button shows a "not configured" state):
+Google Sign-In alternative (optional, otherwise the button shows a "not configured" state):
 
 ```sh
 flutter run \

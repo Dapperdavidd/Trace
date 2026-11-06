@@ -119,7 +119,7 @@ fn request_keys(req: &ServiceRequest, limits: Limits) -> Vec<(String, u32)> {
         .peer_addr()
         .map(|a| a.ip().to_string())
         .unwrap_or_else(|| "unknown".into());
-    if req.path() == "/v1/auth/google" {
+    if req.path() == "/v1/auth/google" || req.path().starts_with("/v1/auth/passkeys/") {
         return vec![(format!("signin:{peer}"), limits.sign_in_ip_per_minute)];
     }
     if let Some(user) = bearer_key(req) {

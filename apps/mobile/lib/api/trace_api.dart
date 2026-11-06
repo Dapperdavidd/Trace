@@ -4,6 +4,13 @@ import 'models.dart';
 /// the demo fixtures, and the fallback wrapper.
 abstract class TraceApi {
   Future<AuthResult> googleSignIn(String idToken);
+  Future<Map<String, dynamic>> passkeyRegisterOptions(
+      String username, String displayName);
+  Future<AuthResult> passkeyRegisterFinish(
+      String ceremonyId, Map<String, dynamic> credential);
+  Future<Map<String, dynamic>> passkeyAuthenticateOptions(String username);
+  Future<AuthResult> passkeyAuthenticateFinish(
+      String ceremonyId, Map<String, dynamic> credential);
   Future<void> logout();
   Future<void> logoutAll();
   Future<List<AccountSession>> sessions();

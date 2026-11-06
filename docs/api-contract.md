@@ -16,6 +16,9 @@ type RiskState = "pass" | "warn" | "block" | "unknown";
 ```
 
 ## Auth and account
+- `POST /auth/passkeys/register/options` body `{ username, display_name }` starts a five-minute server-held registration ceremony. Submit the device response with its `ceremony_id` to `/auth/passkeys/register/finish`.
+- `POST /auth/passkeys/authenticate/options` body `{ username }` starts authentication. Submit the device response with its `ceremony_id` to `/auth/passkeys/authenticate/finish`.
+- Successful passkey completion returns `{ access_token, expires_at, user: { id, username, email: null, name } }`. Passkeys are the primary account identity. Google remains an optional alternative sign-in path.
 - `POST /auth/google` body `{ id_token }` -> `{ access_token, expires_at, user: { id, email, name } }`
 - `POST /auth/logout`, `DELETE /me` (account deletion), `GET /me` -> `{ id, email, name, wallets: { watch_only: number, connected: 0 } }`
 - `GET /auth/sessions` lists active sessions with a coarse device label and marks the current session. `DELETE /auth/sessions/{id}` revokes one, and `POST /auth/logout-all` revokes every session.
@@ -86,8 +89,8 @@ can be verified from NEAR. Natural-language "Ask TRACE" remains unavailable.
 
 ## Settled in milestone 5 (previously ambiguous)
 
-- **Auth:** `Authorization: Bearer <access_token>`. Sessions last 30 days and only a hash is stored. Sign-in answers 503
-  `dependency_unavailable` when `GOOGLE_CLIENT_ID` is not configured. `DELETE /me` removes the account, sessions,
+- **Auth:** `Authorization: Bearer <access_token>`. Sessions last 30 days and only a hash is stored. Passkey challenges stay server-side, expire after five minutes and are single-use. Google sign-in answers 503
+  `dependency_unavailable` when `GOOGLE_CLIENT_ID` is not configured, while passkeys remain available. `DELETE /me` removes the account, sessions,
   watchlist, alerts and paper strategies.
 - **Errors:** every error carries `request_id`, including those raised inside handlers. 409 `conflict`, 422 `limit_reached`.
 - **Watchlist:** up to 200 wallets. `POST` returns 201 for a new wallet and 200 with the same `id` when it already exists.

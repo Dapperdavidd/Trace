@@ -15,7 +15,9 @@ Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worke
 |---|---|---|---|
 | `DATABASE_URL` | both | yes | Use a strong password. The dev password is refused in production |
 | `TRACE_ENV` | api | yes | Set `production` to enable the startup safety checks below |
-| `GOOGLE_CLIENT_ID` | api | yes in prod | Web client id used to verify ID tokens (audience check) |
+| `TRACE_PASSKEY_RP_ID` | api | yes in prod | Stable passkey domain, such as `trace.example`; changing it invalidates credentials |
+| `TRACE_PASSKEY_RP_ORIGIN` | api | yes in prod | Exact HTTPS web origin allowed to use the passkeys |
+| `GOOGLE_CLIENT_ID` | api | optional | Alternative identity provider web client id used to verify ID tokens |
 | `TRACE_CORS_ORIGINS` | api | yes | Comma separated, https only in production |
 | `TRACE_BIND_ADDR` | api | no | Default `127.0.0.1:8080`; the image sets `0.0.0.0:8080` |
 | `TRACE_DB_MAX_CONNECTIONS` | api | no | Default 10. The worker needs at least 2 |
@@ -35,7 +37,7 @@ Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worke
 | `TRACE_SEED_DEMO` | api | never in prod | Seeds labelled fake data |
 
 With `TRACE_ENV=production` the api refuses to start if any of these hold: dev
-auth on, demo seeding on, no `GOOGLE_CLIENT_ID`, a CORS origin that is `*`,
+auth on, demo seeding on, a localhost passkey RP, a non-HTTPS passkey origin, a CORS origin that is `*`,
 localhost or not https, an ops token under 24 characters, the development
 database password, or delegation enabled without both NEAR contract and agent
 accounts. It lists every problem, not only the first.
@@ -48,7 +50,7 @@ accounts. It lists every problem, not only the first.
 4. Configure TLS 1.2 or newer, HSTS, request-size limits, and shared client-IP rate limits at ingress.
 5. Start `api`, check `GET /v1/health/ready`, then start `worker`.
 6. Ingestion stays idle until a protocol is Enabled in the registry **and** its RPC variable is set. Check the worker log for `ingestion is idle` or `ingestion active`.
-7. Sign-in: create a Google OAuth web client, authorise your web origin, set `GOOGLE_CLIENT_ID`, and sign in once end to end.
+7. Sign-in: set the final passkey RP domain and HTTPS origin. Publish Apple `webcredentials` and Android Digital Asset Links association files before native testing. Google can remain an optional alternative sign-in method.
 8. Deploy `trace-mandates-contract` to a dedicated NEAR testnet account, set
    `TRACE_NEAR_CONTRACT_ID`, and verify the deployed WebAssembly hash.
 9. Create a dedicated NEAR agent account. Keep delegation off while testing

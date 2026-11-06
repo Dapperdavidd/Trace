@@ -123,6 +123,50 @@ describe("api client: live responses", () => {
     expect(JSON.parse(init.body as string)).toEqual({ id_token: "id-token" });
   });
 
+  it("runs passkey registration through server-held ceremony state", async () => {
+    const options = { ceremony_id: "ceremony-1", options: { challenge: "challenge-1" } };
+    const session = {
+      access_token: "passkey-token",
+      expires_at: "2026-11-29T00:00:00Z",
+      user: { id: "u", username: "dapper", email: null, name: "Dapper" },
+    };
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(json(options))
+      .mockResolvedValueOnce(json(session));
+    const c = createApiClient({ baseUrl: "http://api.test", demoMode: false, fetchImpl });
+
+    await expect(c.passkeyRegisterOptions("dapper", "Dapper")).resolves.toEqual(options);
+    await expect(c.passkeyRegisterFinish("ceremony-1", { id: "credential-1" })).resolves.toEqual(session);
+    expect(JSON.parse(fetchImpl.mock.calls[0]![1]!.body as string)).toEqual({
+      username: "dapper",
+      display_name: "Dapper",
+    });
+    expect(JSON.parse(fetchImpl.mock.calls[1]![1]!.body as string)).toEqual({
+      ceremony_id: "ceremony-1",
+      credential: { id: "credential-1" },
+    });
+    expect(getToken()).toBe("passkey-token");
+  });
+
+  it("runs passkey authentication without demo fallback", async () => {
+    const options = { ceremony_id: "ceremony-2", options: { challenge: "challenge-2" } };
+    const session = {
+      access_token: "signed-in",
+      expires_at: "2026-11-29T00:00:00Z",
+      user: { id: "u", username: "dapper", email: null, name: "Dapper" },
+    };
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(json(options))
+      .mockResolvedValueOnce(json(session));
+    const c = createApiClient({ baseUrl: "http://api.test", demoMode: true, fetchImpl });
+
+    await c.passkeyAuthenticateOptions("dapper");
+    await c.passkeyAuthenticateFinish("ceremony-2", { id: "credential-2" });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl.mock.calls[0]![0]).toBe("http://api.test/v1/auth/passkeys/authenticate/options");
+    expect(getToken()).toBe("signed-in");
+  });
+
   it("lists and revokes account sessions", async () => {
     setToken("tok123");
     const sessions = {

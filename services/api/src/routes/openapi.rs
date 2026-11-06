@@ -64,6 +64,30 @@ pub const ROUTES: &[(&str, &str, &str, bool)] = &[
     ),
     (
         "post",
+        "/v1/auth/passkeys/register/options",
+        "Begin passkey-first account registration",
+        false,
+    ),
+    (
+        "post",
+        "/v1/auth/passkeys/register/finish",
+        "Verify a passkey and create an app session",
+        false,
+    ),
+    (
+        "post",
+        "/v1/auth/passkeys/authenticate/options",
+        "Begin passkey authentication",
+        false,
+    ),
+    (
+        "post",
+        "/v1/auth/passkeys/authenticate/finish",
+        "Verify a passkey assertion and create an app session",
+        false,
+    ),
+    (
+        "post",
         "/v1/auth/logout",
         "Revoke the current session",
         true,

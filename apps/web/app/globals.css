@@ -424,6 +424,8 @@ ul { margin: 0; padding: 0; list-style: none; }
   .cols-2, .cols-3 { grid-template-columns: minmax(0, 1fr); }
 }
 .m-logo { display: none; font-size: 24px; font-weight: 800; letter-spacing: -0.04em; }
+.auth-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; margin: 18px 0; }
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 @media (max-width: 760px) {
   .movers-grid, .movers-grid.compact { grid-template-columns: 20px minmax(100px, 1.6fr) 70px 64px 24px; }
   .movers-grid .hide-m { display: none; }

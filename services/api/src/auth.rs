@@ -236,7 +236,7 @@ pub async fn create_session(
 pub struct AuthUser {
     pub user_id: Uuid,
     pub session_id: Uuid,
-    pub email: String,
+    pub email: Option<String>,
     pub name: Option<String>,
 }
 

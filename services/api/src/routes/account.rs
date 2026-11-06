@@ -29,7 +29,7 @@ struct GoogleBody {
 #[derive(Serialize)]
 struct UserOut {
     id: Uuid,
-    email: String,
+    email: Option<String>,
     name: Option<String>,
 }
 
@@ -116,7 +116,7 @@ async fn google(
     })))
 }
 
-fn device_label(req: &HttpRequest) -> &'static str {
+pub(crate) fn device_label(req: &HttpRequest) -> &'static str {
     let agent = req
         .headers()
         .get(actix_web::http::header::USER_AGENT)
