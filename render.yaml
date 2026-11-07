@@ -1,0 +1,67 @@
+databases:
+  - name: trace-postgres
+    databaseName: trace
+    user: trace
+    plan: free
+
+services:
+  - type: web
+    name: trace-api-dapper
+    runtime: docker
+    plan: free
+    dockerfilePath: ./infra/render/Dockerfile
+    dockerContext: .
+    dockerCommand: trace-api
+    healthCheckPath: /v1/health/ready
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trace-postgres
+          property: connectionString
+      - key: TRACE_ENV
+        value: production
+      - key: TRACE_BIND_ADDR
+        value: 0.0.0.0:10000
+      - key: TRACE_PASSKEY_RP_ID
+        value: trace-api-dapper.onrender.com
+      - key: TRACE_PASSKEY_RP_ORIGIN
+        value: https://trace-api-dapper.onrender.com
+      - key: TRACE_CORS_ORIGINS
+        value: https://trace-api-dapper.onrender.com
+      - key: TRACE_NEAR_NETWORK
+        value: testnet
+      - key: TRACE_NEAR_CONTRACT_ID
+        value: trace-mandates-dapper.testnet
+      - key: TRACE_NEAR_AGENT_ACCOUNT_ID
+        value: trace-agent-dapper.testnet
+      - key: TRACE_NEAR_DELEGATION_ENABLED
+        value: "false"
+      - key: TRACE_OPS_TOKEN
+        generateValue: true
+
+  - type: worker
+    name: trace-worker-dapper
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./infra/render/Dockerfile
+    dockerContext: .
+    dockerCommand: trace-worker
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trace-postgres
+          property: connectionString
+      - key: TRACE_RPC_ETHEREUM
+        sync: false
+      - key: TRACE_RPC_SOLANA
+        sync: false
+      - key: TRACE_PRICE_PROVIDER
+        value: defillama
+      - key: TRACE_EVM_MAX_BLOCK_RANGE
+        value: "10"
+      - key: TRACE_RETENTION_RAW_EVENT_DAYS
+        value: "90"
+      - key: TRACE_RETENTION_JOB_ATTEMPT_DAYS
+        value: "14"
+      - key: TRACE_RETENTION_AUDIT_EVENT_DAYS
+        value: "180"
