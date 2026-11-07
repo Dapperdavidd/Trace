@@ -14,6 +14,17 @@ use crate::ingest::{step, EvmIngestConfig, EvmSource, IngestError, StepReport};
 use crate::rpc_source::EvmRpcSource;
 
 pub const INGEST_EVM: &str = "ingest_evm";
+const DEFAULT_EVM_MAX_BLOCK_RANGE: u64 = 10;
+
+/// Keep the default compatible with free RPC tiers. Operators with a provider
+/// that permits wider eth_getLogs queries may raise it explicitly.
+pub fn evm_max_block_range(value: Option<&str>) -> u64 {
+    value
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(DEFAULT_EVM_MAX_BLOCK_RANGE)
+        .min(2_000)
+}
 
 /// A known protocol deployment. Addresses must be verified against a block
 /// explorer when the protocol is enabled (see docs/fixtures.md).
@@ -202,7 +213,7 @@ pub async fn run_ingest(pool: &PgPool, ctx: &Ctx, job: &Job) -> Result<IngestRun
         protocol: d.protocol.into(),
         status,
         routers,
-        max_range: 200,
+        max_range: evm_max_block_range(std::env::var("TRACE_EVM_MAX_BLOCK_RANGE").ok().as_deref()),
         reorg_window: 64,
         start_height: None,
     };

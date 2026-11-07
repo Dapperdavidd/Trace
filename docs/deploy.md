@@ -30,6 +30,7 @@ Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worke
 | `TRACE_NEAR_INTENTS_BASE_URL` | api | no | Defaults to the official 1Click endpoint |
 | `TRACE_NEAR_INTENTS_API_KEY` | api | no | Partner key for 1Click; keep in the secret store |
 | `TRACE_RPC_ETHEREUM` | worker | for ingestion | RPC URL; treat as a secret |
+| `TRACE_EVM_MAX_BLOCK_RANGE` | worker | no | Defaults to 10 for free RPC compatibility; raise only when the provider permits wider `eth_getLogs` ranges |
 | `TRACE_RPC_SOLANA` | worker | for ingestion | RPC URL; treat as a secret |
 | `TRACE_PRICE_PROVIDER` | worker | for prices | `defillama`. Off when unset |
 | `TRACE_PRICE_API_BASE` | worker | no | Override the provider host |

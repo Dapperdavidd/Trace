@@ -11,8 +11,17 @@ use trace_domain::SupportStatus;
 use trace_jobs::{enqueue, lease, Failure};
 use trace_worker::ingest::{Bundle, EvmSource, Head, IngestError};
 use trace_worker::ingest_job::{
-    run_ingest, schedule_ingest, Ctx, IngestRun, SourceFactory, INGEST_EVM,
+    evm_max_block_range, run_ingest, schedule_ingest, Ctx, IngestRun, SourceFactory, INGEST_EVM,
 };
+
+#[test]
+fn evm_log_range_defaults_to_free_tier_safe_value_and_is_bounded() {
+    assert_eq!(evm_max_block_range(None), 10);
+    assert_eq!(evm_max_block_range(Some("bad")), 10);
+    assert_eq!(evm_max_block_range(Some("0")), 10);
+    assert_eq!(evm_max_block_range(Some("200")), 200);
+    assert_eq!(evm_max_block_range(Some("9999")), 2_000);
+}
 
 struct Stub {
     calls: Arc<AtomicUsize>,
