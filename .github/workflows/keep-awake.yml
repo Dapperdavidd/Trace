@@ -1,0 +1,26 @@
+name: keep-api-awake
+
+# Render's free web services sleep after 15 minutes without traffic.
+# This pings the API every 10 minutes so judges never hit a cold start.
+# Remove or disable it after judging to stay within free-tier fair use.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping API health
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 https://trace-api-dapper.onrender.com/v1/health/live || true)
+            echo "attempt $i: $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 20
+          done
+          exit 1

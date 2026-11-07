@@ -48,17 +48,31 @@ npm test                     # vitest: formatting, address validation, API clien
 * Observed facts, hypotheses and model assessments are labelled separately. No profit guarantees.
 * Auth: the bearer token lives in memory and `sessionStorage` (every access wrapped in try/catch).
 
+## Design
+
+The UI is a direct port of `design/trace-redesign-v11.html` (the approved Claude design). `app/design.css`
+is that file's stylesheet, unchanged; `app/shell.css` only turns the prototype's desktop and phone frames into a
+responsive full-screen app. The three.js block field and token trace chart live in `lib/trace/engine.ts`.
+
+Every screen asks the live API first. When the API has nothing yet (no market snapshots, empty lists,
+unreachable), the screen shows the design's fictional example data and labels it **Example**. Live data is
+labelled **Live**.
+
 ## Routes
 
-`/` Home, `/top-movers`, `/smart-wallets`, `/wallets/[chain]/[address]`, `/tokens/[chain]/[address]`,
-`/tokens/[chain]/[address]/timeline`, `/timeline`, `/risk-radar`, `/shadow-trades`, `/compare`, `/briefing`,
-`/watchlist`, `/alerts`, `/sign-in`, `/search`, and the Coming Later pages `/wallet`, `/send`, `/receive`,
-`/swap`, `/ask`.
+`/` landing, `/welcome/` onboarding and passkey sign-in, and the app at `/app/<screen>/`:
+`today`, `briefing`, `discover`, `token`, `compare`, `ask`, `wallets`, `profile`, `shadow`, `copy`, `swap`,
+`wallet`, `near`, `me`, `notifs`, `security`, `following`, `prefs`. Coins and wallets are passed as query
+parameters (`?chain=&address=` for live, `?sym=` or `?w=` for examples), so the whole site is a static export.
 
-## Coming later (shown disabled, never faked)
+`copy` runs the NEAR mandate flow: passkey account, shadow test, connect NEAR wallet, prepare the draft,
+sign it in the wallet, verify the anchor. `swap` requests dry NEAR Intents quotes under a signed mandate.
 
-Wallet balance, Send, Receive, Buy, Swap, Create New Wallet, Connect Wallet, real-money trade mirroring (the available Shadow feature is a paper simulation), Ask TRACE (natural-language assistant), coin watchlist (the contract only
-covers wallet watchlists), push notifications.
+## Not live yet
+
+Wallet balances (trace never holds funds, so balances shown in Wallet and Today are labelled Example),
+auto copy (needs the NEAR delegation review), executed swaps (quotes are dry previews; the owner's wallet signs),
+currencies other than USD, languages other than English, push notifications.
 
 ## Contract assumptions that need backend confirmation
 
@@ -80,5 +94,6 @@ covers wallet watchlists), push notifications.
 
 ## Layout
 
-`app/` routes, `components/` shared UI, `lib/api/` types, client, guards, demo fixtures, `lib/format.ts`
-formatters, `lib/address.ts` validation, `tests/` vitest suites, `docs/screens/` verification screenshots.
+`app/` routes and styles, `components/trace/` the app frame, screens, landing and onboarding, `lib/trace/` view
+models, example data, NEAR flow and the 3D engine, `lib/api/` types, client, guards and demo fixtures,
+`tests/` vitest suites, `design/` the source design file.

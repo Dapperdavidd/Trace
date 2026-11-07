@@ -433,6 +433,44 @@ export interface NearAnchorResult {
   as_of: string;
 }
 
+export interface NearIntentPreviewBody {
+  mandate_id: string;
+  quote: {
+    origin_asset: string;
+    destination_asset: string;
+    /** Integer base units. */
+    amount: string;
+    slippage_tolerance: number;
+    recipient: string;
+    refund_to: string;
+    deadline: string;
+  };
+}
+
+export interface NearIntentPreview extends Envelope {
+  preview_id: string;
+  source: "near_intents_1click";
+  execution: "not_submitted";
+  owner_signature_required: true;
+  note: string;
+  quote: {
+    correlationId: string;
+    timestamp: string;
+    signature: string;
+    quote: {
+      amountIn: string;
+      amountInFormatted: string;
+      amountInUsd: string;
+      minAmountIn: string;
+      amountOut: string;
+      amountOutFormatted: string;
+      amountOutUsd: string;
+      minAmountOut: string;
+      timeEstimate: number;
+    };
+  };
+}
+
 export interface AgentConnection {
   id: string;
   name: string;

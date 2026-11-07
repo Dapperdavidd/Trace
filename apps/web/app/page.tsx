@@ -1,5 +1,5 @@
-import { Home } from "@/components/Home";
+import { Landing } from "@/components/trace/Landing";
 
-export default function Page() {
-  return <Home />;
+export default function Home() {
+  return <Landing />;
 }

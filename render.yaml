@@ -5,6 +5,30 @@ databases:
     plan: free
 
 services:
+  # Web app: a fully static Next.js export. Render static sites are free and never sleep.
+  - type: web
+    name: trace-web-dapper
+    runtime: static
+    rootDir: apps/web
+    buildCommand: npm ci && npm run build
+    staticPublishPath: out
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    envVars:
+      - key: NEXT_PUBLIC_TRACE_API_URL
+        value: https://trace-api-dapper.onrender.com
+      - key: NODE_VERSION
+        value: "22"
+
   - type: web
     name: trace-api-dapper
     runtime: docker
@@ -22,12 +46,13 @@ services:
         value: production
       - key: TRACE_BIND_ADDR
         value: 0.0.0.0:10000
+      # Passkeys belong to the web app's domain: the browser runs WebAuthn there.
       - key: TRACE_PASSKEY_RP_ID
-        value: trace-api-dapper.onrender.com
+        value: trace-web-dapper.onrender.com
       - key: TRACE_PASSKEY_RP_ORIGIN
-        value: https://trace-api-dapper.onrender.com
+        value: https://trace-web-dapper.onrender.com
       - key: TRACE_CORS_ORIGINS
-        value: https://trace-api-dapper.onrender.com
+        value: https://trace-web-dapper.onrender.com,https://trace-api-dapper.onrender.com
       - key: TRACE_NEAR_NETWORK
         value: testnet
       - key: TRACE_NEAR_CONTRACT_ID

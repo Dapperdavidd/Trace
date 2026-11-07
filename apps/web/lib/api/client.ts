@@ -48,6 +48,8 @@ import type {
   NearAssetsResponse,
   NearMandateCreated,
   NearMandatesResponse,
+  NearIntentPreview,
+  NearIntentPreviewBody,
   NearStatus,
   PatchWatchlistBody,
   PasskeyOptions,
@@ -475,6 +477,14 @@ export function createApiClient(options: ClientOptions = {}) {
         path: `/near/mandates/${enc(id)}/anchor`,
         body,
         guard: guardIdCreated as Guard<NearAnchorResult>,
+        allowDemo: false,
+      }),
+    nearIntentPreview: (body: NearIntentPreviewBody) =>
+      request<NearIntentPreview>({
+        method: "POST",
+        path: "/near/intents/preview",
+        body,
+        guard: guardAny as Guard<NearIntentPreview>,
         allowDemo: false,
       }),
     agentConnections: () =>

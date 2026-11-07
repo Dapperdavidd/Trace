@@ -1,0 +1,66 @@
+/* Shell layer: turns the design's desk frame and phone frame into one full-screen, responsive app.
+   Everything visual comes from design.css; this file only handles viewport layout. */
+html,body{margin:0;min-height:100%}
+.app.desk.tapp{height:100dvh;min-width:0;border-radius:0;grid-template-columns:224px minmax(0,1fr)}
+.tapp .dside{overflow-y:auto;scrollbar-width:none}
+.tapp .dside::-webkit-scrollbar{display:none}
+.tapp .dsearch{width:min(400px,40vw)}
+.tapp .tabs{display:none}
+.tapp .toast{position:fixed}
+.tapp .vp{scroll-behavior:auto}
+.dnav button .tag{margin-left:auto;font-size:10.5px;padding:1px 7px}
+.ha .tag{align-self:center}
+.tabs .tr.on .i{color:var(--ink)}
+.dtop .src{font-size:12px;color:var(--fg3);display:inline-flex;align-items:center;gap:6px}
+
+@media (max-width:899px){
+  .app.desk.tapp{grid-template-columns:minmax(0,1fr)}
+  .tapp .dside,.tapp .dtop{display:none}
+  .tapp .dmain{grid-template-rows:minmax(0,1fr)}
+  .tapp .vp{padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+  .tapp.notab .vp{padding-bottom:env(safe-area-inset-bottom,0px)}
+  .tapp .tabs{display:grid;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:520px;margin:0 auto}
+  .tapp.notab .tabs{display:none}
+  .tapp .toast{bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+  .tapp.notab .toast{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+  .tapp .actbar{bottom:env(safe-area-inset-bottom,0px)}
+}
+
+/* status strip shown above data that is example or partial */
+.srcbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--fg3)}
+.srcbar .tag{flex:none}
+
+/* forms used by sign-in and the NEAR mandate flow, in the design's language */
+.fld{display:grid;gap:6px}
+.fld>span{font-size:13px;color:var(--fg3)}
+.fld input,.fld select{height:48px;border-radius:var(--r-md);background:var(--panel2);padding:0 16px;color:var(--fg);font-size:15px;border:0;outline:0;font-family:var(--f);width:100%}
+.fld select{appearance:none}
+.fld input:focus-visible,.fld select:focus-visible{outline:2px solid var(--g);outline-offset:2px}
+.err{color:var(--fg);background:rgba(237,242,239,.08);border-radius:var(--r-md);padding:10px 14px;font-size:13.5px;margin:0}
+.okmsg{color:var(--g);background:var(--g-soft);border-radius:var(--r-md);padding:10px 14px;font-size:13.5px;margin:0;word-break:break-all}
+.hash{font-size:12px;color:var(--fg3);word-break:break-all;font-variant-numeric:tabular-nums}
+.bfill:disabled,.bout:disabled{opacity:.45;cursor:not-allowed}
+.steps{display:grid;gap:8px;counter-reset:st}
+.steps>div{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-radius:var(--r-md);background:var(--panel2)}
+.steps>div>i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12.5px;font-weight:600;background:var(--panel3);color:var(--fg2)}
+.steps>div.done>i{background:var(--g);color:var(--ink)}
+.steps>div.cur>i{background:var(--g-soft);color:var(--g)}
+.steps b{font-weight:500;display:block}
+.steps .sub{white-space:normal}
+
+/* welcome page: the phone onboarding screen at full size */
+.wel-page{position:fixed;inset:0;background:var(--bg)}
+.wel-page .s-wel{height:100%}
+.wel-page .welb{max-width:560px;margin:0 auto;padding-bottom:calc(30px + env(safe-area-inset-bottom,0px));overflow-y:auto}
+.wel-page .wlogo{z-index:4}
+.wel-page .back-home{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));right:18px;z-index:4;font-size:14px;color:var(--fg2);background:var(--panel);padding:7px 14px;border-radius:99px}
+@media (min-width:900px){
+  .wel-page .wel3d{height:100%}
+  .wel-page .welb{top:auto;bottom:40px;left:auto;right:max(40px,calc((100vw - 1280px)/2 + 40px));width:440px;max-height:calc(100% - 120px);border-radius:30px;background:var(--panel);padding:26px 28px 28px}
+  .wel-page .welb h3{font-size:38px}
+}
+
+/* legal pages */
+.legal{max-width:760px;margin:0 auto;padding:40px 20px 80px;display:grid;gap:14px}
+.legal h1{font-weight:500;letter-spacing:-.04em;margin:24px 0 4px}
+.legal p,.legal li{color:var(--fg2)}
