@@ -12,6 +12,7 @@ services:
     rootDir: apps/web
     buildCommand: npm ci && npm run build
     staticPublishPath: out
+    autoDeploy: true
     pullRequestPreviewsEnabled: false
     headers:
       - path: /*
@@ -36,6 +37,7 @@ services:
     dockerfilePath: ./infra/render/Dockerfile
     dockerContext: .
     dockerCommand: /usr/local/bin/trace-render
+    autoDeploy: true
     healthCheckPath: /v1/health/ready
     envVars:
       - key: DATABASE_URL
