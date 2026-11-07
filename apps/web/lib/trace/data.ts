@@ -155,11 +155,17 @@ export function discoveredToWallet(d: DiscoveredWallet): WalletVM {
     win: num(d.win_rate_pct),
     trades: d.sample_size,
     d30: num(d.realized_return_pct),
-    style: d.tags.length ? d.tags : [d.decision.replaceAll("_", " ")],
+    style: (d.tags.length ? d.tags : [d.decision]).map(prettyTag),
     seed: seedOf(addr),
     decision: d.decision,
     confidence: d.pnl_confidence,
   };
+}
+
+/** "fast_flipper" -> "Fast flipper", "possible_bot" -> "Possible bot". */
+export function prettyTag(t: string): string {
+  const w = t.replaceAll("_", " ").trim();
+  return w.charAt(0).toUpperCase() + w.slice(1);
 }
 
 /* ---------------- references in URLs ---------------- */
