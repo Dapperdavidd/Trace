@@ -19,6 +19,9 @@ pub struct NearState {
     pub contract_id: Option<Arc<str>>,
     pub agent_account_id: Option<Arc<str>>,
     pub delegation_enabled: bool,
+    /// Base58 SHA-256 of the reviewed mandate contract build. The status endpoint
+    /// reports the deployment as verified only when the on-chain code matches it.
+    pub expected_code_hash: Option<Arc<str>>,
     pub intents: Arc<IntentsClient>,
     pub rpc: Arc<NearRpcClient>,
 }
@@ -30,6 +33,7 @@ impl Default for NearState {
             contract_id: None,
             agent_account_id: None,
             delegation_enabled: false,
+            expected_code_hash: None,
             intents: Arc::new(IntentsClient::new(None)),
             rpc: Arc::new(NearRpcClient::new("https://rpc.testnet.near.org")),
         }

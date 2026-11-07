@@ -18,6 +18,7 @@ fn prod() -> Config {
         near_network: "mainnet".into(),
         near_rpc_url: "https://rpc.mainnet.near.org".into(),
         near_contract_id: None,
+        near_contract_code_hash: trace_api::config::REVIEWED_CONTRACT_CODE_HASH.into(),
         near_agent_account_id: None,
         near_delegation_enabled: false,
         near_intents_base_url: "https://1click.chaindefuser.com".into(),

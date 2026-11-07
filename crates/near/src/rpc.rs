@@ -78,6 +78,37 @@ impl NearRpcClient {
         )
         .map_err(NearRpcError::InvalidResult)
     }
+
+    /// The base58 SHA-256 of the WebAssembly deployed on `account_id`.
+    pub async fn code_hash(&self, account_id: &str) -> Result<String, NearRpcError> {
+        let response: Value = self
+            .http
+            .post(&self.url)
+            .json(&serde_json::json!({
+                "jsonrpc": "2.0",
+                "id": "trace-near-code-hash",
+                "method": "query",
+                "params": {
+                    "request_type": "view_account",
+                    "finality": "final",
+                    "account_id": account_id
+                }
+            }))
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        if let Some(error) = response.get("error") {
+            return Err(NearRpcError::Rpc(error.clone()));
+        }
+        response
+            .get("result")
+            .and_then(|r| r.get("code_hash"))
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .ok_or(NearRpcError::MissingResult)
+    }
 }
 
 #[cfg(test)]

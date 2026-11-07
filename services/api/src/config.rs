@@ -1,5 +1,10 @@
 use anyhow::Context;
 
+/// Base58 SHA-256 of `trace_mandates_contract.wasm` built from `contracts/trace-mandates`
+/// (cargo build --release --target wasm32-unknown-unknown). Update it with every reviewed
+/// contract release; `TRACE_NEAR_CONTRACT_CODE_HASH` overrides it.
+pub const REVIEWED_CONTRACT_CODE_HASH: &str = "7Wo7p8xeSgYLs8svdUm4xDMNqeqkmMWuD2oeWn5TwvsR";
+
 #[derive(Debug, Clone)]
 pub struct Config {
     pub database_url: String,
@@ -22,6 +27,7 @@ pub struct Config {
     pub near_network: String,
     pub near_rpc_url: String,
     pub near_contract_id: Option<String>,
+    pub near_contract_code_hash: String,
     pub near_agent_account_id: Option<String>,
     pub near_delegation_enabled: bool,
     pub near_intents_base_url: String,
@@ -64,6 +70,10 @@ impl Config {
                     "https://rpc.testnet.near.org".into()
                 }
             }),
+            near_contract_code_hash: std::env::var("TRACE_NEAR_CONTRACT_CODE_HASH")
+                .ok()
+                .filter(|v| !v.trim().is_empty())
+                .unwrap_or_else(|| REVIEWED_CONTRACT_CODE_HASH.into()),
             near_contract_id: std::env::var("TRACE_NEAR_CONTRACT_ID")
                 .ok()
                 .filter(|v| !v.is_empty()),

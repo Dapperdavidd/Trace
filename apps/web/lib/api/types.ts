@@ -342,7 +342,7 @@ export interface ShadowResults extends Envelope {
 export interface NearStatus extends Envelope {
   near_is_control_plane: true;
   network: "mainnet" | "testnet";
-  contract: { configured: boolean; account_id: string | null; deployment_verified: boolean };
+  contract: { configured: boolean; account_id: string | null; deployment_verified: boolean; code_hash?: string | null; expected_code_hash?: string | null };
   agent: { configured: boolean; account_id: string | null; delegation_enabled: boolean };
   intents: {
     asset_discovery: boolean;

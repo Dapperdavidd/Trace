@@ -30,6 +30,19 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 
 async fn status(state: web::Data<AppState>) -> HttpResponse {
     let contract_configured = state.near.contract_id.is_some();
+    // Verified means the code deployed on the contract account is byte-for-byte the
+    // reviewed build. Any RPC failure reports unverified rather than guessing.
+    let observed_code_hash = match (
+        state.near.contract_id.as_deref(),
+        state.near.expected_code_hash.is_some(),
+    ) {
+        (Some(id), true) => state.near.rpc.code_hash(id).await.ok(),
+        _ => None,
+    };
+    let deployment_verified = matches!(
+        (observed_code_hash.as_deref(), state.near.expected_code_hash.as_deref()),
+        (Some(seen), Some(want)) if seen == want
+    );
     let agent_configured = state.near.agent_account_id.is_some();
     HttpResponse::Ok().json(json!({
         "data_status": if contract_configured && agent_configured { "partial" } else { "unavailable" },
@@ -40,7 +53,9 @@ async fn status(state: web::Data<AppState>) -> HttpResponse {
         "contract": {
             "configured": contract_configured,
             "account_id": state.near.contract_id.as_deref(),
-            "deployment_verified": false,
+            "deployment_verified": deployment_verified,
+            "code_hash": observed_code_hash,
+            "expected_code_hash": state.near.expected_code_hash.as_deref(),
         },
         "agent": {
             "configured": agent_configured,

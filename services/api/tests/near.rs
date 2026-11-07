@@ -21,6 +21,7 @@ fn near_state(rpc_url: &str) -> NearState {
         contract_id: Some(Arc::from("mandates.trace.testnet")),
         agent_account_id: Some(Arc::from("agent.trace.testnet")),
         delegation_enabled: false,
+        expected_code_hash: None,
         intents: Arc::new(IntentsClient::new(None)),
         rpc: Arc::new(NearRpcClient::new(rpc_url)),
     }
@@ -80,6 +81,39 @@ async fn near_status_never_claims_an_unconfigured_deployment(pool: PgPool) {
     assert_eq!(body["contract"]["deployment_verified"], false);
     assert_eq!(body["intents"]["server_side_signing"], false);
     assert_eq!(body["intents"]["server_side_submission"], false);
+}
+
+async fn status_with_code(pool: PgPool, on_chain: &str, expected: &str) -> Value {
+    let (rpc_url, rpc_response) = mock_rpc();
+    *rpc_response.lock().unwrap() =
+        json!({"jsonrpc": "2.0", "id": "x", "result": {"code_hash": on_chain}});
+    let mut near = near_state(&rpc_url);
+    near.expected_code_hash = Some(Arc::from(expected));
+    let app = test::init_service(
+        App::new()
+            .app_data(web::Data::new(AppState::new(pool).with_near(near)))
+            .app_data(error::json_config())
+            .wrap(RequestId)
+            .configure(configure),
+    )
+    .await;
+    let response =
+        test::call_service(&app, test::TestRequest::get().uri("/v1/near").to_request()).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    test::read_body_json(response).await
+}
+
+#[sqlx::test(migrator = "trace_database::MIGRATOR")]
+async fn deployment_is_verified_only_when_on_chain_code_matches(pool: PgPool) {
+    let body = status_with_code(pool, "ReviewedHash111", "ReviewedHash111").await;
+    assert_eq!(body["contract"]["deployment_verified"], true);
+    assert_eq!(body["contract"]["code_hash"], "ReviewedHash111");
+}
+
+#[sqlx::test(migrator = "trace_database::MIGRATOR")]
+async fn different_on_chain_code_is_not_verified(pool: PgPool) {
+    let body = status_with_code(pool, "SomethingElse", "ReviewedHash111").await;
+    assert_eq!(body["contract"]["deployment_verified"], false);
 }
 
 #[sqlx::test(migrator = "trace_database::MIGRATOR")]

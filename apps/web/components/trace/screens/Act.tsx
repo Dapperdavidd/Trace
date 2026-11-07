@@ -565,6 +565,10 @@ export function NearScreen() {
                 <span className="mono">{s?.contract.account_id ?? "—"}</span>
               </div>
               <div>
+                <span>Deployment verified</span>
+                <span className={`mono${s?.contract.deployment_verified ? " g" : ""}`}>{s ? (s.contract.deployment_verified ? "Yes, code matches the reviewed build" : "Not verified") : "—"}</span>
+              </div>
+              <div>
                 <span>trace agent</span>
                 <span className="mono">{s?.agent.account_id ?? "—"}</span>
               </div>

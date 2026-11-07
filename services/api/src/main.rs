@@ -53,6 +53,7 @@ async fn main() -> anyhow::Result<()> {
         contract_id: cfg.near_contract_id.clone().map(Into::into),
         agent_account_id: cfg.near_agent_account_id.clone().map(Into::into),
         delegation_enabled: cfg.near_delegation_enabled,
+        expected_code_hash: Some(cfg.near_contract_code_hash.clone().into()),
         intents: std::sync::Arc::new(trace_near::IntentsClient::with_base_url(
             cfg.near_intents_base_url.clone(),
             cfg.near_intents_api_key.clone(),
