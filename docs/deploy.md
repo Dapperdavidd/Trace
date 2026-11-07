@@ -34,6 +34,7 @@ Two processes share one PostgreSQL database: `trace-api` (HTTP) and `trace-worke
 | `TRACE_RPC_SOLANA` | worker | for ingestion | RPC URL; treat as a secret |
 | `TRACE_PRICE_PROVIDER` | worker | for prices | `defillama`. Off when unset |
 | `TRACE_PRICE_API_BASE` | worker | no | Override the provider host |
+| `TRACE_LIQUIDITY_PROVIDER` | worker | no | Pool liquidity for market snapshots. Defaults to `dexscreener` (public pairs API, keyed by the observed pool address); `off` keeps liquidity unavailable and movers empty |
 | `TRACE_DEV_AUTH` | api | never in prod | Accepts `dev:<email>` as sign-in |
 | `TRACE_SEED_DEMO` | api | never in prod | Seeds labelled fake data |
 

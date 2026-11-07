@@ -199,15 +199,26 @@ export interface Sourced<T> {
 
 const DISC_TAB: Record<string, MoverTab> = { trending: "trending", early: "early_momentum", smart: "smart_money", new: "new" };
 
-export function useCoins(tab = "trending"): Sourced<CoinVM[]> {
-  const s = useApi(() => api.movers({ tab: DISC_TAB[tab] ?? "trending", window: "24h" }), [tab]);
+/** 24h movers, falling back to the last hour while the 24h price window fills up. */
+async function moversWithFallback(tab: MoverTab) {
+  const day = await api.movers({ tab, window: "24h" });
+  if (day.demo || day.items.length) return { res: day, window: "24h" as const };
+  const hour = await api.movers({ tab, window: "1h" });
+  return hour.items.length && !hour.demo ? { res: hour, window: "1h" as const } : { res: day, window: "24h" as const };
+}
+
+export function useCoins(tab = "trending"): Sourced<CoinVM[]> & { window: "24h" | "1h" } {
+  const r = useApi(() => moversWithFallback(DISC_TAB[tab] ?? "trending"), [tab]);
+  const s = { ...r, data: r.data?.res ?? null };
+  const window = r.data?.window ?? "24h";
   const live = s.data && !s.data.demo && s.data.items.length ? s.data.items.map(moverToCoin) : null;
-  if (live) return { data: live, example: false, loading: false, note: null };
+  if (live) return { data: live, example: false, loading: false, note: null, window };
   return {
     data: exampleCoins(),
     example: true,
     loading: s.status === "loading",
     note: (s.data && !s.data.demo ? s.data.coverage_note : undefined) ?? (s.status === "error" ? "The trace API is waking up or unreachable." : null),
+    window,
   };
 }
 

@@ -91,7 +91,7 @@ pub async fn run_job_with(
         price_backfill_job::BACKFILL_PRICES => price_backfill_job::run(pool, ctx, job)
             .await
             .map(|r| tracing::info!(?r, "price backfill step")),
-        market_job::BUILD_MARKET_SNAPSHOTS => market_job::build(pool, now)
+        market_job::BUILD_MARKET_SNAPSHOTS => market_job::build_with(pool, now, liquidity_source())
             .await
             .map(|r| tracing::info!(?r, "market snapshots built")),
         metadata_job::FETCH_TOKEN_METADATA => match &ctx.metadata {
@@ -117,6 +117,14 @@ pub async fn run_job_with(
             .map_err(|e| Failure::Transient(e.to_string())),
         other => Err(Failure::Permanent(format!("unknown job kind '{other}'"))),
     }
+}
+
+fn liquidity_source() -> Option<&'static market_job::DexScreenerLiquidity> {
+    static SOURCE: std::sync::OnceLock<Option<market_job::DexScreenerLiquidity>> =
+        std::sync::OnceLock::new();
+    SOURCE
+        .get_or_init(market_job::DexScreenerLiquidity::from_env)
+        .as_ref()
 }
 
 /// Lease and run due jobs until none remain. Returns how many ran.

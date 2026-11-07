@@ -363,7 +363,7 @@ export function DiscoverScreen() {
       </div>
       <span className="lab">
         <i className="dot live" />
-        {coins.example ? (coins.note ? `${coins.note} Showing example coins so you can explore.` : "Example coins. Live coins appear here as soon as trace has price snapshots.") : "Live from the chain. Tap a coin to see who is buying."}
+        {coins.example ? (coins.note ? `${coins.note} Showing example coins so you can explore.` : "Example coins. Live coins appear here as soon as trace has price snapshots.") : `Live from the chain${coins.window === "1h" ? ", last hour (the 24 hour view fills in after a day of prices)" : ""}. Tap a coin to see who is buying.`}
       </span>
       {f === "early" ? (
         <Help>
@@ -393,7 +393,7 @@ export function DiscoverScreen() {
               <span />
               <span>Coin</span>
               <span>Price</span>
-              <span>24h</span>
+              <span>{coins.window}</span>
               <span>Volume</span>
               <span>7d</span>
               <span>Why it is moving</span>

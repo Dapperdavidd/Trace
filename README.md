@@ -21,10 +21,10 @@ deployment is verified and independently reviewed.
 | External agent gateway | Revocable observe and propose credentials; no execute scope; NEAR mandate remains authoritative |
 | MCP agent bridge | Compatible agents can read context and request dry NEAR-governed proposals |
 | Ethereum Uniswap V2 ingestion | Enabled with reviewed real fixtures |
-| Solana Raydium AMM v4 | Disabled pending reviewed real fixtures |
+| Solana Raydium AMM v4 | Enabled with reviewed real fixtures |
 | Base and BNB protocols | Disabled pending deployments and fixtures |
 | Real token prices | DefiLlama adapter available, off until configured |
-| Market snapshots | Real prices and finalized-swap volume; liquidity unavailable pending a reviewed source |
+| Market snapshots | Real prices, finalized-swap volume, and pool liquidity from DexScreener where it lists the pool; unlisted pools stay unranked |
 | Watchlist alerts | Real finalized direct swaps, in-app only |
 | Signals | Real finalized buys can publish sealed research signals when liquidity and risk inputs are complete; outcomes use fixed horizons |
 | Shadow | Paper-only and gated by price and liquidity evidence |
