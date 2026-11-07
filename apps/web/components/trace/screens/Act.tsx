@@ -64,12 +64,12 @@ export function SwapScreen() {
       const q = await api.nearIntentPreview({
         mandate_id: mandate.id,
         quote: {
-          origin_asset: pay.assetId,
-          destination_asset: get.assetId,
+          originAsset: pay.assetId,
+          destinationAsset: get.assetId,
           amount: base,
-          slippage_tolerance: Math.min(mandate.max_slippage_bps, 100),
+          slippageTolerance: Math.min(mandate.max_slippage_bps, 100),
           recipient: mandate.owner_near_account,
-          refund_to: mandate.owner_near_account,
+          refundTo: mandate.owner_near_account,
           deadline: new Date(Date.now() + 10 * 60_000).toISOString(),
         },
       });

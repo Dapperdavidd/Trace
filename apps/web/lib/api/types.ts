@@ -435,14 +435,15 @@ export interface NearAnchorResult {
 
 export interface NearIntentPreviewBody {
   mandate_id: string;
+  /** Field names are camelCase: the API passes this body through to NEAR Intents 1Click. */
   quote: {
-    origin_asset: string;
-    destination_asset: string;
+    originAsset: string;
+    destinationAsset: string;
     /** Integer base units. */
     amount: string;
-    slippage_tolerance: number;
+    slippageTolerance: number;
     recipient: string;
-    refund_to: string;
+    refundTo: string;
     deadline: string;
   };
 }

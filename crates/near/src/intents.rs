@@ -98,20 +98,7 @@ impl IntentsClient {
     /// endpoint that submits deposits or signed intents.
     pub async fn preview(&self, request: &QuoteRequest) -> Result<QuoteResponse, IntentsError> {
         validate_request(request)?;
-        let payload = serde_json::json!({
-            "dry": true,
-            "swapType": "EXACT_INPUT",
-            "slippageTolerance": request.slippage_tolerance,
-            "originAsset": request.origin_asset,
-            "depositType": "ORIGIN_CHAIN",
-            "destinationAsset": request.destination_asset,
-            "amount": request.amount,
-            "recipient": request.recipient,
-            "recipientType": "DESTINATION_CHAIN",
-            "refundTo": request.refund_to,
-            "refundType": "ORIGIN_CHAIN",
-            "deadline": request.deadline,
-        });
+        let payload = quote_payload(request);
         let mut call = self
             .http
             .post(format!("{}/v0/quote", self.base_url))
@@ -121,6 +108,48 @@ impl IntentsClient {
         }
         decode(call.send().await?).await
     }
+}
+
+/// A NEAR account: a named account (`alice.near`, `owner.testnet`) or a 64-hex implicit account.
+pub fn is_near_account(id: &str) -> bool {
+    let implicit = id.len() == 64 && id.bytes().all(|b| b.is_ascii_hexdigit());
+    let named = (2..=64).contains(&id.len())
+        && (id.ends_with(".near") || id.ends_with(".testnet"))
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"-_.".contains(&b));
+    implicit || named
+}
+
+/// The dry 1Click quote body. A NEAR account as refund address means the funds sit in
+/// NEAR Intents for that account, so deposit and refund use `INTENTS`; a NEAR account as
+/// recipient receives inside NEAR Intents too. External addresses use the chain types.
+/// (1Click rejects `ORIGIN_CHAIN` deposits refunded to a NEAR account.)
+pub fn quote_payload(request: &QuoteRequest) -> serde_json::Value {
+    let (deposit, refund) = if is_near_account(&request.refund_to) {
+        ("INTENTS", "INTENTS")
+    } else {
+        ("ORIGIN_CHAIN", "ORIGIN_CHAIN")
+    };
+    let recipient = if is_near_account(&request.recipient) {
+        "INTENTS"
+    } else {
+        "DESTINATION_CHAIN"
+    };
+    serde_json::json!({
+        "dry": true,
+        "swapType": "EXACT_INPUT",
+        "slippageTolerance": request.slippage_tolerance,
+        "originAsset": request.origin_asset,
+        "depositType": deposit,
+        "destinationAsset": request.destination_asset,
+        "amount": request.amount,
+        "recipient": request.recipient,
+        "recipientType": recipient,
+        "refundTo": request.refund_to,
+        "refundType": refund,
+        "deadline": request.deadline,
+    })
 }
 
 fn validate_request(request: &QuoteRequest) -> Result<(), IntentsError> {
@@ -186,6 +215,40 @@ mod tests {
             validate_request(&value),
             Err(IntentsError::InvalidAmount)
         ));
+    }
+
+    #[test]
+    fn near_accounts_route_through_intents_and_external_addresses_through_chains() {
+        let mut r = request();
+        r.refund_to = "owner.testnet".into();
+        r.recipient = "owner.testnet".into();
+        let p = quote_payload(&r);
+        assert_eq!(p["depositType"], "INTENTS");
+        assert_eq!(p["refundType"], "INTENTS");
+        assert_eq!(p["recipientType"], "INTENTS");
+        assert_eq!(p["dry"], true);
+
+        let p = quote_payload(&request());
+        assert_eq!(p["depositType"], "INTENTS");
+        assert_eq!(p["recipientType"], "DESTINATION_CHAIN");
+
+        r.refund_to = "0x0000000000000000000000000000000000000001".into();
+        r.recipient = "0x0000000000000000000000000000000000000001".into();
+        let p = quote_payload(&r);
+        assert_eq!(p["depositType"], "ORIGIN_CHAIN");
+        assert_eq!(p["refundType"], "ORIGIN_CHAIN");
+        assert_eq!(p["recipientType"], "DESTINATION_CHAIN");
+    }
+
+    #[test]
+    fn recognises_near_accounts() {
+        assert!(is_near_account("alice.near"));
+        assert!(is_near_account("trace-mandates-dapper.testnet"));
+        assert!(is_near_account(&"a".repeat(64)));
+        assert!(!is_near_account(
+            "0x0000000000000000000000000000000000000001"
+        ));
+        assert!(!is_near_account("Alice.near"));
     }
 
     #[test]
