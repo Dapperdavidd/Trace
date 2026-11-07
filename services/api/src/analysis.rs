@@ -230,6 +230,15 @@ pub struct WalletAnalysis {
 }
 
 pub async fn analyze_wallet(pool: &PgPool, w: &WalletId) -> Result<WalletAnalysis, ApiError> {
+    let (swaps, prices) = load_wallet(pool, w).await?;
+    Ok(analyze_loaded(swaps, prices))
+}
+
+/// Database half of [`analyze_wallet`]: the wallet's swaps and the prices they need.
+pub async fn load_wallet(
+    pool: &PgPool,
+    w: &WalletId,
+) -> Result<(Vec<NormalizedSwap>, DbPrices), ApiError> {
     let swaps = trace_database::reads::wallet_swaps(
         pool,
         w.chain.as_str(),
@@ -243,14 +252,19 @@ pub async fn analyze_wallet(pool: &PgPool, w: &WalletId) -> Result<WalletAnalysi
         .flat_map(|s| [s.token_in.clone(), s.token_out.clone()])
         .collect();
     let prices = DbPrices::load(pool, &assets).await?;
+    Ok((swaps, prices))
+}
+
+/// Pure half of [`analyze_wallet`]: accounting over already-loaded swaps and prices.
+pub fn analyze_loaded(swaps: Vec<NormalizedSwap>, prices: DbPrices) -> WalletAnalysis {
     let accounting = compute(&swaps, &prices, &prices.marks());
     let demo = swaps.iter().any(|s| s.demo);
-    Ok(WalletAnalysis {
+    WalletAnalysis {
         swaps,
         accounting,
         prices,
         demo,
-    })
+    }
 }
 
 pub struct SnapshotRow {

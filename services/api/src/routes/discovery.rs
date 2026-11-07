@@ -14,7 +14,7 @@ use trace_intelligence::{dna, wqs};
 
 use super::common::*;
 use crate::{
-    analysis::{analyze_wallet, load_snapshots},
+    analysis::{analyze_loaded, load_snapshots, load_wallet},
     error::ApiError,
     state::AppState,
 };
@@ -175,13 +175,6 @@ async fn wallets(
     .map(|r| ((r.get("chain"), r.get("address")), r.get("n")))
     .collect();
 
-    struct Entry {
-        sort_score: i64,
-        first_seen: chrono::DateTime<Utc>,
-        followers: i64,
-        json: Value,
-        demo: bool,
-    }
     let mut entries: Vec<Entry> = vec![];
     for (c, addr, _n) in active {
         if chain.is_some_and(|ch| ch.as_str() != c) {
@@ -190,12 +183,44 @@ async fn wallets(
         let Ok(w) = WalletId::parse(c.parse()?, &addr) else {
             continue;
         };
-        let a = analyze_wallet(&state.pool, &w).await?;
+        let (swaps, prices) = load_wallet(&state.pool, &w).await?;
+        // One wallet with pathological data (an overflow, an empty edge case) must not take
+        // the whole ranking down with it. Analysis is pure, so a panic is isolated and skipped.
+        let analysed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            rank_entry(analyze_loaded(swaps, prices), &c, &addr, &followers, now)
+        }));
+        match analysed {
+            Ok(Some(e)) => entries.push(e),
+            Ok(None) => {}
+            Err(_) => {
+                tracing::error!(chain = %c, wallet = %addr, "wallet analysis panicked; skipped from discovery")
+            }
+        }
+    }
+    finish_wallets(tab, entries, offset, now)
+}
+
+struct Entry {
+    sort_score: i64,
+    first_seen: chrono::DateTime<Utc>,
+    followers: i64,
+    json: Value,
+    demo: bool,
+}
+
+fn rank_entry(
+    a: crate::analysis::WalletAnalysis,
+    c: &str,
+    addr: &str,
+    followers: &BTreeMap<(String, String), i64>,
+    now: chrono::DateTime<Utc>,
+) -> Option<Entry> {
+    {
         let activity = summarize(&a.swaps);
         let mut tags: Vec<String> = vec![];
         if let Some(act) = activity.first() {
             match classify(&CandidateConfig::default(), act, &Default::default()) {
-                CandidateDecision::ExcludedInfrastructure => continue,
+                CandidateDecision::ExcludedInfrastructure => return None,
                 CandidateDecision::UncertainBot { .. } => tags.push("possible_bot".into()),
                 _ => {}
             }
@@ -210,8 +235,12 @@ async fn wallets(
         let d = dna::analyze(&a.accounting.closed_lots);
         tags.extend(d.traits.iter().take(2).map(|t| t.key.clone()));
         let cost: Decimal = a.accounting.closed_lots.iter().map(|l| l.cost_usd).sum();
+        // Checked: dust-priced lots can make p / cost overflow Decimal, which panics.
         let realized_pct = match (a.accounting.realized_pnl_usd, cost > Decimal::ZERO) {
-            (Some(p), true) => Some(dec_str((p / cost * Decimal::from(100)).round_dp(2))),
+            (Some(p), true) => p
+                .checked_div(cost)
+                .and_then(|r| r.checked_mul(Decimal::from(100)))
+                .map(|r| dec_str(r.round_dp(2))),
             _ => None,
         };
         let closes = a.accounting.winning_closes + a.accounting.losing_closes;
@@ -228,10 +257,10 @@ async fn wallets(
             decision = json!("watch_only");
         }
         let f = followers
-            .get(&(c.clone(), addr.clone()))
+            .get(&(c.to_string(), addr.to_string()))
             .copied()
             .unwrap_or(0);
-        entries.push(Entry {
+        Some(Entry {
             sort_score: score.value.map(i64::from).unwrap_or(-1),
             first_seen: a.swaps.first().map(|s| s.observed_at).unwrap_or(now),
             followers: f,
@@ -246,8 +275,16 @@ async fn wallets(
                 "pnl_confidence": a.accounting.pnl_confidence,
                 "coverage_ratio": a.accounting.coverage_ratio.map(dec_str),
             }),
-        });
+        })
     }
+}
+
+fn finish_wallets(
+    tab: &str,
+    mut entries: Vec<Entry>,
+    offset: usize,
+    now: chrono::DateTime<Utc>,
+) -> Result<HttpResponse, ApiError> {
     match tab {
         "new" => entries.sort_by_key(|e| std::cmp::Reverse(e.first_seen)),
         "most_followed" => entries.sort_by(|a, b| {
