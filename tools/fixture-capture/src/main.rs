@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
                 bail!("--program is required at least once");
             }
             let result: Value = rpc
-                .call("getTransaction", json!([tx, { "encoding": "jsonParsed", "maxSupportedTransactionVersion": 0, "commitment": "finalized" }]))
+                .call("getTransaction", json!([tx, { "encoding": "jsonParsed", "maxSupportedTransactionVersion": 1, "commitment": "finalized" }]))
                 .await?;
             solana::assemble(&protocol, &url, &tx, &programs, &result)?
         }

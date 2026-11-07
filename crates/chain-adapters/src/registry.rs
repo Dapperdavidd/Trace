@@ -61,12 +61,12 @@ pub fn protocols() -> Vec<ProtocolCapability> {
             Solana,
             "raydium_amm_v4",
             "constant-product AMM",
-            Disabled,
+            Enabled,
             vec![
-                "instruction and inner-instruction decoding required",
-                "wrapped SOL handling required",
+                "relayed routes are marked routed and excluded from direct trader scoring",
+                "complex fee-payer balance changes with more than two net token legs are skipped",
             ],
-            Some(NO_FIXTURE),
+            None,
         ),
         cap(
             Solana,
@@ -164,7 +164,13 @@ mod tests {
             .filter(|p| p.status == SupportStatus::Enabled)
             .map(|p| (p.chain, p.protocol))
             .collect();
-        assert_eq!(enabled, vec![(ChainId::Ethereum, "uniswap_v2")]);
+        assert_eq!(
+            enabled,
+            vec![
+                (ChainId::Solana, "raydium_amm_v4"),
+                (ChainId::Ethereum, "uniswap_v2"),
+            ]
+        );
     }
 
     #[test]

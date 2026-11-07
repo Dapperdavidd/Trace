@@ -65,7 +65,7 @@ fn now() -> chrono::DateTime<Utc> {
 
 #[sqlx::test(migrator = "trace_database::MIGRATOR")]
 async fn nothing_is_scheduled_unless_enabled_and_an_rpc_url_is_set(pool: PgPool) {
-    // The real registry: raydium is Disabled, so even a configured worker does nothing.
+    // The real registry enables Raydium once reviewed fixtures exist.
     let mut real = Ctx::empty();
     real.rpc_urls
         .insert("solana".into(), "http://unused".into());
@@ -76,18 +76,16 @@ async fn nothing_is_scheduled_unless_enabled_and_an_rpc_url_is_set(pool: PgPool)
             .find(|p| p.protocol == "raydium_amm_v4")
             .unwrap()
             .status,
-        SupportStatus::Disabled
+        SupportStatus::Enabled
     );
-    assert!(targets(&real).is_empty());
-    assert_eq!(schedule_solana(&pool, &real, now()).await.unwrap(), 0);
+    assert_eq!(targets(&real).len(), 1);
+    assert_eq!(schedule_solana(&pool, &real, now()).await.unwrap(), 1);
 
     let (no_url, _) = ctx(SupportStatus::Enabled, false);
     assert!(targets(&no_url).is_empty());
-    let (c, _) = ctx(SupportStatus::Enabled, true);
-    assert_eq!(schedule_solana(&pool, &c, now()).await.unwrap(), 1);
-    schedule_solana(&pool, &c, now() + Duration::seconds(20))
-        .await
-        .unwrap();
+    let (disabled, _) = ctx(SupportStatus::Disabled, true);
+    assert!(targets(&disabled).is_empty());
+    assert_eq!(schedule_solana(&pool, &disabled, now()).await.unwrap(), 0);
     let n: i64 = sqlx::query_scalar("SELECT count(*) FROM worker_jobs WHERE kind = $1")
         .bind(INGEST_SOLANA)
         .fetch_one(&pool)
@@ -268,7 +266,7 @@ async fn the_rpc_source_refuses_a_transaction_that_is_not_the_one_requested() {
         "getTransaction" => {
             assert_eq!(p[1]["encoding"], "jsonParsed");
             assert_eq!(p[1]["commitment"], "finalized");
-            assert_eq!(p[1]["maxSupportedTransactionVersion"], 0);
+            assert_eq!(p[1]["maxSupportedTransactionVersion"], 1);
             Ok(json!({ "slot": 1, "transaction": { "signatures": ["someone-else"] } }))
         }
         _ => Err(0),

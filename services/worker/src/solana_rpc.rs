@@ -108,7 +108,7 @@ impl SolanaSource for SolanaRpcSource {
         let v = self
             .call(
                 "getTransaction",
-                json!([signature, { "encoding": "jsonParsed", "maxSupportedTransactionVersion": 0, "commitment": "finalized" }]),
+                json!([signature, { "encoding": "jsonParsed", "maxSupportedTransactionVersion": 1, "commitment": "finalized" }]),
             )
             .await?;
         if v.is_null() {

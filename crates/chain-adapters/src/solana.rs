@@ -14,7 +14,7 @@ use trace_domain::{
     Address, AssetId, Attribution, BaseUnits, ChainId, Finality, NormalizedSwap, WalletId,
 };
 
-pub const PARSER_VERSION: &str = "solana_delta/1";
+pub const PARSER_VERSION: &str = "solana_delta/2";
 pub const WRAPPED_SOL: &str = "So11111111111111111111111111111111111111112";
 
 #[derive(Debug, Clone, Deserialize)]
@@ -46,6 +46,8 @@ pub struct Meta {
     pub pre_token_balances: Vec<TokenBalance>,
     #[serde(rename = "postTokenBalances", default)]
     pub post_token_balances: Vec<TokenBalance>,
+    #[serde(rename = "innerInstructions", default)]
+    pub inner_instructions: Vec<InnerInstructions>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -144,13 +146,27 @@ pub fn parse_tx(cfg: &Config<'_>, tx: &TxResult) -> Result<NormalizedSwap, Skipp
     let payer = *keys
         .first()
         .ok_or_else(|| Skipped::Malformed("no account keys".into()))?;
-    let program = tx
+    let top_level_program = tx
         .transaction
         .message
         .instructions
         .iter()
-        .find_map(|i| cfg.programs.iter().find(|p| p.program_id == i.program_id))
-        .ok_or(Skipped::NoAllowlistedProgram)?;
+        .find_map(|i| cfg.programs.iter().find(|p| p.program_id == i.program_id));
+    let inner_program = tx
+        .meta
+        .inner_instructions
+        .iter()
+        .flat_map(|group| &group.instructions)
+        .find_map(|i| cfg.programs.iter().find(|p| p.program_id == i.program_id));
+    let (program, attribution) = if let Some(program) = top_level_program {
+        (program, Attribution::Direct)
+    } else if let Some(program) = inner_program {
+        // The fee payer's exact transaction-level deltas are still useful, but
+        // an outer router chose the route. Keep it out of direct-trader scores.
+        (program, Attribution::Routed)
+    } else {
+        return Err(Skipped::NoAllowlistedProgram);
+    };
     let block_time = tx.block_time.ok_or(Skipped::MissingBlockTime)?;
     let observed_at: DateTime<Utc> = Utc
         .timestamp_opt(block_time, 0)
@@ -228,8 +244,7 @@ pub fn parse_tx(cfg: &Config<'_>, tx: &TxResult) -> Result<NormalizedSwap, Skipp
         } else {
             Finality::Tentative
         },
-        // Fee payer swapping directly through an allowlisted program with clean deltas.
-        attribution: Attribution::Direct,
+        attribution,
         parser_version: PARSER_VERSION.into(),
         raw_ref: format!("solana:{sig}:0"),
         demo: false,

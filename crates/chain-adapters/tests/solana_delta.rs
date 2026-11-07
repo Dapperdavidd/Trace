@@ -153,6 +153,51 @@ fn unlisted_programs_are_not_classified() {
 }
 
 #[test]
+fn inner_raydium_invocation_is_parsed_but_marked_routed() {
+    let raw = json!({
+        "slot": 300_000_000u64,
+        "blockTime": 1_793_190_000i64,
+        "transaction": {
+            "signatures": ["5synthSigAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"],
+            "message": {
+                "accountKeys": [{"pubkey": PAYER}, {"pubkey": POOL}],
+                "instructions": [{"programId": OTHER_PROGRAM}]
+            }
+        },
+        "meta": {
+            "err": null,
+            "fee": 5000,
+            "preBalances": [5_000_000_000u64, 0],
+            "postBalances": [3_999_995_000u64, 0],
+            "preTokenBalances": [
+                bal(2, USDC, PAYER, 0),
+                bal(3, USDC, POOL, 900_000_000)
+            ],
+            "postTokenBalances": [
+                bal(2, USDC, PAYER, 150_000_000),
+                bal(3, USDC, POOL, 750_000_000)
+            ],
+            "innerInstructions": [{
+                "index": 0,
+                "instructions": [{"programId": RAYDIUM}]
+            }]
+        }
+    });
+    let t: TxResult = serde_json::from_value(raw).unwrap();
+    let (programs, finalized) = cfg();
+    let swap = parse_tx(
+        &Config {
+            programs: &programs,
+            finalized,
+        },
+        &t,
+    )
+    .unwrap();
+    assert_eq!(swap.protocol, "raydium_amm_v4");
+    assert_eq!(swap.attribution, Attribution::Routed);
+}
+
+#[test]
 fn two_assets_leaving_is_not_a_simple_swap() {
     // Looks like LP deposit: SOL and USDC both leave, LP token arrives.
     let lp = "So11111111111111111111111111111111111111111";

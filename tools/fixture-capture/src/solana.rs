@@ -6,7 +6,7 @@ use trace_chain_adapters::solana::{parse_tx, Config, ProgramAllow, TxResult};
 use crate::{host_of, review, sha256_hex, Fixture, SCHEMA, TOOL_VERSION};
 
 /// `result` of `getTransaction` with `encoding: "jsonParsed"`,
-/// `maxSupportedTransactionVersion: 0` and `commitment: "finalized"`.
+/// `maxSupportedTransactionVersion: 1` and `commitment: "finalized"`.
 pub fn assemble(
     protocol: &str,
     rpc_url: &str,

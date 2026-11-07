@@ -5,7 +5,7 @@ This file changes in the same commit as the fixtures that justify an enabled sta
 
 | Chain | Protocol | Status | Blocker |
 |---|---|---|---|
-| Solana | raydium_amm_v4 | disabled | Parser not verified against golden fixtures from real transactions |
+| Solana | raydium_amm_v4 | enabled | Three finalized real transactions reviewed against Solana Explorer; routed activity is marked routed and excluded from direct trader scoring |
 | Solana | orca_whirlpool | unsupported | No adapter planned for MVP |
 | Ethereum | uniswap_v2 | enabled | None |
 | Ethereum | uniswap_v3 | unsupported | No adapter planned for MVP |
