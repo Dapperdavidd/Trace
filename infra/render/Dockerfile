@@ -15,6 +15,7 @@ RUN apt-get update \
  && useradd --system --uid 10001 --no-create-home trace
 COPY --from=build /src/target/release/trace-api /usr/local/bin/trace-api
 COPY --from=build /src/target/release/trace-worker /usr/local/bin/trace-worker
+COPY infra/render/start.sh /usr/local/bin/trace-render
 USER trace
 ENV TRACE_ENV=production RUST_LOG=info,sqlx=warn TRACE_BIND_ADDR=0.0.0.0:10000
 EXPOSE 10000

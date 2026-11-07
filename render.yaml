@@ -11,7 +11,7 @@ services:
     plan: free
     dockerfilePath: ./infra/render/Dockerfile
     dockerContext: .
-    dockerCommand: trace-api
+    dockerCommand: /usr/local/bin/trace-render
     healthCheckPath: /v1/health/ready
     envVars:
       - key: DATABASE_URL
@@ -38,19 +38,6 @@ services:
         value: "false"
       - key: TRACE_OPS_TOKEN
         generateValue: true
-
-  - type: worker
-    name: trace-worker-dapper
-    runtime: docker
-    plan: starter
-    dockerfilePath: ./infra/render/Dockerfile
-    dockerContext: .
-    dockerCommand: trace-worker
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: trace-postgres
-          property: connectionString
       - key: TRACE_RPC_ETHEREUM
         sync: false
       - key: TRACE_RPC_SOLANA
