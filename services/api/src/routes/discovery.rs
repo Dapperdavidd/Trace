@@ -234,6 +234,86 @@ async fn add_trending_pools(
     }
 }
 
+async fn add_jupiter_trending(
+    client: &reqwest::Client,
+    win: &str,
+    best: &mut HashMap<String, DexMover>,
+) {
+    let interval = match win {
+        "1h" => "1h",
+        "24h" => "24h",
+        _ => return,
+    };
+    let base = std::env::var("TRACE_SOLANA_TRENDS_API_BASE")
+        .unwrap_or_else(|_| "https://lite-api.jup.ag".into());
+    let url = format!(
+        "{}/tokens/v2/toptrending/{interval}",
+        base.trim_end_matches('/')
+    );
+    let body: Value = match client.get(url).send().await {
+        Ok(response) if response.status().is_success() => match response.json().await {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::warn!(%error, "Solana trending response was not JSON");
+                return;
+            }
+        },
+        Ok(response) => {
+            tracing::warn!(status = %response.status(), "Solana trending request refused");
+            return;
+        }
+        Err(error) => {
+            tracing::warn!(%error, "Solana trending request failed");
+            return;
+        }
+    };
+    let stats_key = if win == "1h" { "stats1h" } else { "stats24h" };
+    for item in body.as_array().into_iter().flatten() {
+        let (Some(token), Some(price_usd), Some(liquidity_usd), Some(change_pct)) = (
+            item["id"].as_str(),
+            dex_decimal(&item["usdPrice"]),
+            dex_decimal(&item["liquidity"]),
+            dex_decimal(&item[stats_key]["priceChange"]),
+        ) else {
+            continue;
+        };
+        let Some(buy_volume) = dex_decimal(&item[stats_key]["buyVolume"]) else {
+            continue;
+        };
+        let Some(sell_volume) = dex_decimal(&item[stats_key]["sellVolume"]) else {
+            continue;
+        };
+        let Some(volume_usd) = buy_volume.checked_add(sell_volume) else {
+            continue;
+        };
+        if price_usd <= Decimal::ZERO
+            || volume_usd < Decimal::ZERO
+            || liquidity_usd < Decimal::from(25_000)
+        {
+            continue;
+        }
+        let pool = item["graduatedPool"].as_str().unwrap_or(token).to_string();
+        let candidate = DexMover {
+            chain: "solana".to_string(),
+            token: token.to_string(),
+            symbol: item["symbol"].as_str().map(str::to_string),
+            name: item["name"].as_str().map(str::to_string),
+            pool,
+            price_usd,
+            change_pct,
+            volume_usd,
+            liquidity_usd,
+        };
+        let key = dex_key("solana", token);
+        if best
+            .get(&key)
+            .is_none_or(|current| candidate.liquidity_usd > current.liquidity_usd)
+        {
+            best.insert(key, candidate);
+        }
+    }
+}
+
 async fn live_dex_movers(
     rows: &[crate::analysis::SnapshotRow],
     win: &str,
@@ -375,6 +455,9 @@ async fn live_dex_movers(
     }
     if best.len() < 10 {
         add_trending_pools(&client, win, &mut best).await;
+    }
+    if best.len() < 10 {
+        add_jupiter_trending(&client, win, &mut best).await;
     }
     let mut movers: Vec<DexMover> = best.into_values().collect();
     movers.sort_by(|a, b| {
