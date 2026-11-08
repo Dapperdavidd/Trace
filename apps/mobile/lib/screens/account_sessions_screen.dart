@@ -106,7 +106,7 @@ class _AccountSessionsScreenState extends ConsumerState<AccountSessionsScreen> {
                                   children: [
                                     Text(session.deviceLabel,
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.w700)),
+                                            fontWeight: FontWeight.w500)),
                                     if (session.current)
                                       const Pill('This device',
                                           color: TraceColors.positive),

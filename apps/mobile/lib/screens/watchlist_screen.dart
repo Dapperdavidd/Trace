@@ -90,7 +90,7 @@ class _WatchTile extends ConsumerWidget {
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(w.displayName,
                 style:
-                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
             Muted('${w.chain.label}  ${shortAddress(w.address)}', size: 12),
             const SizedBox(height: 6),
             Pill(watchStatusText(item.status),
@@ -205,7 +205,7 @@ class _AddWatchFormState extends ConsumerState<_AddWatchForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Add a wallet to watch',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
             const SizedBox(height: 12),
             Wrap(spacing: 8, children: [
               for (final c in Chain.supported)

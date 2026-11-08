@@ -73,7 +73,9 @@ class SessionController extends Notifier<SessionState> {
       state = SessionState(SessionPhase.signedIn,
           name: await _read(_nameKey), email: await _read(_emailKey));
     } else {
-      state = const SessionState(SessionPhase.signedOut);
+      state = AppConfig.startExploring
+          ? const SessionState(SessionPhase.explorer)
+          : const SessionState(SessionPhase.signedOut);
     }
   }
 

@@ -2,170 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/config.dart';
-import '../core/copy.dart';
 import '../core/tokens.dart';
 import '../state/providers.dart';
 import '../state/session.dart';
+import '../widgets/block_field.dart';
 import '../widgets/common.dart';
 
-class WelcomeScreen extends ConsumerWidget {
+/// Onboarding in the v11 design: the block field behind one headline, then a passkey.
+class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider);
-    final notifier = ref.read(sessionProvider.notifier);
-    final configured = AppConfig.googleConfigured;
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            ValueListenableBuilder<bool>(
-              valueListenable: ref.watch(demoActiveProvider),
-              builder: (_, active, __) =>
-                  active ? const DemoBanner() : const SizedBox.shrink(),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(TraceSpacing.gutter),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 32),
-                    Semantics(
-                      header: true,
-                      label: 'TRACE',
-                      child: const ExcludeSemantics(
-                        child: Text('TRACE',
-                            style: TextStyle(
-                                fontSize: 52,
-                                fontWeight: FontWeight.w900,
-                                color: TraceColors.text)),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                        'Find smart wallets and moving coins, and understand why.',
-                        style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            height: 1.2)),
-                    const SizedBox(height: 12),
-                    const Muted(
-                        'Discover opportunities. Watch any wallet. Practice with paper trades before you risk real money.',
-                        size: 16),
-                    const SizedBox(height: 24),
-                    const TraceCard(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.visibility_outlined,
-                              color: TraceColors.emerald),
-                          SizedBox(width: 12),
-                          Expanded(child: Text(Copy.watchOnly)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const _PasskeyPanel(),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Row(children: [
-                        Expanded(child: Divider()),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Muted('Alternative sign-in', size: 12),
-                        ),
-                        Expanded(child: Divider()),
-                      ]),
-                    ),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: session.busy || !configured
-                            ? null
-                            : notifier.signInWithGoogle,
-                        icon: const Icon(Icons.login),
-                        label: Text(session.busy
-                            ? 'Signing in...'
-                            : 'Sign in with Google'),
-                      ),
-                    ),
-                    if (!configured)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: Muted(
-                            'Google Sign-In is not configured in this build (missing TRACE_GOOGLE_CLIENT_ID). You can still explore.'),
-                      ),
-                    if (AppConfig.devAuth) ...[
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: session.busy
-                              ? null
-                              : notifier.signInForDevelopment,
-                          icon: const Icon(Icons.developer_mode),
-                          label: const Text('Local development sign-in'),
-                        ),
-                      ),
-                      const Muted(
-                          'Shown only in builds started with TRACE_DEV_AUTH=true.',
-                          size: 12),
-                    ],
-                    if (session.error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Text(session.error!,
-                              style:
-                                  const TextStyle(color: TraceColors.negative)),
-                        ),
-                      ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: notifier.explore,
-                        child: const Text('Explore without signing in'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: null,
-                        child: Text('Create wallet (${Copy.comingLater})'),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Muted(
-                        'Creating or connecting a spendable wallet is not available yet. A passkey signs you into TRACE but never gives TRACE access to funds.',
-                        size: 12),
-                    const Disclaimer(),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _PasskeyPanel extends ConsumerStatefulWidget {
-  const _PasskeyPanel();
+enum _Mode { start, create, signIn }
 
-  @override
-  ConsumerState<_PasskeyPanel> createState() => _PasskeyPanelState();
-}
-
-class _PasskeyPanelState extends ConsumerState<_PasskeyPanel> {
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
+  _Mode mode = _Mode.start;
   final username = TextEditingController();
   final displayName = TextEditingController();
-  bool creating = false;
 
   @override
   void dispose() {
@@ -178,73 +34,282 @@ class _PasskeyPanelState extends ConsumerState<_PasskeyPanel> {
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
     final notifier = ref.read(sessionProvider.notifier);
-    return TraceCard(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Row(children: [
-          Icon(Icons.fingerprint, color: TraceColors.emerald),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text('Passkey',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+    final height = MediaQuery.of(context).size.height;
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            height: height * 0.56,
+            child: const BlockField(),
           ),
-          Pill('PRIMARY'),
-        ]),
-        const SizedBox(height: 8),
-        const Muted(
-            'Use Face ID, Touch ID, fingerprint or your device PIN. Biometrics never leave your device.'),
-        const SizedBox(height: 12),
-        SegmentedButton<bool>(
-          segments: const [
-            ButtonSegment(value: false, label: Text('Sign in')),
-            ButtonSegment(value: true, label: Text('Create account')),
-          ],
-          selected: {creating},
-          onSelectionChanged: session.busy
-              ? null
-              : (value) => setState(() => creating = value.first),
-        ),
-        const SizedBox(height: 12),
-        if (creating) ...[
-          TextField(
-            controller: displayName,
-            textInputAction: TextInputAction.next,
-            autofillHints: const [AutofillHints.name],
-            maxLength: 80,
-            decoration: const InputDecoration(labelText: 'Display name'),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 12, 14, 0),
+              child: Row(
+                children: [
+                  Semantics(
+                    header: true,
+                    label: 'trace',
+                    child: const ExcludeSemantics(child: _Logo()),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: notifier.explore,
+                    style: TextButton.styleFrom(
+                      backgroundColor: TraceColors.surface,
+                      foregroundColor: TraceColors.textMuted,
+                      minimumSize: const Size(0, 40),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    child: const Text('Explore first'),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              constraints: BoxConstraints(
+                  minHeight: height * 0.46, maxHeight: height * 0.9),
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: TraceColors.bg,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ValueListenableBuilder<bool>(
+                        valueListenable: ref.watch(demoActiveProvider),
+                        builder: (_, active, __) => active
+                            ? const Padding(
+                                padding: EdgeInsets.only(bottom: 12),
+                                child: DemoBanner())
+                            : const SizedBox.shrink(),
+                      ),
+                      _GreenPill(mode == _Mode.start
+                          ? 'On-chain research, made simple'
+                          : mode == _Mode.create
+                              ? 'No password. Just a passkey.'
+                              : 'Welcome back'),
+                      const SizedBox(height: 14),
+                      _Headline(
+                        mode == _Mode.start
+                            ? "See who's buying"
+                            : mode == _Mode.create
+                                ? 'Create your account'
+                                : 'Sign in',
+                        mode == _Mode.start
+                            ? 'before you buy.'
+                            : mode == _Mode.create
+                                ? 'in about 20 seconds.'
+                                : 'with your passkey.',
+                      ),
+                      const SizedBox(height: 12),
+                      if (mode == _Mode.start) ...[
+                        const Text(
+                          'trace reads every trade on the chain and tells you who is buying, in plain words.',
+                          style: TextStyle(
+                              color: TraceColors.textMuted,
+                              fontSize: 15,
+                              height: 1.45),
+                        ),
+                        const SizedBox(height: 22),
+                        _wide(FilledButton(
+                          onPressed: () =>
+                              setState(() => mode = _Mode.create),
+                          child: const Text('Create an account'),
+                        )),
+                        const SizedBox(height: 8),
+                        _wide(OutlinedButton(
+                          onPressed: () =>
+                              setState(() => mode = _Mode.signIn),
+                          child: const Text('I already have one'),
+                        )),
+                      ] else
+                        ..._form(session, notifier),
+                      if (session.error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: TraceColors.surfaceRaised,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(session.error!),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'trace never holds your keys or funds. Your NEAR wallet signs every copy limit.',
+                        style:
+                            TextStyle(color: TraceColors.textFaint, fontSize: 12.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
-        TextField(
-          controller: username,
-          autocorrect: false,
-          enableSuggestions: false,
-          textCapitalization: TextCapitalization.none,
-          autofillHints: const [AutofillHints.username],
-          decoration: const InputDecoration(labelText: 'Username'),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: session.busy
-                ? null
-                : () {
-                    final handle = username.text.trim().toLowerCase();
-                    if (creating) {
-                      notifier.registerPasskey(handle, displayName.text.trim());
-                    } else {
-                      notifier.signInWithPasskey(handle);
-                    }
-                  },
-            icon: const Icon(Icons.fingerprint),
-            label: Text(session.busy
-                ? 'Waiting for your device'
-                : creating
-                    ? 'Create account with passkey'
-                    : 'Sign in with passkey'),
-          ),
-        ),
-      ]),
+      ),
     );
   }
+
+  Widget _wide(Widget child) =>
+      SizedBox(width: double.infinity, height: 52, child: child);
+
+  List<Widget> _form(SessionState session, SessionController notifier) {
+    final creating = mode == _Mode.create;
+    return [
+      if (creating) ...[
+        TextField(
+          controller: displayName,
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.name],
+          maxLength: 80,
+          decoration: const InputDecoration(
+              hintText: 'Your name', counterText: ''),
+        ),
+        const SizedBox(height: 10),
+      ],
+      TextField(
+        controller: username,
+        autocorrect: false,
+        enableSuggestions: false,
+        textCapitalization: TextCapitalization.none,
+        autofillHints: const [AutofillHints.username],
+        decoration: const InputDecoration(hintText: 'Username'),
+      ),
+      const SizedBox(height: 14),
+      _wide(FilledButton.icon(
+        onPressed: session.busy
+            ? null
+            : () {
+                final handle = username.text.trim().toLowerCase();
+                if (creating) {
+                  notifier.registerPasskey(handle, displayName.text.trim());
+                } else {
+                  notifier.signInWithPasskey(handle);
+                }
+              },
+        icon: const Icon(Icons.fingerprint),
+        label: Text(session.busy
+            ? 'Waiting for your device'
+            : creating
+                ? 'Create with passkey'
+                : 'Sign in with passkey'),
+      )),
+      const SizedBox(height: 8),
+      _wide(OutlinedButton(
+        onPressed: session.busy
+            ? null
+            : () => setState(
+                () => mode = creating ? _Mode.signIn : _Mode.create),
+        child: Text(creating
+            ? 'I already have an account'
+            : 'Create an account instead'),
+      )),
+      if (AppConfig.googleConfigured) ...[
+        const SizedBox(height: 8),
+        _wide(OutlinedButton.icon(
+          onPressed: session.busy ? null : notifier.signInWithGoogle,
+          icon: const Icon(Icons.login),
+          label: const Text('Sign in with Google'),
+        )),
+      ],
+      if (AppConfig.devAuth) ...[
+        const SizedBox(height: 8),
+        _wide(OutlinedButton.icon(
+          onPressed: session.busy ? null : notifier.signInForDevelopment,
+          icon: const Icon(Icons.developer_mode),
+          label: const Text('Local development sign-in'),
+        )),
+      ],
+      const SizedBox(height: 10),
+      const Text(
+        'Your face or fingerprint stays on your device. trace stores only a public key.',
+        style: TextStyle(color: TraceColors.textMuted, fontSize: 13),
+      ),
+    ];
+  }
+}
+
+class _Logo extends StatelessWidget {
+  const _Logo();
+  @override
+  Widget build(BuildContext context) => const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.manage_search_rounded,
+              color: TraceColors.text, size: 24),
+          SizedBox(width: 8),
+          Text('trace',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.6)),
+        ],
+      );
+}
+
+class _GreenPill extends StatelessWidget {
+  const _GreenPill(this.text);
+  final String text;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.fromLTRB(8, 5, 12, 5),
+        decoration: BoxDecoration(
+          color: TraceColors.surface,
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+              width: 7,
+              height: 7,
+              decoration: const BoxDecoration(
+                  color: TraceColors.emerald, shape: BoxShape.circle)),
+          const SizedBox(width: 7),
+          Text(text,
+              style: const TextStyle(
+                  fontSize: 12.5, color: TraceColors.textMuted)),
+        ]),
+      );
+}
+
+class _Headline extends StatelessWidget {
+  const _Headline(this.first, this.second);
+  final String first;
+  final String second;
+  @override
+  Widget build(BuildContext context) => Semantics(
+        header: true,
+        child: Text.rich(
+          TextSpan(children: [
+            TextSpan(text: '$first\n'),
+            TextSpan(
+                text: second,
+                style: const TextStyle(color: TraceColors.emerald)),
+          ]),
+          style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w500,
+              letterSpacing: -1.4,
+              height: 1.05),
+        ),
+      );
 }

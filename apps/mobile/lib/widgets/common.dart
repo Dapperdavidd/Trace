@@ -39,7 +39,7 @@ class TraceScaffold extends ConsumerWidget {
             Semantics(
                 header: true,
                 child: Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.w700))),
+                    style: const TextStyle(fontWeight: FontWeight.w500))),
             if (subtitle != null)
               Text(subtitle!,
                   style: const TextStyle(
@@ -74,7 +74,7 @@ class DemoBanner extends StatelessWidget {
       label: 'Demo data. ${Copy.demoExplain}',
       child: Container(
         width: double.infinity,
-        color: TraceColors.warning,
+        color: TraceColors.emeraldSoft,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: const ExcludeSemantics(
           child: Wrap(
@@ -83,11 +83,11 @@ class DemoBanner extends StatelessWidget {
             children: [
               Text(Copy.demoBanner,
                   style: TextStyle(
-                      color: Color(0xFF241A00),
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1)),
+                      color: TraceColors.emerald,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.4)),
               Text('Fictional example data. Not live.',
-                  style: TextStyle(color: Color(0xFF241A00), fontSize: 13)),
+                  style: TextStyle(color: TraceColors.textMuted, fontSize: 13)),
             ],
           ),
         ),
@@ -184,14 +184,13 @@ class Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: filled ? color : tint(color, 0.16),
+        color: filled ? color : tint(color, 0.13),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: tint(color, 0.6)),
       ),
       child: Text(label,
           style: TextStyle(
             color: filled ? TraceColors.onEmerald : color,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w500,
             fontSize: 12,
           )),
     );
@@ -257,7 +256,6 @@ class TraceCard extends StatelessWidget {
       color: TraceColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TraceSpacing.radius),
-        side: const BorderSide(color: TraceColors.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: onTap == null
@@ -300,7 +298,7 @@ class SectionTitle extends StatelessWidget {
                 header: true,
                 child: Text(text,
                     style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w700)),
+                        fontSize: 18, fontWeight: FontWeight.w500)),
               ),
             ),
             if (trailing != null) trailing!,
@@ -350,8 +348,7 @@ class StatTile extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: TraceColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: TraceColors.border),
+            borderRadius: BorderRadius.circular(TraceSpacing.radius),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,7 +359,7 @@ class StatTile extends StatelessWidget {
               Text(value,
                   style: TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w500,
                       color: valueColor ?? TraceColors.text)),
               if (note != null) Muted(note!, size: 11),
             ],
@@ -422,15 +419,14 @@ class TokenAvatar extends StatelessWidget {
           width: size,
           height: size,
           alignment: Alignment.center,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            color: tint(TraceColors.emerald, 0.16),
-            border: Border.all(color: tint(TraceColors.emerald, 0.5)),
+            color: TraceColors.surfaceRaised,
           ),
           child: Text(
               symbol.isEmpty ? '?' : symbol.substring(0, 1).toUpperCase(),
               style: const TextStyle(
-                  fontWeight: FontWeight.w800, color: TraceColors.emerald)),
+                  fontWeight: FontWeight.w500, color: TraceColors.emerald)),
         ),
       );
 }
@@ -465,7 +461,7 @@ class ComingLaterPanel extends StatelessWidget {
             Expanded(
                 child: Text(title,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w700))),
+                        fontSize: 16, fontWeight: FontWeight.w500))),
             const Pill(Copy.comingLater, color: TraceColors.info),
           ]),
           const SizedBox(height: 8),
@@ -521,7 +517,7 @@ class ErrorState extends StatelessWidget {
             const Icon(Icons.cloud_off, size: 40, color: TraceColors.textMuted),
             const SizedBox(height: 12),
             const Text('Data unavailable',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Text(msg,
                 textAlign: TextAlign.center,
@@ -566,7 +562,7 @@ class EmptyState extends StatelessWidget {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text(title,
                 style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(message,

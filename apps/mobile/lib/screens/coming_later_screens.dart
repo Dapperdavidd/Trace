@@ -125,8 +125,8 @@ class AskScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    border: Border.all(color: TraceColors.border),
-                    borderRadius: BorderRadius.circular(12),
+                    color: TraceColors.surfaceRaised,
+                    borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(q,
                       style: const TextStyle(color: TraceColors.textMuted)),

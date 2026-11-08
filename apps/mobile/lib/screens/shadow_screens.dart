@@ -97,7 +97,7 @@ class _SimTile extends ConsumerWidget {
         const SizedBox(width: 12),
         Expanded(
             child: Text('Simulation $id', overflow: TextOverflow.ellipsis)),
-        Text(text, style: const TextStyle(fontWeight: FontWeight.w800)),
+        Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
       ]),
     );
   }
@@ -141,12 +141,12 @@ class ShadowResultsScreen extends ConsumerWidget {
                               Text(signedPercentString(r.returnPct),
                                   style: TextStyle(
                                       fontSize: 36,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w500,
                                       color: changeColor(ret))),
                               Text(compactUsdString(r.endingUsd),
                                   style: const TextStyle(
                                       fontSize: 20,
-                                      fontWeight: FontWeight.w700)),
+                                      fontWeight: FontWeight.w500)),
                             ]),
                         Muted(
                             'Starting with ${compactUsdString(r.startingUsd)}'),
@@ -179,7 +179,7 @@ class ShadowResultsScreen extends ConsumerWidget {
                                 ? 'Not available'
                                 : signedPercentString(baselineReturn),
                             style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.w700)),
+                                fontSize: 20, fontWeight: FontWeight.w500)),
                         const Muted(
                             'Shown so you can see whether following the wallet beat a simple alternative.',
                             size: 12),
@@ -298,7 +298,7 @@ class _ShadowSetupScreenState extends ConsumerState<ShadowSetupScreen> {
       T value, void Function(T) onPick) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const SizedBox(height: 12),
-      Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+      Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
       Muted(help, size: 12),
       const SizedBox(height: 4),
       Wrap(spacing: 8, children: [
@@ -337,7 +337,7 @@ class _ShadowSetupScreenState extends ConsumerState<ShadowSetupScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(shortAddress(widget.address!, head: 6, tail: 6),
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
                       Muted(_chain.label),
                     ]),
               )

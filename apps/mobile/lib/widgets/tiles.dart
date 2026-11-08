@@ -36,7 +36,7 @@ class MoverTile extends StatelessWidget {
               children: [
                 Text(item.token.displayName,
                     style: const TextStyle(
-                        fontWeight: FontWeight.w800, fontSize: 16)),
+                        fontWeight: FontWeight.w500, fontSize: 16)),
                 Muted(item.reasonLabel, size: 12),
                 const SizedBox(height: 4),
                 RiskPill(item.risk),
@@ -51,7 +51,7 @@ class MoverTile extends StatelessWidget {
               const SizedBox(height: 4),
               Text(signedPercent(change),
                   style: TextStyle(
-                      fontWeight: FontWeight.w800, color: changeColor(change))),
+                      fontWeight: FontWeight.w500, color: changeColor(change))),
               Muted(compactUsdString(item.volumeUsd), size: 12),
             ],
           ),
@@ -112,7 +112,7 @@ class WalletTile extends StatelessWidget {
             Expanded(
               child: Text(item.wallet.displayName,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 16)),
+                      fontWeight: FontWeight.w500, fontSize: 16)),
             ),
             Muted(item.wallet.chain.label, size: 12),
           ]),

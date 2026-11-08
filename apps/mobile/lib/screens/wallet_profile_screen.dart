@@ -103,7 +103,7 @@ class _Overview extends ConsumerWidget {
       TraceCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(shortAddress(d.wallet.address, head: 6, tail: 6),
-              style: const TextStyle(fontWeight: FontWeight.w700)),
+              style: const TextStyle(fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
           Muted(
               'First seen ${relativeTime(d.firstSeen)}. Last active ${relativeTime(d.lastSeen)}.'),
@@ -177,7 +177,7 @@ class _Overview extends ConsumerWidget {
                         children: [
                           Text(t.label,
                               style:
-                                  const TextStyle(fontWeight: FontWeight.w700)),
+                                  const TextStyle(fontWeight: FontWeight.w500)),
                           const SizedBox(height: 4),
                           Muted('Evidence: ${t.evidence}'),
                         ]),
@@ -225,7 +225,7 @@ class _Trades extends ConsumerWidget {
                       Text(
                           '${t.isBuy ? 'Bought' : 'Sold'} ${t.token.displayName}',
                           style: TextStyle(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: t.isBuy
                                   ? TraceColors.text
                                   : TraceColors.negative)),
@@ -234,7 +234,7 @@ class _Trades extends ConsumerWidget {
               ),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(compactUsdString(t.amountUsd),
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                    style: const TextStyle(fontWeight: FontWeight.w500)),
                 Pill(t.finality == Finality.final_ ? 'Final' : 'Not final yet',
                     color: t.finality == Finality.final_
                         ? TraceColors.positive
@@ -317,10 +317,10 @@ class _ScoreCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Pill(Copy.modelLabel, color: TraceColors.info),
           const SizedBox(height: 8),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
           Text(s.value == null ? 'Not scored' : s.value!.toStringAsFixed(0),
               style:
-                  const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                  const TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
           if (s.explanation.isNotEmpty) Muted(s.explanation),
           Muted(
               'Version ${s.version}. Cohort: ${s.cohort}. Window: ${s.window}.',

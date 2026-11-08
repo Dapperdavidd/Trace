@@ -24,7 +24,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return TraceScaffold(
-      title: 'TRACE',
+      title: 'trace',
       actions: [
         IconButton(
           tooltip: 'Alerts',
@@ -51,7 +51,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SizedBox(width: 12),
               Expanded(
                   child: Text('Daily briefing',
-                      style: TextStyle(fontWeight: FontWeight.w700))),
+                      style: TextStyle(fontWeight: FontWeight.w500))),
               Icon(Icons.chevron_right),
             ]),
           ),
@@ -159,7 +159,7 @@ class _WatchlistCard extends ConsumerWidget {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Your watchlist',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
             Muted(text),
             const Muted(
                 'Watch-only. No balances are shown because TRACE holds no funds.',
@@ -189,7 +189,7 @@ class _PaperCard extends ConsumerWidget {
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Paper results',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
               Muted(
                   'No simulation yet. See what would have happened if you shadowed a trader. No real money.'),
             ]),
@@ -209,11 +209,11 @@ class _PaperCard extends ConsumerWidget {
             'Paper results. Simulated return ${signedPercentString(r.returnPct)}. Simulation, not real money.',
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Paper results',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
           Text(signedPercentString(r.returnPct),
               style: TextStyle(
                   fontSize: 28,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: changeColor(parseDecimal(r.returnPct)))),
           const Muted('Simulated result, not real money.', size: 12),
           const Muted(Copy.paperOnly, size: 12),

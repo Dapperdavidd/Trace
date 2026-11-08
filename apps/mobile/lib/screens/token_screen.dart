@@ -79,11 +79,11 @@ class _Header extends StatelessWidget {
                         children: [
                           Text(compactUsdString(t.priceUsd),
                               style: const TextStyle(
-                                  fontSize: 28, fontWeight: FontWeight.w800)),
+                                  fontSize: 28, fontWeight: FontWeight.w500)),
                           Text(signedPercent(change),
                               style: TextStyle(
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w500,
                                   color: changeColor(change))),
                           const Muted('24h', size: 12),
                         ]),
@@ -184,7 +184,7 @@ class _Analysis extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                        style: const TextStyle(fontWeight: FontWeight.w500)),
                     Muted(sub, size: 12),
                   ]),
             ),
@@ -234,7 +234,7 @@ class _Buyers extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(w.displayName,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                        style: const TextStyle(fontWeight: FontWeight.w500)),
                     Muted(shortAddress(w.address), size: 12),
                   ]),
             ),

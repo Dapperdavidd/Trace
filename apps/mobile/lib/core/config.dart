@@ -3,7 +3,7 @@ class AppConfig {
   const AppConfig._();
 
   static const String apiUrl = String.fromEnvironment('TRACE_API_URL',
-      defaultValue: 'http://10.0.2.2:8080');
+      defaultValue: 'https://trace-api-dapper.onrender.com');
 
   /// When true the app never calls the network and serves demo fixtures.
   static const bool demoForced =
@@ -17,6 +17,10 @@ class AppConfig {
   /// Enables the explicit local-only development sign-in surface.
   static const bool devAuth =
       bool.fromEnvironment('TRACE_DEV_AUTH', defaultValue: false);
+
+  /// Skip onboarding and open the app in explore mode (screenshots and demos).
+  static const bool startExploring =
+      bool.fromEnvironment('TRACE_EXPLORE', defaultValue: false);
 
   static bool get googleConfigured =>
       googleClientId.isNotEmpty || googleServerClientId.isNotEmpty;

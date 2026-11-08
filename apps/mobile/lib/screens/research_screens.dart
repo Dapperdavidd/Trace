@@ -102,7 +102,7 @@ class _Step extends StatelessWidget {
                       KindLabel(item.kind),
                       const SizedBox(height: 4),
                       Text(item.title,
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
                       if (item.detail.isNotEmpty) Muted(item.detail),
                       if (item.possibleImpact != null)
                         Muted('Possible impact: ${item.possibleImpact}',
@@ -165,7 +165,7 @@ class RiskRadarScreen extends ConsumerWidget {
                       Text(overallText(t.risk.overall),
                           style: TextStyle(
                               fontSize: 20,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w500,
                               color: riskColor(t.risk.overall))),
                       Muted('Checked ${relativeTime(t.risk.fetchedAt)}',
                           size: 12),
@@ -188,7 +188,7 @@ class RiskRadarScreen extends ConsumerWidget {
                           Expanded(
                               child: Text(c.label,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w700))),
+                                      fontWeight: FontWeight.w500))),
                           RiskPill(c.state),
                         ]),
                         if (c.note.isNotEmpty) Muted(c.note),
@@ -388,7 +388,7 @@ class _CompareResult extends ConsumerWidget {
                       flex: 3,
                       child: Text(f(t),
                           style: TextStyle(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: color?.call(t))),
                     ),
                 ]),
@@ -408,7 +408,7 @@ class _CompareResult extends ConsumerWidget {
                       flex: 3,
                       child: Text(t.token.displayName,
                           style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 16))),
+                              fontWeight: FontWeight.w500, fontSize: 16))),
               ]),
               const Divider(),
               row('Price change (24h)',
@@ -467,7 +467,7 @@ Future<void> pickTokenAndGo(
         const Padding(
           padding: EdgeInsets.all(16),
           child: Text('Choose a coin',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
         ),
         for (final t in tokens)
           ListTile(

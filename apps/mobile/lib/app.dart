@@ -136,34 +136,112 @@ class _Shell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void go(int i) =>
+        shell.goBranch(i, initialLocation: i == shell.currentIndex);
     return Scaffold(
+      extendBody: true,
       body: shell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: shell.currentIndex,
-        onDestinationSelected: (i) =>
-            shell.goBranch(i, initialLocation: i == shell.currentIndex),
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Home'),
-          NavigationDestination(
-              icon: Icon(Icons.bar_chart_outlined),
-              selectedIcon: Icon(Icons.bar_chart),
-              label: 'Market'),
-          NavigationDestination(
-              icon: Icon(Icons.science_outlined),
-              selectedIcon: Icon(Icons.science),
-              label: 'Shadow'),
-          NavigationDestination(
-              icon: Icon(Icons.visibility_outlined),
-              selectedIcon: Icon(Icons.visibility),
-              label: 'Watchlist'),
-          NavigationDestination(
-              icon: Icon(Icons.more_horiz),
-              selectedIcon: Icon(Icons.more_horiz),
-              label: 'More'),
-        ],
+      bottomNavigationBar: _PillTabs(index: shell.currentIndex, onTap: go),
+    );
+  }
+}
+
+/// The v11 floating tab bar: a rounded pill with a green circular centre action.
+class _PillTabs extends StatelessWidget {
+  const _PillTabs({required this.index, required this.onTap});
+  final int index;
+  final ValueChanged<int> onTap;
+
+  static const _items = [
+    (Icons.home_outlined, 'Today'),
+    (Icons.grid_view_rounded, 'Discover'),
+    (Icons.science_outlined, 'Test'),
+    (Icons.star_outline_rounded, 'Following'),
+    (Icons.more_horiz_rounded, 'More'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(14, 0, 14, 16),
+      child: Container(
+        height: 66,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: TraceColors.surfaceRaised,
+          borderRadius: BorderRadius.circular(99),
+          boxShadow: const [
+            BoxShadow(color: TraceColors.bg, spreadRadius: 6, blurRadius: 0)
+          ],
+        ),
+        child: Row(
+          children: [
+            for (var i = 0; i < _items.length; i++)
+              Expanded(
+                child: i == 2
+                    ? _centre(i)
+                    : _tab(i, _items[i].$1, _items[i].$2),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _centre(int i) {
+    final on = index == i;
+    return Semantics(
+      button: true,
+      selected: on,
+      label: _items[i].$2,
+      child: GestureDetector(
+        onTap: () => onTap(i),
+        child: Center(
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: TraceColors.emerald,
+              shape: BoxShape.circle,
+              boxShadow: on
+                  ? const [
+                      BoxShadow(
+                          color: TraceColors.emeraldSoft, spreadRadius: 4)
+                    ]
+                  : null,
+            ),
+            child: Icon(_items[i].$1, color: TraceColors.onEmerald, size: 22),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tab(int i, IconData icon, String label) {
+    final on = index == i;
+    return Semantics(
+      button: true,
+      selected: on,
+      label: label,
+      excludeSemantics: true,
+      child: InkResponse(
+        onTap: () => onTap(i),
+        radius: 30,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon,
+                size: 21,
+                color: on ? TraceColors.emerald : TraceColors.textFaint),
+            const SizedBox(height: 3),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w500,
+                    color: on ? TraceColors.text : TraceColors.textFaint)),
+          ],
+        ),
       ),
     );
   }
@@ -175,7 +253,7 @@ class TraceApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-      title: 'TRACE',
+      title: 'trace',
       debugShowCheckedModeBanner: false,
       theme: buildTraceTheme(),
       darkTheme: buildTraceTheme(),

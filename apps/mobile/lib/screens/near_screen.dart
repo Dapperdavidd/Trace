@@ -68,7 +68,7 @@ class _ArchitectureCard extends StatelessWidget {
             SizedBox(width: 10),
             Expanded(
               child: Text('NEAR is the core, not another market',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500)),
             ),
           ]),
           SizedBox(height: 10),
@@ -158,7 +158,7 @@ class _Mandates extends StatelessWidget {
             Row(children: [
               Expanded(
                   child: Text(item.mode.replaceAll('_', ' '),
-                      style: const TextStyle(fontWeight: FontWeight.w700))),
+                      style: const TextStyle(fontWeight: FontWeight.w500))),
               Pill(item.status.toUpperCase(),
                   color: item.isAnchored
                       ? TraceColors.positive

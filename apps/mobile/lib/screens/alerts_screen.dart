@@ -63,7 +63,7 @@ class AlertsScreen extends ConsumerWidget {
                           const SizedBox(height: 8),
                           Text(a.title,
                               style:
-                                  const TextStyle(fontWeight: FontWeight.w700)),
+                                  const TextStyle(fontWeight: FontWeight.w500)),
                           Muted(a.body),
                           if (a.evidenceTx.isNotEmpty)
                             Muted(

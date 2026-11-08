@@ -28,7 +28,7 @@ class MoreScreen extends ConsumerWidget {
           Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
               Muted(sub, size: 12),
             ]),
           ),
@@ -123,7 +123,7 @@ class MoreScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Data status labels',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+                        style: TextStyle(fontWeight: FontWeight.w500)),
                     SizedBox(height: 4),
                     Muted(
                         'LIVE: fresh data. STALE: out of date. PARTIAL: some data missing. UNAVAILABLE: source is down. DEMO DATA: fictional example numbers.'),
@@ -185,7 +185,7 @@ class _CoverageCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Chain and protocol coverage',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+                style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             EnvelopeBar(coverage.env),
             for (final chain in coverage.chains) ...[
