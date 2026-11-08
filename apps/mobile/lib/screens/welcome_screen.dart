@@ -114,7 +114,13 @@ class WelcomeScreen extends ConsumerWidget {
                           : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                _GoogleMark(),
+                                Image(
+                                  image: AssetImage('assets/google-g.png'),
+                                  width: 26,
+                                  height: 26,
+                                  fit: BoxFit.contain,
+                                  semanticLabel: 'Google',
+                                ),
                                 SizedBox(width: 14),
                                 Text(
                                   'Sign in with Google',
@@ -159,21 +165,6 @@ class _Headline extends StatelessWidget {
           fontWeight: FontWeight.w600,
           height: 1,
           letterSpacing: -2,
-        ),
-      );
-}
-
-class _GoogleMark extends StatelessWidget {
-  const _GoogleMark();
-
-  @override
-  Widget build(BuildContext context) => const Text(
-        'G',
-        style: TextStyle(
-          color: Color(0xFF4285F4),
-          fontSize: 26,
-          fontWeight: FontWeight.w700,
-          fontFamily: 'Arial',
         ),
       );
 }
