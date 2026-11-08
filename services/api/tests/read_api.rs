@@ -653,9 +653,13 @@ async fn briefing_is_built_from_stored_data_only(pool: PgPool) {
         .iter()
         .map(|s| s["title"].as_str().unwrap())
         .collect();
-    for t in ["Top movers", "Risk watch", "Signals"] {
+    for t in ["The short version", "Risk watch", "Signals"] {
         assert!(titles.contains(&t), "{titles:?}");
     }
+    assert!(
+        titles.iter().any(|t| t.starts_with("Biggest moves")),
+        "{titles:?}"
+    );
     let text = b.to_string();
     assert!(
         !text.contains("guarantee") && !text.contains("will go up"),
