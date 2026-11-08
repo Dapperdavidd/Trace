@@ -950,12 +950,25 @@ class ShadowResults {
 // ---------------------------------------------------------------------------
 
 class BriefingItem {
-  const BriefingItem({required this.text, this.link});
+  const BriefingItem({required this.text, this.link, this.token, this.wallet});
   final String text;
   final String? link;
+  final TokenRef? token;
+  final WalletRef? wallet;
 
-  factory BriefingItem.fromJson(Map<String, dynamic> j) =>
-      BriefingItem(text: str(j['text']), link: strOrNull(j['link']));
+  /// The in-app screen this line opens, if any.
+  String? get route => token?.path ?? wallet?.path ?? link;
+
+  factory BriefingItem.fromJson(Map<String, dynamic> j) => BriefingItem(
+        text: str(j['text']),
+        link: strOrNull(j['link']),
+        token: j['token'] is Map
+            ? TokenRef.fromJson((j['token'] as Map).cast<String, dynamic>())
+            : null,
+        wallet: j['wallet'] is Map
+            ? WalletRef.fromJson((j['wallet'] as Map).cast<String, dynamic>())
+            : null,
+      );
 }
 
 class BriefingSection {

@@ -31,17 +31,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           icon: const Icon(Icons.notifications_none),
           onPressed: () => context.push('/alerts'),
         ),
+        IconButton(
+          tooltip: 'Profile and settings',
+          icon: const Icon(Icons.person_outline),
+          onPressed: () => context.push('/more'),
+        ),
       ],
       body: ListView(
         padding: const EdgeInsets.all(TraceSpacing.gutter),
         children: [
           const _WatchlistCard(),
           const _PaperCard(),
-          const ComingLaterPanel(
-            title: 'Send, Receive, Buy, Swap',
-            explanation:
-                'TRACE does not hold funds yet. Wallet actions arrive in a later version.',
-            icon: Icons.account_balance_wallet_outlined,
+          TraceCard(
+            onTap: () => context.go('/wallet'),
+            semanticsLabel: 'Your wallet. Send, receive and swap.',
+            child: const Row(children: [
+              Icon(Icons.account_balance_wallet_outlined,
+                  color: TraceColors.emerald),
+              SizedBox(width: 12),
+              Expanded(
+                  child: Text('Your wallet · send, receive, swap',
+                      style: TextStyle(fontWeight: FontWeight.w500))),
+              Icon(Icons.chevron_right),
+            ]),
           ),
           TraceCard(
             onTap: () => context.push('/briefing'),
@@ -150,7 +162,7 @@ class _WatchlistCard extends ConsumerWidget {
       },
     );
     return TraceCard(
-      onTap: () => context.go('/watchlist'),
+      onTap: () => context.push('/watchlist'),
       semanticsLabel: 'Your watchlist. $text',
       child: Row(children: [
         const Icon(Icons.visibility_outlined, color: TraceColors.emerald),
@@ -180,7 +192,7 @@ class _PaperCard extends ConsumerWidget {
     final ids = ref.watch(shadowIdsProvider);
     if (ids.isEmpty) {
       return TraceCard(
-        onTap: () => context.go('/shadow'),
+        onTap: () => context.push('/shadow'),
         semanticsLabel: 'Paper results. No simulation yet. Start one.',
         child: const Row(children: [
           Icon(Icons.science_outlined, color: TraceColors.emerald),

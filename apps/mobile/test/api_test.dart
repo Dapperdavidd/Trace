@@ -53,15 +53,15 @@ void main() {
           shouldUseDemo(forceDemo: true, error: ApiException.fromHttp(401, '')),
           isTrue);
     });
-    test('network, timeout and gateway errors fall back', () {
+    test('unreachable APIs are reported, never replaced by demo data', () {
       expect(shouldUseDemo(forceDemo: false, error: ApiException.network()),
-          isTrue);
+          isFalse);
       expect(shouldUseDemo(forceDemo: false, error: ApiException.timeout()),
-          isTrue);
+          isFalse);
       expect(
           shouldUseDemo(
               forceDemo: false, error: ApiException.fromHttp(503, '')),
-          isTrue);
+          isFalse);
     });
     test('real application errors are not hidden by demo data', () {
       for (final s in [400, 401, 403, 404, 409, 422, 429, 500]) {
@@ -327,7 +327,8 @@ void main() {
     ApiClient failing(Object error) => ApiClient(
         baseUrl: 'http://h', client: MockClient((req) async => throw error));
 
-    test('serves flagged demo data when the server is unreachable', () async {
+    test('reports an unreachable server instead of serving demo data',
+        () async {
       final active = ValueNotifier<bool>(false);
       final api = FallbackApi(
         remote: failing(const SocketException('down')),
@@ -335,10 +336,8 @@ void main() {
         forceDemo: false,
         demoActive: active,
       );
-      final r = await api.movers();
-      expect(r.env.isDemo, isTrue);
-      expect(r.items, isNotEmpty);
-      expect(active.value, isTrue);
+      await expectLater(api.movers(), throwsA(isA<ApiException>()));
+      expect(active.value, isFalse);
     });
     test('does not hide real server errors behind demo data', () async {
       final active = ValueNotifier<bool>(false);

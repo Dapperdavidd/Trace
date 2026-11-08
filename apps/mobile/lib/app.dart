@@ -8,7 +8,7 @@ import 'core/tokens.dart';
 import 'screens/alerts_screen.dart';
 import 'screens/account_sessions_screen.dart';
 import 'screens/briefing_screen.dart';
-import 'screens/coming_later_screens.dart';
+import 'screens/act_screens.dart';
 import 'screens/home_screen.dart';
 import 'screens/more_screen.dart';
 import 'screens/movers_screen.dart';
@@ -49,8 +49,22 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/home',
     refreshListenable: refresh,
-    redirect: (context, state) =>
-        redirectFor(ref.read(sessionProvider).phase, state.matchedLocation),
+    redirect: (context, state) {
+      final phase = ref.read(sessionProvider).phase;
+      final loc = state.matchedLocation;
+      // Keep the screen someone asked for (a deep link or --route) across the splash.
+      if (phase == SessionPhase.loading && loc != '/splash') {
+        return '/splash?next=${Uri.encodeComponent(state.uri.toString())}';
+      }
+      final next = state.uri.queryParameters['next'];
+      if (loc == '/splash' &&
+          next != null &&
+          next.startsWith('/') &&
+          (phase == SessionPhase.explorer || phase == SessionPhase.signedIn)) {
+        return next;
+      }
+      return redirectFor(phase, loc);
+    },
     routes: [
       GoRoute(
           path: '/splash',
@@ -67,15 +81,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(path: '/market', builder: (_, __) => const MoversScreen())
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(
-                path: '/shadow', builder: (_, __) => const ShadowHomeScreen())
+            GoRoute(path: '/trade', builder: (_, __) => const TradeScreen())
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(
-                path: '/watchlist', builder: (_, __) => const WatchlistScreen())
+            GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen())
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: '/more', builder: (_, __) => const MoreScreen())
+            GoRoute(path: '/ask', builder: (_, __) => const AskScreen())
           ]),
         ],
       ),
@@ -117,10 +129,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, s) => CompareScreen(
             a: s.uri.queryParameters['a'], b: s.uri.queryParameters['b']),
       ),
-      GoRoute(path: '/ask', builder: (_, __) => const AskScreen()),
+      GoRoute(
+          path: '/shadow', builder: (_, __) => const ShadowHomeScreen()),
+      GoRoute(
+          path: '/watchlist', builder: (_, __) => const WatchlistScreen()),
+      GoRoute(path: '/more', builder: (_, __) => const MoreScreen()),
       GoRoute(path: '/briefing', builder: (_, __) => const BriefingScreen()),
-      GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
-      GoRoute(path: '/trade', builder: (_, __) => const TradeScreen()),
       GoRoute(path: '/alerts', builder: (_, __) => const AlertsScreen()),
       GoRoute(path: '/near', builder: (_, __) => const NearScreen()),
       GoRoute(
@@ -155,9 +169,9 @@ class _PillTabs extends StatelessWidget {
   static const _items = [
     (Icons.home_outlined, 'Today'),
     (Icons.grid_view_rounded, 'Discover'),
-    (Icons.science_outlined, 'Test'),
-    (Icons.star_outline_rounded, 'Following'),
-    (Icons.more_horiz_rounded, 'More'),
+    (Icons.swap_horiz_rounded, 'Trade'),
+    (Icons.account_balance_wallet_outlined, 'Wallet'),
+    (Icons.auto_awesome_outlined, 'Ask'),
   ];
 
   @override

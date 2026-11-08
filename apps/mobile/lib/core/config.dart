@@ -26,5 +26,6 @@ class AppConfig {
       googleClientId.isNotEmpty || googleServerClientId.isNotEmpty;
 
   static const int alertPollSeconds = 30;
-  static const Duration requestTimeout = Duration(seconds: 12);
+  /// Generous enough for a free Render instance waking from sleep.
+  static const Duration requestTimeout = Duration(seconds: 30);
 }
