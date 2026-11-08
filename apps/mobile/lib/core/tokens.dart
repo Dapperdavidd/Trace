@@ -13,10 +13,10 @@ class TraceColors {
   static const Color border = Color(0x12EDF2EF); // --line
   static const Color border2 = Color(0x1FEDF2EF); // --line2
 
-  static const Color emerald = Color(0xFF4AE38F); // --g
-  static const Color emeraldSoft = Color(0x214AE38F); // --g-soft
-  static const Color emeraldDeep = Color(0xFF163323);
-  static const Color onEmerald = Color(0xFF04130A); // --ink
+  static const Color emerald = Color(0xFF4387FF); // primary blue
+  static const Color emeraldSoft = Color(0x334387FF);
+  static const Color emeraldDeep = Color(0xFF12264A);
+  static const Color onEmerald = Color(0xFFFFFFFF);
 
   static const Color text = Color(0xFFEDF2EF); // --fg
   static const Color textMuted = Color(0xA8EDF2EF); // --fg2

@@ -8,17 +8,17 @@ import 'core/tokens.dart';
 import 'screens/alerts_screen.dart';
 import 'screens/account_sessions_screen.dart';
 import 'screens/briefing_screen.dart';
-import 'screens/act_screens.dart';
 import 'screens/home_screen.dart';
-import 'screens/more_screen.dart';
-import 'screens/movers_screen.dart';
 import 'screens/near_screen.dart';
+import 'screens/more_screen.dart';
 import 'screens/research_screens.dart';
 import 'screens/shadow_screens.dart';
 import 'screens/token_screen.dart';
 import 'screens/wallet_profile_screen.dart';
 import 'screens/watchlist_screen.dart';
 import 'screens/welcome_screen.dart';
+import 'screens/following_screen.dart';
+import 'screens/you_screen.dart';
 import 'state/session.dart';
 
 class _RouterRefresh extends ChangeNotifier {
@@ -78,16 +78,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(path: '/home', builder: (_, __) => const HomeScreen())
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: '/market', builder: (_, __) => const MoversScreen())
+            GoRoute(
+                path: '/following', builder: (_, __) => const FollowingScreen())
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: '/trade', builder: (_, __) => const TradeScreen())
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen())
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/ask', builder: (_, __) => const AskScreen())
+            GoRoute(path: '/you', builder: (_, __) => const YouScreen())
           ]),
         ],
       ),
@@ -129,10 +124,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, s) => CompareScreen(
             a: s.uri.queryParameters['a'], b: s.uri.queryParameters['b']),
       ),
-      GoRoute(
-          path: '/shadow', builder: (_, __) => const ShadowHomeScreen()),
-      GoRoute(
-          path: '/watchlist', builder: (_, __) => const WatchlistScreen()),
+      GoRoute(path: '/shadow', builder: (_, __) => const ShadowHomeScreen()),
+      GoRoute(path: '/watchlist', builder: (_, __) => const WatchlistScreen()),
       GoRoute(path: '/more', builder: (_, __) => const MoreScreen()),
       GoRoute(path: '/briefing', builder: (_, __) => const BriefingScreen()),
       GoRoute(path: '/alerts', builder: (_, __) => const AlertsScreen()),
@@ -160,18 +153,16 @@ class _Shell extends StatelessWidget {
   }
 }
 
-/// The v11 floating tab bar: a rounded pill with a green circular centre action.
+/// Minimal three-tab navigation: discovery, following, and account/security.
 class _PillTabs extends StatelessWidget {
   const _PillTabs({required this.index, required this.onTap});
   final int index;
   final ValueChanged<int> onTap;
 
   static const _items = [
-    (Icons.home_outlined, 'Today'),
-    (Icons.grid_view_rounded, 'Discover'),
-    (Icons.swap_horiz_rounded, 'Trade'),
-    (Icons.account_balance_wallet_outlined, 'Wallet'),
-    (Icons.auto_awesome_outlined, 'Ask'),
+    (Icons.explore_outlined, 'Explore'),
+    (Icons.bookmark_border_rounded, 'Following'),
+    (Icons.person_outline_rounded, 'You'),
   ];
 
   @override
@@ -192,41 +183,8 @@ class _PillTabs extends StatelessWidget {
         child: Row(
           children: [
             for (var i = 0; i < _items.length; i++)
-              Expanded(
-                child: i == 2
-                    ? _centre(i)
-                    : _tab(i, _items[i].$1, _items[i].$2),
-              ),
+              Expanded(child: _tab(i, _items[i].$1, _items[i].$2)),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _centre(int i) {
-    final on = index == i;
-    return Semantics(
-      button: true,
-      selected: on,
-      label: _items[i].$2,
-      child: GestureDetector(
-        onTap: () => onTap(i),
-        child: Center(
-          child: Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: TraceColors.emerald,
-              shape: BoxShape.circle,
-              boxShadow: on
-                  ? const [
-                      BoxShadow(
-                          color: TraceColors.emeraldSoft, spreadRadius: 4)
-                    ]
-                  : null,
-            ),
-            child: Icon(_items[i].$1, color: TraceColors.onEmerald, size: 22),
-          ),
         ),
       ),
     );

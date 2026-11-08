@@ -43,19 +43,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const _WatchlistCard(),
           const _PaperCard(),
           TraceCard(
-            onTap: () => context.go('/wallet'),
-            semanticsLabel: 'Your wallet. Send, receive and swap.',
-            child: const Row(children: [
-              Icon(Icons.account_balance_wallet_outlined,
-                  color: TraceColors.emerald),
-              SizedBox(width: 12),
-              Expanded(
-                  child: Text('Your wallet · send, receive, swap',
-                      style: TextStyle(fontWeight: FontWeight.w500))),
-              Icon(Icons.chevron_right),
-            ]),
-          ),
-          TraceCard(
             onTap: () => context.push('/briefing'),
             semanticsLabel: 'Daily briefing. Your market summary.',
             child: const Row(children: [
