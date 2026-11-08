@@ -73,7 +73,11 @@ async fn status(state: web::Data<AppState>) -> HttpResponse {
             "receipt_commitments": "near_contract_state",
             "full_evidence": "trace_append_only_database",
         },
-        "coverage_note": "NEAR owns agent authorization and evidence. Ethereum and Solana are observed markets. Live authority remains unavailable until the contract deployment is verified.",
+        "coverage_note": if deployment_verified {
+            "NEAR owns agent authorization and evidence. Ethereum and Solana are observed markets. The deployed mandate contract matches the reviewed build. Auto copy stays off until the security review."
+        } else {
+            "NEAR owns agent authorization and evidence. Ethereum and Solana are observed markets. Live authority remains unavailable until the contract deployment is verified."
+        },
     }))
 }
 
@@ -287,11 +291,12 @@ async fn create_mandate(
 }
 
 fn create_transaction(contract_id: &str, mandate: &AgentMandate) -> Value {
+    // The contract declares these as plain u128, which near-sdk reads from JSON numbers.
+    // Strings make create_mandate trap on chain. u64 covers any validated mandate limit.
     let micros = |value: Decimal| {
         (value * Decimal::from(1_000_000))
-            .to_u128()
+            .to_u64()
             .expect("validated positive microdollar amount")
-            .to_string()
     };
     json!({
         "receiverId": contract_id,

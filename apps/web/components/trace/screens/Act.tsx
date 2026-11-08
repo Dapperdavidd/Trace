@@ -4,76 +4,131 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useApi, useAuthToken } from "@/hooks/useApi";
 import { api } from "@/lib/api/client";
-import type { NearAsset, NearIntentPreview, NearMandate } from "@/lib/api/types";
-import { D, SOLP } from "@/lib/trace/example";
-import { coinHref, useCoins, type CoinVM } from "@/lib/trace/data";
-import { errText, nearExplorerTx, savedShadows, toBaseUnits, useNear } from "@/lib/trace/near";
-import { cl, money, pf, sgn, walk } from "@/lib/trace/viz";
+import { errText, toBaseUnits } from "@/lib/trace/near";
+import {
+  FAUCET_COOLDOWN_MS,
+  createWallet,
+  explorerAccount,
+  explorerTx,
+  forgetWallet,
+  getActivity,
+  importWallet,
+  requestTestnetTokens,
+  sendNear,
+  setNetwork,
+  useWallet,
+  yoctoToNear,
+  type Activity,
+  type Network,
+} from "@/lib/trace/wallet";
+import { money, shortAddr } from "@/lib/trace/viz";
 import { useApp } from "../AppState";
-import { Av, Chart2, Hd, Ic, Lk, Row, Seg, Src, Tk } from "../ui";
+import { usd0 } from "@/lib/trace/viz";
+import { Av, Hd, Ic, Lk, Row, Seg, Src, Tk } from "../ui";
+import { Empty } from "./Research";
 
-/* =============================== Swap =============================== */
+/* =============================== Trade / Swap (NEAR Intents) =============================== */
 
-function assetLabel(a: NearAsset | undefined) {
-  return a ? `${a.symbol}` : "—";
+interface IntentAsset {
+  assetId: string;
+  decimals: number;
+  blockchain: string;
+  symbol: string;
+  price?: number;
+}
+interface Quote {
+  amountInFormatted: string;
+  amountInUsd: string;
+  amountOutFormatted: string;
+  amountOutUsd: string;
+  minAmountOut: string;
+  timeEstimate: number;
+}
+
+const ONECLICK = "https://1click.chaindefuser.com/v0";
+const PICKS: Array<[string, string]> = [
+  ["near", "wNEAR"],
+  ["near", "USDC"],
+  ["near", "USDT"],
+  ["eth", "ETH"],
+  ["sol", "SOL"],
+  ["btc", "BTC"],
+  ["base", "ETH"],
+];
+const CHAIN_LABEL: Record<string, string> = { near: "NEAR", eth: "Ethereum", sol: "Solana", btc: "Bitcoin", base: "Base" };
+const label = (a?: IntentAsset) => (a ? (a.symbol === "wNEAR" ? "NEAR" : a.symbol) : "—");
+
+function useIntentAssets() {
+  const [items, setItems] = useState<IntentAsset[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(`${ONECLICK}/tokens`)
+      .then((r) => r.json() as Promise<IntentAsset[]>)
+      .then((all) => setItems(PICKS.map(([c, s]) => all.find((a) => a.blockchain === c && a.symbol === s)).filter(Boolean) as IntentAsset[]))
+      .catch(() => setErr("NEAR Intents is not reachable right now."));
+  }, []);
+  return { items, err };
 }
 
 export function SwapScreen() {
   const router = useRouter();
   const params = useSearchParams();
   const { toast } = useApp();
-  const coins = useCoins("trending");
-  const token = useAuthToken();
-  const mandates = useApi(() => api.nearMandates(), [token], !!token);
-  const assets = useApi(() => api.nearAssets(), [token], !!token);
-  const usable = (mandates.data?.items ?? []).filter((m) => m.status === "anchored" || m.status === "draft");
-  const mandate: NearMandate | undefined = usable.find((m) => m.status === "anchored") ?? usable[0];
-  const liveMode = !!(token && mandate);
-
-  /* example state (design behaviour) */
-  const [to, setTo] = useState<string>(params.get("to") ?? "NEURA");
-  const [amt, setAmt] = useState(1);
-  const [confirm, setConfirm] = useState(false);
-  const exList = coins.example ? coins.data : coins.data;
-  const d: CoinVM = (exList.find((c) => c.sym === to) ?? exList[0])!;
-  useEffect(() => {
-    const t = params.get("to");
-    if (t) setTo(t);
-  }, [params]);
-
-  /* live state (NEAR Intents dry quote under a mandate) */
-  const find = (id: string | undefined) => assets.data?.items.find((a) => a.assetId === id);
-  const pay = mandate ? find(mandate.allowed_assets[0]?.asset_id) : undefined;
-  const get = mandate ? find(mandate.allowed_assets[1]?.asset_id) : undefined;
-  const [liveAmt, setLiveAmt] = useState("1");
-  const [quote, setQuote] = useState<NearIntentPreview | null>(null);
+  const { store, network } = useWallet();
+  const mainnet = store.mainnet ?? null;
+  const assets = useIntentAssets();
+  const buyMode = params.get("mode") === "buy";
+  const [mode, setMode] = useState<"swap" | "buy" | "sell">(buyMode ? "buy" : "swap");
+  const [fromId, setFromId] = useState<string>("nep141:wrap.near");
+  const [toId, setToId] = useState<string>("nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1");
+  const [amount, setAmount] = useState("1");
+  const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const from = assets.items.find((a) => a.assetId === fromId);
+  const to = assets.items.find((a) => a.assetId === toId);
 
-  const reviewLive = async () => {
-    if (!mandate || !pay || !get) return;
-    if (quote) {
-      toast("Quote saved. trace never submits trades. Your NEAR wallet signs when execution opens.");
-      return;
-    }
-    const base = toBaseUnits(liveAmt, pay.decimals);
+  useEffect(() => setQuote(null), [fromId, toId, amount]);
+  useEffect(() => {
+    if (mode === "buy") setFromId("nep141:wrap.near");
+    if (mode === "sell") setToId("nep141:wrap.near");
+  }, [mode]);
+
+  const cycle = (cur: string, skip: string) => {
+    const l = assets.items.filter((a) => a.assetId !== skip);
+    const i = l.findIndex((a) => a.assetId === cur);
+    return l[(i + 1) % l.length]?.assetId ?? cur;
+  };
+
+  const getQuote = async () => {
+    if (!from || !to) return;
+    if (!mainnet) return setErr("Create your mainnet wallet in the Wallet tab first. Swaps run on NEAR mainnet.");
+    const base = toBaseUnits(amount, from.decimals);
     if (!base) return setErr("Type an amount, for example 1 or 0.5.");
     setBusy(true);
     setErr(null);
     try {
-      const q = await api.nearIntentPreview({
-        mandate_id: mandate.id,
-        quote: {
-          originAsset: pay.assetId,
-          destinationAsset: get.assetId,
+      const res = await fetch(`${ONECLICK}/quote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dry: true,
+          swapType: "EXACT_INPUT",
+          slippageTolerance: 100,
+          originAsset: from.assetId,
+          depositType: "INTENTS",
+          destinationAsset: to.assetId,
           amount: base,
-          slippageTolerance: Math.min(mandate.max_slippage_bps, 100),
-          recipient: mandate.owner_near_account,
-          refundTo: mandate.owner_near_account,
+          recipient: mainnet.accountId,
+          recipientType: "INTENTS",
+          refundTo: mainnet.accountId,
+          refundType: "INTENTS",
           deadline: new Date(Date.now() + 10 * 60_000).toISOString(),
-        },
+        }),
       });
-      setQuote(q);
+      const body = (await res.json()) as { quote?: Quote; message?: string };
+      if (!res.ok || !body.quote) throw new Error(body.message ? `NEAR Intents: ${body.message}` : "NEAR Intents could not quote this swap.");
+      setQuote(body.quote);
     } catch (e) {
       setErr(errText(e));
     } finally {
@@ -81,233 +136,129 @@ export function SwapScreen() {
     }
   };
 
-  if (liveMode) {
-    const q = quote?.quote.quote;
-    return (
-      <div className="scr s-swap">
-        <Hd title="Trade" crumb="Swap one coin for another through NEAR Intents" right={<Src example={false} />} />
-        <div className="swgrid">
-          <div style={{ display: "grid", gap: 14 }}>
-            <Seg cls="box" opts={[["swap", "Swap"], ["buy", "Buy"], ["sell", "Sell"]]} cur="swap" onPick={(v) => v !== "swap" && toast("Buy and sell use the same NEAR route. Pick the assets in your mandate.")} />
-            <div>
-              <div className="sbox">
-                <div className="pn-h">
-                  <span className="lab">You pay</span>
-                  <span className="mono f3" style={{ fontSize: 11 }}>
-                    Up to ${mandate.max_trade_usd} per trade
-                  </span>
-                </div>
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <input
-                    className="amt"
-                    inputMode="decimal"
-                    value={liveAmt}
-                    onChange={(e) => {
-                      setLiveAmt(e.target.value.replace(",", "."));
-                      setQuote(null);
-                    }}
-                    aria-label={`Amount of ${assetLabel(pay)}`}
-                  />
-                  <span className="tsel">
-                    <Tk s={pay?.symbol ?? "?"} />
-                    {assetLabel(pay)}
-                  </span>
-                </div>
-                <span className="mono f3" style={{ fontSize: 11.5 }}>
-                  {q ? `$${Number(q.amountInUsd).toFixed(2)}` : pay ? `on ${pay.blockchain}` : "Loading assets"}
-                </span>
-              </div>
-              <div className="flip">
-                <Ic id="swap" />
-              </div>
-              <div className="sbox" style={{ paddingTop: 22 }}>
-                <span className="lab">You get</span>
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <span className="amt">{q ? Number(q.amountOutFormatted).toLocaleString("en-US", { maximumFractionDigits: 6 }) : "—"}</span>
-                  <span className="tsel">
-                    <Tk s={get?.symbol ?? "?"} on />
-                    {assetLabel(get)}
-                  </span>
-                </div>
-                <span className="mono f3" style={{ fontSize: 11.5 }}>
-                  {q ? `$${Number(q.amountOutUsd).toFixed(2)} · at least ${q.minAmountOut} base units` : "Review to get a live quote"}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
-            <div className="kvl">
-              <div>
-                <span>Route</span>
-                <span className="mono">NEAR Intents 1Click</span>
-              </div>
-              <div>
-                <span>Max slippage</span>
-                <span className="mono">{(Math.min(mandate.max_slippage_bps, 100) / 100).toFixed(2)}%</span>
-              </div>
-              <div>
-                <span>Time estimate</span>
-                <span className="mono">{q ? `${q.timeEstimate}s` : "—"}</span>
-              </div>
-              <div>
-                <span>Mandate</span>
-                <span className="mono">{mandate.status === "anchored" ? "Signed on NEAR" : "Draft, not signed"}</span>
-              </div>
-            </div>
-            <div className="warnrow okk">
-              <Ic id="shield" />
-              <span className="grow">Your NEAR mandate caps this at ${mandate.max_trade_usd} a trade and ${mandate.max_daily_usd} a day</span>
-            </div>
-            {err ? <p className="err">{err}</p> : null}
-            <button className="bfill" style={{ height: 50 }} type="button" disabled={busy || !pay || !get} onClick={reviewLive}>
-              {busy ? "Getting a quote" : quote ? "Confirm swap" : "Review swap"}
-            </button>
-            {quote ? (
-              <span className="sub" style={{ textAlign: "center", whiteSpace: "normal" }}>
-                {quote.note}
-              </span>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const usdIn = from?.price && Number(amount) ? Number(amount) * from.price : null;
 
-  const out = (amt * SOLP) / d.p;
   return (
     <div className="scr s-swap">
-      <Hd title="Trade" crumb="Swap one coin for another" right={<Src example />} />
+      <Hd title={mode === "buy" ? "Buy" : mode === "sell" ? "Sell" : "Trade"} crumb="Live quotes from NEAR Intents, across chains" right={<Src example={false} />} />
+      {network === "testnet" ? (
+        <div className="warnrow">
+          <Ic id="globe" />
+          <span className="grow">NEAR Intents only runs on mainnet. Quotes below are real mainnet prices.</span>
+          <button className="lk" type="button" onClick={() => setNetwork("mainnet")}>
+            Use mainnet <Ic id="arr" />
+          </button>
+        </div>
+      ) : null}
       <div className="swgrid">
         <div style={{ display: "grid", gap: 14 }}>
-          <Seg cls="box" opts={[["swap", "Swap"], ["buy", "Buy"], ["sell", "Sell"]]} cur="swap" onPick={(v) => v !== "swap" && toast("Coming soon")} />
+          <Seg
+            cls="box"
+            opts={[
+              ["swap", "Swap"],
+              ["buy", "Buy"],
+              ["sell", "Sell"],
+            ]}
+            cur={mode}
+            onPick={setMode}
+          />
           <div>
             <div className="sbox">
               <div className="pn-h">
                 <span className="lab">You pay</span>
                 <span className="mono f3" style={{ fontSize: 11 }}>
-                  Balance 8.20 SOL
+                  {from ? CHAIN_LABEL[from.blockchain] ?? from.blockchain : ""}
                 </span>
               </div>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <input
-                  className="amt"
-                  inputMode="decimal"
-                  value={amt}
-                  onChange={(e) => {
-                    const v = Math.max(0, Math.min(8.2, parseFloat(e.target.value.replace(",", ".")) || 0));
-                    setAmt(v);
-                    setConfirm(false);
-                  }}
-                  aria-label="Amount of SOL"
-                />
-                <span className="tsel">
-                  <Tk s="SOL" />
-                  SOL
-                </span>
-              </div>
-              <span className="mono f3" style={{ fontSize: 11.5 }}>
-                {money(amt * SOLP)}
-              </span>
-            </div>
-            <div className="flip">
-              <Ic id="swap" />
-            </div>
-            <div className="sbox" style={{ paddingTop: 22 }}>
-              <span className="lab">You get</span>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <span className="amt">{Math.round(out).toLocaleString()}</span>
-                <button
-                  className="tsel"
-                  type="button"
-                  onClick={() => {
-                    const i = exList.indexOf(d);
-                    setTo(exList[(i + 1) % exList.length]!.sym);
-                    setConfirm(false);
-                  }}
-                >
-                  <Tk s={d.sym} on />
-                  {d.sym} ▾
+                <input className="amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(",", "."))} aria-label="Amount to pay" />
+                <button className="tsel" type="button" disabled={mode === "buy"} onClick={() => setFromId(cycle(fromId, toId))}>
+                  <Tk s={label(from)} />
+                  {label(from)}
+                  {mode !== "buy" ? " ▾" : ""}
                 </button>
               </div>
               <span className="mono f3" style={{ fontSize: 11.5 }}>
-                {pf(d.p)} per {d.sym}
+                {quote ? `$${Number(quote.amountInUsd).toFixed(2)}` : usdIn !== null ? `about ${money(usdIn)}` : " "}
+              </span>
+            </div>
+            <button
+              className="flip"
+              type="button"
+              aria-label="Flip"
+              onClick={() => {
+                setFromId(toId);
+                setToId(fromId);
+              }}
+            >
+              <Ic id="swap" />
+            </button>
+            <div className="sbox" style={{ paddingTop: 22 }}>
+              <span className="lab">You get</span>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <span className="amt">{quote ? Number(quote.amountOutFormatted).toLocaleString("en-US", { maximumFractionDigits: 6 }) : "—"}</span>
+                <button className="tsel" type="button" disabled={mode === "sell"} onClick={() => setToId(cycle(toId, fromId))}>
+                  <Tk s={label(to)} on />
+                  {label(to)}
+                  {mode !== "sell" ? " ▾" : ""}
+                </button>
+              </div>
+              <span className="mono f3" style={{ fontSize: 11.5 }}>
+                {quote ? `$${Number(quote.amountOutUsd).toFixed(2)} · on ${CHAIN_LABEL[to?.blockchain ?? ""] ?? to?.blockchain}` : to?.price ? `1 ${label(to)} ≈ ${money(to.price)}` : " "}
               </span>
             </div>
           </div>
           <Seg
             cls="box"
             opts={[
-              [0.25, "25%"],
-              [0.5, "50%"],
-              [0.75, "75%"],
-              [1, "Max"],
+              ["0.1", "0.1"],
+              ["1", "1"],
+              ["5", "5"],
+              ["10", "10"],
             ]}
-            cur=""
-            onPick={(v) => {
-              setAmt(+(8.2 * v).toFixed(2));
-              setConfirm(false);
-            }}
+            cur={amount}
+            onPick={(v) => setAmount(v)}
           />
         </div>
         <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
           <div className="kvl">
             <div>
-              <span>Rate</span>
-              <span className="mono">
-                1 SOL = {Math.round(SOLP / d.p).toLocaleString()} {d.sym}
-              </span>
-            </div>
-            <div>
-              <span>Price impact</span>
-              <span className="mono g">{(d.liqN ?? 0) > 2 ? "0.3%" : "1.4%"}</span>
-            </div>
-            <div>
-              <span>Network fee</span>
-              <span className="mono">$0.004</span>
-            </div>
-            <div>
               <span>Route</span>
-              <span className="mono">NEAR Intents</span>
+              <span className="mono">NEAR Intents 1Click</span>
+            </div>
+            <div>
+              <span>Max slippage</span>
+              <span className="mono">1%</span>
+            </div>
+            <div>
+              <span>Time estimate</span>
+              <span className="mono">{quote ? `${quote.timeEstimate}s` : "—"}</span>
+            </div>
+            <div>
+              <span>Your mainnet wallet</span>
+              <span className="mono">{mainnet ? shortAddr(mainnet.accountId) : "Not created"}</span>
             </div>
           </div>
-          {d.risk !== "Low" ? (
-            <Row className="warnrow" href={coinHref(d, "&tab=rk")}>
-              <Ic id="shield" />
-              <span className="grow">
-                {d.sym} is {d.risk === "Unrated" ? "not rated yet" : `${d.risk.toLowerCase()} risk`}
-              </span>
-              <span className="lk">
-                Review <Ic id="arr" />
-              </span>
-            </Row>
+          {assets.err ? <p className="err">{assets.err}</p> : null}
+          {err ? <p className="err">{err}</p> : null}
+          {!mainnet ? (
+            <button className="bfill" style={{ height: 50 }} type="button" onClick={() => router.push("/app/wallet/?net=mainnet")}>
+              Create mainnet wallet
+            </button>
           ) : (
-            <div className="warnrow okk">
-              <Ic id="shield" />
-              <span className="grow">{d.sym} passed its risk check</span>
-            </div>
+            <button
+              className="bfill"
+              style={{ height: 50 }}
+              type="button"
+              disabled={busy || !from || !to}
+              onClick={() => (quote ? toast("Fund your mainnet wallet with NEAR to place this swap. Your wallet signs it; trace never holds funds.") : getQuote())}
+            >
+              {busy ? "Getting a live quote" : quote ? "Confirm swap" : "Get live quote"}
+            </button>
           )}
-          <button
-            className="bfill"
-            style={{ height: 50 }}
-            type="button"
-            onClick={() => {
-              if (!confirm) return setConfirm(true);
-              setConfirm(false);
-              if (!token) return router.push("/welcome/?next=/app/copy/");
-              toast("Example only. Copy a wallet to sign a NEAR mandate, then quotes are real.");
-            }}
-          >
-            {confirm ? "Confirm swap" : "Review swap"}
-          </button>
-          {confirm ? (
-            <span className="sub" style={{ textAlign: "center" }}>
-              You pay {amt} SOL · you get about {Math.round(out).toLocaleString()} {d.sym}
-            </span>
-          ) : (
-            <span className="sub" style={{ textAlign: "center", whiteSpace: "normal" }}>
-              Real quotes come from NEAR Intents once you sign a copy mandate.
-            </span>
-          )}
+          <span className="sub" style={{ textAlign: "center", whiteSpace: "normal" }}>
+            Quotes are live from NEAR Intents and settle into your NEAR account. Your wallet signs every swap.
+          </span>
         </div>
       </div>
     </div>
@@ -316,78 +267,262 @@ export function SwapScreen() {
 
 /* =============================== Wallet =============================== */
 
+function ago(d: Date) {
+  const s = (Date.now() - d.getTime()) / 1000;
+  if (s < 90) return "just now";
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
 export function WalletScreen() {
   const router = useRouter();
   const params = useSearchParams();
   const { toast } = useApp();
   const token = useAuthToken();
-  const near = useNear();
-  const alerts = useApi(() => api.alerts(), [token], !!token);
+  const { store, network, wallet, balance, usd, refresh } = useWallet();
+  const me = useApi(() => api.me(), [token], !!token);
+  const mandates = useApi(() => api.nearMandates(), [token], !!token);
   const [t, setT] = useState(params.get("t") ?? "tokens");
+  const [panel, setPanel] = useState<"none" | "send" | "receive" | "import" | "secret">(() => (params.get("a") === "send" ? "send" : params.get("a") === "receive" ? "receive" : "none"));
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [to, setTo] = useState("");
+  const [amt, setAmt] = useState("");
+  const [secret, setSecret] = useState("");
+  const [importId, setImportId] = useState("");
+  const [activity, setActivity] = useState<Activity[] | null>(null);
+
   useEffect(() => {
-    const p = params.get("t");
-    if (p) setT(p);
+    const n = params.get("net");
+    if (n === "mainnet" || n === "testnet") setNetwork(n);
   }, [params]);
-  const mandates = near.mandates.data?.items ?? [];
-  const liveCopies = !!token && mandates.length > 0;
-  const liveActivity = !!token && (alerts.data?.items.length ?? 0) > 0;
-  const acct = near.wallet?.accountId;
+  useEffect(() => {
+    setActivity(null);
+    if (wallet) getActivity(network, wallet.accountId).then(setActivity).catch(() => setActivity([]));
+  }, [network, wallet, balance]);
+
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await fn();
+    } catch (e) {
+      setErr(errText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const nameHint = me.data?.name || me.data?.email?.split("@")[0] || "trace";
+  const near = balance ? Number(yoctoToNear(balance.available, 6).replace(/,/g, "")) : 0;
+  const cooling = !!store.lastFaucetAt && Date.now() - store.lastFaucetAt < FAUCET_COOLDOWN_MS;
+  const copies = mandates.data?.items ?? [];
+
+  const netSeg = (
+    <Seg
+      cls="box"
+      opts={[
+        ["mainnet", "Mainnet"],
+        ["testnet", "Testnet"],
+      ]}
+      cur={network}
+      onPick={(n: Network) => {
+        setNetwork(n);
+        setPanel("none");
+        setErr(null);
+      }}
+    />
+  );
+
+  if (!wallet) {
+    return (
+      <div className="scr s-wlt">
+        <Hd title="Wallet" crumb="Your keys stay on this device" />
+        {netSeg}
+        <div className="wgrid">
+          <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
+            <div className="pn">
+              <span className="lab">{network === "testnet" ? "Testnet wallet" : "Mainnet wallet"}</span>
+              <b style={{ fontWeight: 500, fontSize: 20, letterSpacing: "-.03em" }}>{network === "testnet" ? "Try everything with free test NEAR." : "Your real NEAR wallet."}</b>
+              <span className="sub" style={{ whiteSpace: "normal" }}>
+                {network === "testnet"
+                  ? "trace creates a testnet account for you and asks the NEAR faucet for 10 test NEAR. Test tokens have no value."
+                  : "trace creates a NEAR account from a key generated on this device. It starts empty; send NEAR to it to trade. trace never sees your key."}
+              </span>
+              <button className="bfill" type="button" disabled={busy} onClick={() => run(async () => void (await createWallet(network, nameHint), refresh(), toast(network === "testnet" ? "Testnet wallet ready with 10 test NEAR" : "Mainnet wallet created")))}>
+                {busy ? (network === "testnet" ? "Asking the faucet" : "Creating") : network === "testnet" ? "Create testnet wallet" : "Create mainnet wallet"}
+              </button>
+              <button className="bout" type="button" onClick={() => setPanel(panel === "import" ? "none" : "import")}>
+                I have a NEAR key
+              </button>
+              {panel === "import" ? (
+                <div style={{ display: "grid", gap: 10 }}>
+                  <label className="fld">
+                    <span>Secret key (ed25519:…)</span>
+                    <input value={secret} onChange={(e) => setSecret(e.target.value)} autoComplete="off" spellCheck={false} />
+                  </label>
+                  <label className="fld">
+                    <span>Account (leave empty for an implicit account)</span>
+                    <input value={importId} onChange={(e) => setImportId(e.target.value)} autoComplete="off" placeholder={network === "testnet" ? "name.testnet" : "name.near"} />
+                  </label>
+                  <button className="bfill" type="button" disabled={busy || !secret} onClick={() => run(async () => void (await importWallet(network, secret, importId), setSecret(""), refresh(), toast("Wallet restored")))}>
+                    Restore wallet
+                  </button>
+                </div>
+              ) : null}
+              {err ? <p className="err">{err}</p> : null}
+            </div>
+          </div>
+          <div className="pn">
+            <span className="lab">How your wallet works</span>
+            <div className="steps">
+              {[
+                ["Self-custody", "The key is created and stored only in this browser."],
+                ["Two networks", "Switch between mainnet and testnet any time. Each has its own account."],
+                ["Copy limits on NEAR", "Your wallet signs the mandate that caps every copied trade."],
+              ].map(([a, b], i) => (
+                <div key={a} className="done">
+                  <i>{i + 1}</i>
+                  <div>
+                    <b>{a}</b>
+                    <span className="sub">{b}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="scr s-wlt">
       <Hd
         title="Wallet"
-        crumb={acct ? `NEAR · ${acct}` : "Connect a NEAR wallet to sign copy limits"}
+        crumb={`${network === "mainnet" ? "Mainnet" : "Testnet"} · ${shortAddr(wallet.accountId)}`}
         right={
-          acct ? (
-            <button
-              className="hb"
-              type="button"
-              aria-label="Copy address"
-              onClick={() => {
-                navigator.clipboard?.writeText(acct).catch(() => undefined);
-                toast(`Address ${acct} copied`);
-              }}
-            >
-              <Ic id="copy" />
-            </button>
-          ) : (
-            <button className="bout sm" type="button" onClick={near.connect} disabled={near.busy || !near.status.data}>
-              {near.busy ? "Connecting" : "Connect NEAR"}
-            </button>
-          )
+          <button
+            className="hb"
+            type="button"
+            aria-label="Copy address"
+            onClick={() => {
+              navigator.clipboard?.writeText(wallet.accountId).catch(() => undefined);
+              toast("Address copied");
+            }}
+          >
+            <Ic id="copy" />
+          </button>
         }
       />
+      {netSeg}
       <div className="wgrid">
         <div style={{ display: "grid", gap: 14 }}>
           <div className="vrow">
-            <span className="big n">$2,840.25</span>
-            <span className="mono g">+$313.33 · +12.4% 24h</span>
-            <Src example />
+            <span className="big n">{balance ? yoctoToNear(balance.available, 2) : "…"} NEAR</span>
+            {usd !== null && balance ? <span className="mono f2">{money(near * usd)}</span> : null}
+            {balance && !balance.exists ? <span className="tag">Not on chain yet</span> : null}
           </div>
           <div className="qa">
-            <button className="qb" type="button" onClick={() => router.push("/app/near/")}>
-              <Ic id="key" />
-              <span>Mandates</span>
+            <button className="qb" type="button" onClick={() => setPanel(panel === "send" ? "none" : "send")}>
+              <Ic id="send" />
+              <span>Send</span>
             </button>
-            <button className="qb" type="button" onClick={() => router.push("/app/shadow/")}>
-              <Ic id="flask" />
-              <span>Test</span>
+            <button className="qb" type="button" onClick={() => setPanel(panel === "receive" ? "none" : "receive")}>
+              <Ic id="recv" />
+              <span>Receive</span>
             </button>
             <button className="qb" type="button" onClick={() => router.push("/app/swap/")}>
               <Ic id="swap" />
               <span>Swap</span>
             </button>
-            <button className="qb pri" type="button" onClick={() => router.push("/app/wallets/")}>
-              <Ic id="plus" />
-              <span>Copy</span>
-            </button>
+            {network === "testnet" ? (
+              <button
+                className="qb pri"
+                type="button"
+                disabled={busy || cooling}
+                onClick={() =>
+                  run(async () => {
+                    const r = await requestTestnetTokens();
+                    toast(`${r.amount} test NEAR is on its way`);
+                    setTimeout(refresh, 2500);
+                  })
+                }
+              >
+                <Ic id="plus" />
+                <span>{busy ? "Asking the faucet" : cooling ? "Tokens sent" : "Request tokens"}</span>
+              </button>
+            ) : (
+              <button className="qb pri" type="button" onClick={() => router.push("/app/swap/?mode=buy")}>
+                <Ic id="plus" />
+                <span>Buy</span>
+              </button>
+            )}
           </div>
+          {err ? <p className="err">{err}</p> : null}
+          {panel === "send" ? (
+            <div className="pn">
+              <span className="lab">Send NEAR</span>
+              <label className="fld">
+                <span>To (NEAR account)</span>
+                <input value={to} onChange={(e) => setTo(e.target.value.trim())} autoComplete="off" placeholder={network === "testnet" ? "friend.testnet" : "friend.near"} />
+              </label>
+              <label className="fld">
+                <span>Amount (NEAR)</span>
+                <input value={amt} onChange={(e) => setAmt(e.target.value.replace(",", "."))} inputMode="decimal" placeholder="1" />
+              </label>
+              <button
+                className="bfill"
+                type="button"
+                disabled={busy || !to || !amt}
+                onClick={() => {
+                  if (!window.confirm(`Send ${amt} NEAR to ${to} on ${network}? This cannot be undone.`)) return;
+                  run(async () => {
+                    const hash = await sendNear(network, to, amt);
+                    toast(`Sent ${amt} NEAR`);
+                    setTo("");
+                    setAmt("");
+                    setPanel("none");
+                    setTimeout(refresh, 1500);
+                    if (hash) window.open(explorerTx(network, hash), "_blank", "noopener");
+                  });
+                }}
+              >
+                {busy ? "Sending" : "Send"}
+              </button>
+            </div>
+          ) : null}
+          {panel === "receive" ? (
+            <div className="pn">
+              <span className="lab">Your {network} address</span>
+              <code className="hash" style={{ fontSize: 14, color: "var(--fg)" }}>
+                {wallet.accountId}
+              </code>
+              <div className="bset">
+                <button
+                  className="bfill sm"
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(wallet.accountId).catch(() => undefined);
+                    toast("Address copied");
+                  }}
+                >
+                  Copy address
+                </button>
+                <a className="bout sm" href={explorerAccount(network, wallet.accountId)} target="_blank" rel="noreferrer">
+                  View on NearBlocks
+                </a>
+              </div>
+              <span className="sub" style={{ whiteSpace: "normal" }}>
+                Only send NEAR on {network} to this address.
+              </span>
+            </div>
+          ) : null}
           <Seg
             cls="box"
             opts={[
               ["tokens", "Tokens"],
-              ["copies", `Copies · ${liveCopies ? mandates.length : 3}`],
+              ["copies", `Copies · ${copies.length}`],
               ["activity", "Activity"],
             ]}
             cur={t}
@@ -395,120 +530,121 @@ export function WalletScreen() {
           />
           <div>
             {t === "tokens" ? (
-              <>
-                <span className="lab">
-                  <Src example /> trace never holds tokens. Balances live in your own wallet.
-                </span>
-                {D.holdings.map((h) => (
-                  <div className="hrow" key={h[0]}>
-                    <Tk s={h[0]} on={h[0] === "NEURA"} />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="nm">{h[1]}</div>
-                      <div className="mono">{h[2]}</div>
-                    </div>
-                    <div className="rt">
-                      <div className="v">{money(h[3])}</div>
-                      <div className={`mono ${cl(h[4])}`}>{sgn(h[4])}%</div>
-                    </div>
-                  </div>
-                ))}
-              </>
+              <div className="hrow">
+                <Tk s="NEAR" on />
+                <div style={{ minWidth: 0 }}>
+                  <div className="nm">NEAR</div>
+                  <div className="mono">{balance ? yoctoToNear(balance.available, 4) : "…"} NEAR</div>
+                </div>
+                <div className="rt">
+                  <div className="v">{usd === null || !balance ? "—" : money(near * usd)}</div>
+                  <div className="mono f3">{usd === null ? "" : `${money(usd)} each`}</div>
+                </div>
+              </div>
             ) : null}
             {t === "copies" ? (
-              liveCopies ? (
-                mandates.map((m) => (
+              copies.length ? (
+                copies.map((m) => (
                   <Row key={m.id} href="/app/near/">
                     <Av t="N" />
                     <div className="grow">
                       <div className="nm">{m.mode === "delegated" ? "Auto copy" : m.mode === "paper" ? "Paper only" : "Alerts only"}</div>
                       <div className="sub">
-                        ${m.max_trade_usd} a trade · ${m.max_daily_usd} a day · ends {new Date(m.expires_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                        ${usd0(m.max_trade_usd)} a trade · ${usd0(m.max_daily_usd)} a day · ends {new Date(m.expires_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                       </div>
                     </div>
                     <span className={`tag ${m.status === "anchored" ? "g" : ""}`}>{m.status === "anchored" ? "Signed" : m.status}</span>
                   </Row>
                 ))
               ) : (
-                <>
-                  <span className="lab">
-                    <Src example /> {token ? "You have no copies yet." : "Sign in to copy a wallet."}
-                  </span>
-                  {[
-                    { w: "0xSun", amt: 120.25, ch: 48.6 },
-                    { w: "CryptoNomad", amt: 80.1, ch: 22.3 },
-                    { w: "DeFiWhale", amt: 98.4, ch: -3.1 },
-                  ].map((c) => (
-                    <Row key={c.w} href={`/app/profile/?w=${c.w}`}>
-                      <Av t={D.wallets[c.w]!.av} />
-                      <div className="grow">
-                        <div className="nm">{c.w}</div>
-                        <div className="sub">auto copy · {money(c.amt)}</div>
-                      </div>
-                      <span className={`mono ${cl(c.ch)}`}>{sgn(c.ch)}%</span>
-                    </Row>
-                  ))}
-                </>
+                <p className="sub" style={{ whiteSpace: "normal" }}>
+                  {token ? "No copies yet. Copy a smart wallet with limits your wallet signs." : "Sign in to copy a wallet."} <Lk href="/app/wallets/">Smart wallets</Lk>
+                </p>
               )
             ) : null}
             {t === "activity" ? (
-              liveActivity ? (
-                alerts.data?.items.map((a) => (
-                  <div className="li" key={a.id}>
-                    <span className="tk on">
-                      <Ic id={a.type === "risk_event" ? "shield" : "bolt"} />
+              activity === null ? (
+                <p className="sub">Loading activity…</p>
+              ) : activity.length ? (
+                activity.map((a) => (
+                  <a key={a.hash} className="li" href={explorerTx(network, a.hash)} target="_blank" rel="noreferrer">
+                    <span className={`tk${a.incoming ? " on" : ""}`}>
+                      <Ic id={a.incoming ? "recv" : "send"} />
                     </span>
                     <div className="grow">
                       <div className="nm" style={{ fontWeight: 400 }}>
-                        {a.title}
+                        {a.incoming ? "Received from" : a.kind === "transfer" ? "Sent to" : a.kind} <b style={{ fontWeight: 500 }}>{shortAddr(a.counterparty)}</b>
                       </div>
                       <div className="sub">
-                        {new Date(a.event_time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · {a.body}
+                        {ago(a.time)}
+                        {a.ok ? "" : " · failed"}
                       </div>
                     </div>
-                  </div>
+                    <span className="mono">{a.amount > 0n ? `${a.incoming ? "+" : "−"}${yoctoToNear(a.amount, 3)}` : ""}</span>
+                  </a>
                 ))
               ) : (
-                <>
-                  <span className="lab">
-                    <Src example /> {token ? "Follow a wallet to see its trades here." : "Sign in to see alerts from wallets you follow."}
-                  </span>
-                  {D.activity.map((a) => (
-                    <Row key={a[0]! + a[2]} href={`/app/token/?sym=${a[2]}`}>
-                      <Av t={D.wallets[a[0]!]!.av} />
-                      <div className="grow">
-                        <div className="nm" style={{ fontWeight: 400 }}>
-                          {a[0]} {a[1]} <b style={{ fontWeight: 500 }}>{a[2]}</b>
-                        </div>
-                        <div className="sub">
-                          {a[4]}
-                          {a[5] ? ` · ${a[5]}` : ""}
-                        </div>
-                      </div>
-                      <span className="mono">{a[3]}</span>
-                    </Row>
-                  ))}
-                </>
+                <p className="sub">No transactions yet.</p>
               )
             ) : null}
           </div>
         </div>
-        <div className="pn">
-          <span className="lab">
-            <b>This week</b> <Src example />
-          </span>
-          <Chart2 sets={[{ v: walk(21, 40, 0.36) }]} />
-          <div className="kvl">
-            <div>
-              <span>Copies</span>
-              <span className="mono g">+18.7%</span>
+        <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
+          <div className="pn">
+            <span className="lab">
+              <b>Backup</b>
+            </span>
+            <span className="sub" style={{ whiteSpace: "normal" }}>
+              Your key lives only in this browser. Save it somewhere safe; without it, nobody can recover this wallet.
+            </span>
+            {panel === "secret" ? (
+              <code className="hash" style={{ color: "var(--fg)" }}>
+                {wallet.secretKey}
+              </code>
+            ) : null}
+            <button
+              className="bout"
+              type="button"
+              onClick={() => {
+                if (panel === "secret") return setPanel("none");
+                if (window.confirm("Show your secret key? Anyone who sees it can take everything in this wallet.")) setPanel("secret");
+              }}
+            >
+              {panel === "secret" ? "Hide secret key" : "Show secret key"}
+            </button>
+          </div>
+          <div className="pn">
+            <span className="lab">Account</span>
+            <div className="kvl">
+              <div>
+                <span>Network</span>
+                <span className="mono">{network}</span>
+              </div>
+              <div>
+                <span>Address</span>
+                <span className="mono">{shortAddr(wallet.accountId)}</span>
+              </div>
+              <div>
+                <span>Created</span>
+                <span className="mono">{new Date(wallet.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
+              </div>
             </div>
-            <div>
-              <span>Your own trades</span>
-              <span className="mono g">+6.2%</span>
-            </div>
-            <div>
-              <span>Fees paid</span>
-              <span className="mono">$3.84</span>
+            <div className="bset">
+              <a className="bout sm" href={explorerAccount(network, wallet.accountId)} target="_blank" rel="noreferrer">
+                NearBlocks
+              </a>
+              <button
+                className="blink"
+                type="button"
+                onClick={() => {
+                  if (window.confirm("Remove this wallet from this device? Without your secret key backup it is gone for good.")) {
+                    forgetWallet(network);
+                    toast("Wallet removed from this device");
+                  }
+                }}
+              >
+                Remove from device
+              </button>
             </div>
           </div>
         </div>
@@ -521,13 +657,14 @@ export function WalletScreen() {
 
 export function NearScreen() {
   const router = useRouter();
-  const { toast } = useApp();
-  const near = useNear();
-  const s = near.status.data;
-  const mandates = near.mandates.data?.items ?? [];
-  const shadows = useMemo(() => (typeof window === "undefined" ? [] : savedShadows()), []);
-  const [anchoring, setAnchoring] = useState<string | null>(null);
-  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
+  const token = useAuthToken();
+  const status = useApi(() => api.nearStatus(), []);
+  const mandates = useApi(() => api.nearMandates(), [token], !!token);
+  const { store } = useWallet();
+  const s = status.data;
+  const list = mandates.data?.items ?? [];
+  const testnet = store.testnet;
+  const contractNote = useMemo(() => s?.coverage_note, [s]);
 
   return (
     <div className="scr s-me">
@@ -540,7 +677,7 @@ export function NearScreen() {
               {[
                 ["Discover", "trace finds wallets and explains why coins move, on Ethereum and Solana."],
                 ["Prove", "A shadow test replays the wallet with pretend money first."],
-                ["Authorize on NEAR", "Your mandate sets assets, an amount per trade, a daily cap, slippage and expiry."],
+                ["Authorize on NEAR", "Your wallet signs a mandate: amount per trade, daily cap, slippage, expiry."],
                 ["Execute by intent", "NEAR Intents quotes the route. Your wallet signs. trace never holds keys."],
               ].map(([t, d], i) => (
                 <div key={t} className="done">
@@ -581,68 +718,65 @@ export function NearScreen() {
                 <span className="mono">Never</span>
               </div>
             </div>
-            {s?.coverage_note ? (
+            {contractNote ? (
               <span className="sub" style={{ whiteSpace: "normal" }}>
-                {s.coverage_note}
+                {contractNote}
               </span>
             ) : null}
           </div>
         </div>
         <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
           <div className="pn">
-            <span className="lab">Your NEAR wallet</span>
-            {near.wallet ? (
+            <span className="lab">Signing wallet</span>
+            {testnet ? (
               <div className="grow2">
                 <div>
-                  <b style={{ fontWeight: 500 }}>{near.wallet.accountId}</b>
-                  <div className="sub">Owns, pauses and revokes your mandates</div>
+                  <b style={{ fontWeight: 500 }}>{testnet.accountId}</b>
+                  <div className="sub">Your trace testnet wallet signs your mandates</div>
                 </div>
-                <button className="bout sm" type="button" onClick={near.disconnect} disabled={near.busy}>
-                  Disconnect
-                </button>
+                <a className="bout sm" href={explorerAccount("testnet", testnet.accountId)} target="_blank" rel="noreferrer">
+                  View
+                </a>
               </div>
             ) : (
               <>
-                <p className="sub" style={{ whiteSpace: "normal", margin: 0 }}>
-                  Connect the NEAR account that will own your copy limits. It keeps its own keys.
-                </p>
-                <button className="bfill" type="button" onClick={near.connect} disabled={near.busy || !s}>
-                  {near.busy ? "Connecting" : "Connect NEAR wallet"}
+                <span className="sub" style={{ whiteSpace: "normal" }}>
+                  Mandates are signed by your trace testnet wallet. Create it in one tap.
+                </span>
+                <button className="bfill" type="button" onClick={() => router.push("/app/wallet/?net=testnet")}>
+                  Create testnet wallet
                 </button>
               </>
             )}
-            {near.error ? <p className="err">{near.error}</p> : null}
           </div>
           <div className="pn">
             <div className="pn-h">
               <span className="lab">Your mandates</span>
               <Lk href="/app/wallets/">New copy</Lk>
             </div>
-            {!near.token ? (
+            {!token ? (
               <>
-                <p className="sub" style={{ whiteSpace: "normal", margin: 0 }}>
-                  Sign in to see and create mandates.
-                </p>
+                <span className="sub">Sign in to see and create mandates.</span>
                 <button className="bfill" type="button" onClick={() => router.push("/welcome/?next=/app/near/")}>
                   Sign in
                 </button>
               </>
-            ) : mandates.length ? (
+            ) : list.length ? (
               <div>
-                {mandates.map((m) => (
+                {list.map((m) => (
                   <div className="li" key={m.id} style={{ alignItems: "flex-start" }}>
                     <span className={`tk${m.status === "anchored" ? " on" : ""}`}>
                       <Ic id="key" />
                     </span>
                     <div className="grow" style={{ display: "grid", gap: 4 }}>
                       <div className="nm">
-                        ${m.max_trade_usd} a trade · ${m.max_daily_usd} a day
+                        ${usd0(m.max_trade_usd)} a trade · ${usd0(m.max_daily_usd)} a day
                       </div>
                       <div className="sub">
                         {m.mode.replaceAll("_", " ")} · {m.max_slippage_bps / 100}% slippage · ends {new Date(m.expires_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                       </div>
                       {m.anchor_tx_hash ? (
-                        <a className="hash" href={nearExplorerTx(near.network, m.anchor_tx_hash)} target="_blank" rel="noreferrer">
+                        <a className="hash" href={explorerTx("testnet", m.anchor_tx_hash)} target="_blank" rel="noreferrer">
                           NEAR tx {m.anchor_tx_hash.slice(0, 18)}…
                         </a>
                       ) : (
@@ -654,33 +788,15 @@ export function NearScreen() {
                 ))}
               </div>
             ) : (
-              <p className="sub" style={{ whiteSpace: "normal", margin: 0 }}>
-                No mandates yet. {shadows.length ? "You have a shadow test saved, so you can copy that wallet now." : "Run a shadow test on a wallet, then copy it."}
-              </p>
+              <Empty title="No mandates yet">Pick a smart wallet, run a shadow test, then copy it. Your wallet signs the limits.</Empty>
             )}
-            {mandates.some((m) => m.status === "draft") && near.wallet ? (
-              <span className="sub" style={{ whiteSpace: "normal" }}>
-                To sign a draft, open Copy for that wallet again and prepare a fresh mandate. Drafts expire unused.
-              </span>
-            ) : null}
-            {msg ? <p className={msg.ok ? "okmsg" : "err"}>{msg.t}</p> : null}
-            {anchoring ? <span className="sub">Signing {anchoring}</span> : null}
           </div>
           <div className="pn">
             <span className="lab">For developers</span>
-            <p className="sub" style={{ whiteSpace: "normal", margin: 0 }}>
+            <span className="sub" style={{ whiteSpace: "normal" }}>
               Agents can connect through the trace MCP bridge with observe and propose scopes. They never get an execute scope, and every proposal is checked against your NEAR mandate.
-            </p>
-            <button
-              className="bout"
-              type="button"
-              onClick={() => {
-                setAnchoring(null);
-                setMsg(null);
-                router.push("/app/security/");
-                toast("Connected apps live in Security");
-              }}
-            >
+            </span>
+            <button className="bout" type="button" onClick={() => router.push("/app/security/")}>
               Manage connected agents
             </button>
           </div>

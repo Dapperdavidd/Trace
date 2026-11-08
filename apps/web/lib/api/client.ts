@@ -98,6 +98,8 @@ export interface ClientOptions {
   baseUrl?: string;
   /** Always serve demo fixtures and never call the network. */
   demoMode?: boolean;
+  /** Serve demo fixtures when the API is unreachable. Off for the shipped app: it shows real data or says so. */
+  demoFallback?: boolean;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   now?: () => Date;
@@ -128,6 +130,7 @@ function envDemo(): boolean {
 export function createApiClient(options: ClientOptions = {}) {
   const baseUrl = (options.baseUrl ?? envBase()).replace(/\/+$/, "");
   const demoMode = options.demoMode ?? envDemo();
+  const demoFallback = options.demoFallback ?? true;
   const timeoutMs = options.timeoutMs ?? 8000;
   const now = options.now ?? (() => new Date());
 
@@ -186,7 +189,7 @@ export function createApiClient(options: ClientOptions = {}) {
           : "The TRACE API could not be reached.",
         details: err instanceof Error ? err.message : undefined,
       });
-      if (allowDemo) {
+      if (allowDemo && demoFallback) {
         const demoOk = demoResponse(spec.method, spec.path, spec.query ?? {}, spec.body, now()).found;
         if (demoOk) return serveDemo(spec, "The TRACE API is unreachable, so demo fixtures are shown.");
       }
@@ -524,7 +527,7 @@ export function createApiClient(options: ClientOptions = {}) {
 export type ApiClient = ReturnType<typeof createApiClient>;
 
 /** Shared browser instance. */
-export const api: ApiClient = createApiClient();
+export const api: ApiClient = createApiClient({ demoFallback: false, timeoutMs: 25_000 });
 
 export function describeError(err: unknown): { title: string; message: string; requestId: string | null } {
   if (err instanceof ApiError) {

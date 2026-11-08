@@ -1,15 +1,12 @@
 "use client";
 /**
- * View models for the TRACE screens. Every hook asks the live API first. When the API has
- * nothing yet (no snapshots, empty lists, unreachable, or demo fixtures) the hook returns the
- * design's example data with `example: true`, and the screen labels it "Example".
+ * View models for the trace screens. Every hook returns live API data only. When the API
+ * has nothing yet the list is empty and `note` says why; screens show an honest empty state.
  */
 import { useApi, useAuthToken } from "@/hooks/useApi";
 import { api } from "@/lib/api/client";
 import type { Chain, DiscoveredWallet, MoverItem, MoverTab, RiskState, TokenDetail, TimelineResponse, WalletTab } from "@/lib/api/types";
-import { D } from "./example";
-import { compactUsd, num, rescale as _rescale, seedOf, shortAddr, walk as _walk } from "./viz";
-import type { ChartEvent } from "./engine";
+import { compactUsd, num, seedOf, shortAddr } from "./viz";
 
 export type RiskLabel = "Low" | "Medium" | "High" | "Unrated";
 
@@ -60,22 +57,6 @@ export interface WalletVM {
   decision?: string;
   confidence?: string;
 }
-
-/* ---------------- example adapters ---------------- */
-
-export function exampleCoin(sym: string): CoinVM | null {
-  const d = D.coins[sym];
-  if (!d) return null;
-  return { key: sym, sym, name: d.n, chain: "Solana", example: true, p: d.p, ch: d.ch, vol: d.vol, mc: d.mc, liq: d.liq, liqN: d.liqN, mcN: d.mcN, hold: d.hold, why: d.why, sm: d.sm, risk: d.risk, rn: d.rn, seed: d.seed, vx: d.vx, early: !!d.early };
-}
-export const exampleCoins = (): CoinVM[] => D.order.map((s) => exampleCoin(s) as CoinVM);
-
-export function exampleWallet(name: string): WalletVM | null {
-  const w = D.wallets[name];
-  if (!w) return null;
-  return { key: name, name, a: w.a, av: w.av, chain: "Solana", example: true, ret: w.ret, win: w.win, trades: w.trades, hold: w.hold, d7: w.d7, d30: w.d30, d90: w.d90, style: w.style, copiers: w.copiers, seed: w.seed, isNew: !!w.isNew };
-}
-export const exampleWallets = (): WalletVM[] => D.wOrder.map((n) => exampleWallet(n) as WalletVM);
 
 /* ---------------- live adapters ---------------- */
 
@@ -190,6 +171,21 @@ export function chainKey(c: string): string {
 
 /* ---------------- hooks ---------------- */
 
+/** Turn the API's ranking diagnostics ("5 excluded: stale.") into a sentence people can read. */
+function friendlyNote(note: string | null | undefined): string | null {
+  if (!note) return null;
+  if (/excluded/i.test(note)) {
+    const stale = /stale/i.test(note);
+    const liq = /liquidity/i.test(note);
+    return stale && liq
+      ? "trace is waiting for fresh prices and liquidity on today's coins."
+      : stale
+        ? "trace is waiting for fresh prices on today's coins."
+        : "Today's coins do not have enough liquidity to list safely yet.";
+  }
+  return note;
+}
+
 export interface Sourced<T> {
   data: T;
   example: boolean;
@@ -207,18 +203,18 @@ async function moversWithFallback(tab: MoverTab) {
   return hour.items.length && !hour.demo ? { res: hour, window: "1h" as const } : { res: day, window: "24h" as const };
 }
 
-export function useCoins(tab = "trending"): Sourced<CoinVM[]> & { window: "24h" | "1h" } {
+export function useCoins(tab = "trending"): Sourced<CoinVM[]> & { window: "24h" | "1h"; error: boolean } {
   const r = useApi(() => moversWithFallback(DISC_TAB[tab] ?? "trending"), [tab]);
-  const s = { ...r, data: r.data?.res ?? null };
+  const res = r.data?.res ?? null;
   const window = r.data?.window ?? "24h";
-  const live = s.data && !s.data.demo && s.data.items.length ? s.data.items.map(moverToCoin) : null;
-  if (live) return { data: live, example: false, loading: false, note: null, window };
+  const live = res && !res.demo ? res.items.map(moverToCoin) : [];
   return {
-    data: exampleCoins(),
-    example: true,
-    loading: s.status === "loading",
-    note: (s.data && !s.data.demo ? s.data.coverage_note : undefined) ?? (s.status === "error" ? "The trace API is waking up or unreachable." : null),
+    data: live,
+    example: false,
+    loading: r.status === "loading",
+    note: res && !res.demo ? friendlyNote(res.coverage_note) : r.status === "error" ? "trace could not reach its API. It may be waking up; try again in a moment." : null,
     window,
+    error: r.status === "error",
   };
 }
 
@@ -232,42 +228,26 @@ export function useCoin(ref: Ref): Sourced<CoinDetail | null> & { error: unknown
   const liveRef = !!(ref.chain && ref.address);
   const t = useApi(() => api.token(ref.chain as Chain, ref.address as string), [ref.chain, ref.address], liveRef);
   const tl = useApi(() => api.tokenTimeline(ref.chain as Chain, ref.address as string), [ref.chain, ref.address], liveRef);
-  if (!liveRef) {
-    const c = exampleCoin(ref.sym || "NEURA") ?? (exampleCoin("NEURA") as CoinVM);
-    return { data: { coin: c, detail: null, timeline: null }, example: true, loading: false, note: null, error: null };
-  }
-  if (t.data && !t.data.demo) {
+  if (liveRef && t.data && !t.data.demo) {
     return { data: { coin: tokenToCoin(t.data), detail: t.data, timeline: tl.data ?? null }, example: false, loading: false, note: t.data.coverage_note ?? null, error: null };
   }
-  return { data: null, example: false, loading: t.status === "loading", note: null, error: t.error };
+  return { data: null, example: false, loading: liveRef && t.status === "loading", note: null, error: liveRef ? t.error : null };
 }
 
 const WALLET_TAB: Record<string, WalletTab> = { top: "top", new: "new", copied: "most_followed" };
 
-export function useWallets(tab = "top"): Sourced<WalletVM[]> {
+export function useWallets(tab = "top"): Sourced<WalletVM[]> & { error: boolean } {
   const s = useApi(() => api.discoveryWallets({ tab: WALLET_TAB[tab] ?? "top" }), [tab]);
-  const live = s.data && !s.data.demo && s.data.items.length ? s.data.items.map(discoveredToWallet) : null;
-  if (live) return { data: live, example: false, loading: false, note: null };
+  const live = s.data && !s.data.demo ? s.data.items.map(discoveredToWallet) : [];
   return {
-    data: exampleWallets(),
-    example: true,
+    data: live,
+    example: false,
     loading: s.status === "loading",
-    note: (s.data && !s.data.demo ? s.data.coverage_note : undefined) ?? (s.status === "error" ? "Live wallet rankings are not available right now." : null),
+    note: s.data && !s.data.demo ? s.data.coverage_note ?? null : s.status === "error" ? "trace could not reach its API. It may be waking up; try again in a moment." : null,
+    error: s.status === "error",
   };
 }
 
 export function useSignedIn(): boolean {
   return !!useAuthToken();
-}
-
-/* ---------------- example series and events ---------------- */
-
-export function exampleSeries(sym: string, n: number): number[] {
-  const d = D.coins[sym];
-  if (!d) return [];
-  const a = _walk(d.seed, n, 0.35, sym === "NEURA" ? "breakout" : null);
-  return _rescale(a, d.p / (1 + d.ch / 100), d.p);
-}
-export function exampleEvents(sym: string): ChartEvent[] {
-  return (D.events[sym] || []).map((e) => ({ t: e.t, w: e.w, amt: e.amt, sell: !!e.sell }));
 }

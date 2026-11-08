@@ -1,25 +1,23 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useApi, useAuthToken } from "@/hooks/useApi";
 import { api } from "@/lib/api/client";
 import type { Chain, NearMandateCreated, ShadowResults } from "@/lib/api/types";
-import { D, HOLD_SOL } from "@/lib/trace/example";
-import { chainName, exampleWallet, useWallets, walletQuery, type WalletVM } from "@/lib/trace/data";
-import { defaultPair, errText, nearExplorerTx, savedShadows, saveShadow, useNear } from "@/lib/trace/near";
-import { cl, money, num, rescale, sgn, shortAddr, walk } from "@/lib/trace/viz";
+import { chainName, useWallets, walletQuery } from "@/lib/trace/data";
+import { defaultPair, errText, savedShadows, saveShadow } from "@/lib/trace/near";
+import { createWallet, explorerTx, signFunctionCall, useWalletStore } from "@/lib/trace/wallet";
+import { cl, money, num, sgn, shortAddr } from "@/lib/trace/viz";
 import { useApp } from "../AppState";
-import { Av, Chart2, Hd, Ic, Row, Seg, Spark, Src, Tk } from "../ui";
+import { Av, Hd, Ic, Row, Seg, Spark, Src, Tk } from "../ui";
+import { Empty } from "./Research";
 
-/** Resolve the wallet a screen is about: example (?w=0xSun) or live (?chain=&address=). */
-function useWalletRef(): { ex: WalletVM | null; chain: string | null; address: string | null } {
+function useWalletRef(): { chain: string | null; address: string | null } {
   const p = useSearchParams();
-  const chain = p.get("chain");
-  const address = p.get("address");
-  if (chain && address) return { ex: null, chain, address };
-  return { ex: exampleWallet(p.get("w") || "0xSun"), chain: null, address: null };
+  return { chain: p.get("chain"), address: p.get("address") };
 }
+const avOf = (addr: string, alias?: string | null) => (alias || addr.replace(/^0x/, "")).slice(0, 2).toUpperCase();
 
 /* =============================== Smart wallets =============================== */
 
@@ -27,30 +25,24 @@ export function WalletsScreen() {
   const router = useRouter();
   const [tab, setTab] = useState("top");
   const ws = useWallets(tab);
-  const list = useMemo(() => {
-    const l = ws.data.slice();
-    if (!ws.example) return l;
-    if (tab === "new") return l.filter((w) => w.isNew);
-    if (tab === "copied") return l.sort((a, b) => parseInt((b.copiers || "0").replace(",", "")) - parseInt((a.copiers || "0").replace(",", "")));
-    return l.sort((a, b) => (b.d30 ?? 0) - (a.d30 ?? 0));
-  }, [ws.data, ws.example, tab]);
 
   return (
     <div className="scr s-wal">
-      <Hd title="Smart wallets" crumb="Wallets that make money on most of their trades" back right={<Src example={ws.example} loading={ws.loading} />} />
+      <Hd title="Smart wallets" crumb="Wallets ranked by their real trading record" back right={<Src example={false} loading={ws.loading} />} />
       <Seg
         cls="box"
         opts={[
-          ["top", "Top 30 days"],
+          ["top", "Top"],
           ["new", "New"],
-          ["copied", "Most copied"],
+          ["copied", "Most followed"],
         ]}
         cur={tab}
         onPick={setTab}
       />
-      {ws.example && ws.note ? <span className="lab">{ws.note} Showing example wallets.</span> : null}
+      {ws.loading ? <p className="sub">Scoring wallets from their trades…</p> : null}
+      {!ws.loading && !ws.data.length ? <Empty title="No ranked wallets yet">{ws.note ?? "A wallet needs enough closed trades to be scored. The list fills in as trace reads more of the chain."}</Empty> : null}
       <div>
-        {list.map((w) => {
+        {ws.data.map((w) => {
           const q = walletQuery(w);
           const d = w.d30 ?? 0;
           return (
@@ -59,10 +51,10 @@ export function WalletsScreen() {
               <div style={{ minWidth: 0 }}>
                 <div className="nm">{w.name}</div>
                 <div className="sub">
-                  {w.a} · {w.win === null ? `${w.trades} trades` : `${w.win}% win`}
+                  {w.chain} · {w.win === null ? `${w.trades} closed trades` : `${w.win}% win`}
                 </div>
               </div>
-              <span className={`mono ${cl(d)} wc`}>{w.d30 === null ? "—" : `${sgn(d)}% 30d`}</span>
+              <span className={`mono ${cl(d)} wc`}>{w.d30 === null ? "—" : `${sgn(d)}%`}</span>
               <span className="mono wc">{w.win === null ? "—" : `${w.win}%`}</span>
               <span className="tags wc">
                 {w.style.slice(0, 2).map((s) => (
@@ -102,129 +94,13 @@ export function ProfileScreen() {
   const trades = useApi(() => api.walletTrades(ref.chain as Chain, ref.address as string), [ref.address], live);
   const dna = useApi(() => api.walletDna(ref.chain as Chain, ref.address as string), [ref.address], live);
 
-  const follow = async (key: string, address?: string, chain?: string) => {
-    const on = toggleStar(key);
-    toast(on ? "Following" : "Unfollowed");
-    if (on && token && address && chain) {
-      api.addWatchlist({ chain: chain as Chain, address }).catch(() => undefined);
-    }
-  };
-
   if (!live) {
-    const w = ref.ex as WalletVM;
-    const n = w.name;
-    const ex = D.wallets[n]!;
-    const tr: [string, string, string, string, string?][] =
-      n === "0xSun"
-        ? [
-            ["b", "NEURA", "$127K", "14 min ago"],
-            ["b", "SOLX", "$89K", "3 h ago"],
-            ["s", "FROG", "$45K", "1 day ago", "+31%"],
-            ["b", "NOVA", "$73K", "2 days ago"],
-          ]
-        : D.order
-            .filter((s) => (D.events[s] || []).some((e) => e.w === n))
-            .map((s) => {
-              const e = D.events[s]!.filter((x) => x.w === n)[0]!;
-              return [e.sell ? "s" : "b", s, e.amt, "today"] as [string, string, string, string];
-            })
-            .slice(0, 4);
     return (
       <div className="scr s-prof">
-        <Hd
-          title={n}
-          crumb={`${w.a} · ${w.copiers} copiers`}
-          back
-          right={
-            <>
-              <Src example />
-              <button className={`hb${star["w" + n] ? " on" : ""}`} type="button" aria-label="Follow" onClick={() => follow("w" + n)}>
-                <Ic id="star" />
-              </button>
-            </>
-          }
-        />
-        <div className="prof">
-          <div style={{ display: "grid", gap: 16 }}>
-            <div className="phead">
-              <Av t={w.av} l />
-              <div style={{ display: "grid", gap: 6 }}>
-                <span className="tag g" style={{ justifySelf: "start" }}>
-                  {ex.d30 >= 40 ? "Top 1% · 30 days" : ex.isNew ? "New this month" : "Top 10% · 30 days"}
-                </span>
-                <div className="tags">
-                  {ex.style.map((s) => (
-                    <span key={s}>{s}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="stat">
-              <div>
-                <span className="lab">All time</span>
-                <b className="g">+{ex.ret.toLocaleString()}%</b>
-              </div>
-              <div>
-                <span className="lab">Win rate</span>
-                <b>{ex.win}%</b>
-              </div>
-              <div>
-                <span className="lab">Trades</span>
-                <b>{ex.trades}</b>
-              </div>
-              <div>
-                <span className="lab">Avg hold</span>
-                <b>{ex.hold}</b>
-              </div>
-            </div>
-            <div>
-              <div className="pn-h" style={{ marginBottom: 8 }}>
-                <span className="lab">Last 30 days</span>
-                <span className={`mono ${cl(ex.d30)}`}>{sgn(ex.d30)}%</span>
-              </div>
-              <Chart2 sets={[{ v: walk(ex.seed, 40, ex.d30 >= 0 ? 0.4 : -0.1) }]} />
-            </div>
-          </div>
-          <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
-            <span className="lab">
-              <b>Recent trades</b>
-            </span>
-            <div>
-              {tr.length ? (
-                tr.map((t) => (
-                  <Row key={t[1] + t[3]} className="trow" href={`/app/token/?sym=${t[1]}`}>
-                    <Tk s={t[1]} on={t[0] === "b"} />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="nm">
-                        {t[0] === "b" ? "Bought " : "Sold "}
-                        {t[1]}
-                        {t[4] ? (
-                          <span className="g mono" style={{ fontSize: 12 }}>
-                            {" "}
-                            {t[4]}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="sub">{t[3]}</div>
-                    </div>
-                    <span className="mono">{t[2]}</span>
-                  </Row>
-                ))
-              ) : (
-                <p className="f2">No trades today.</p>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="actbar">
-          <button className="bout" type="button" onClick={() => router.push(`/app/shadow/?w=${n}`)}>
-            <Ic id="flask" />
-            Shadow test
-          </button>
-          <button className="bfill" type="button" onClick={() => router.push(`/app/copy/?w=${n}`)}>
-            Copy wallet
-          </button>
-        </div>
+        <Hd title="Wallet" back />
+        <Empty title="No wallet selected" action={<button className="bout" type="button" onClick={() => router.push("/app/wallets/")}>Smart wallets</button>}>
+          Open a wallet from Smart wallets, a coin page or the daily briefing, or paste an address into search.
+        </Empty>
       </div>
     );
   }
@@ -237,6 +113,11 @@ export function ProfileScreen() {
   const pnl = num(m?.realized_pnl_usd);
   const q = `chain=${encodeURIComponent(chain)}&address=${encodeURIComponent(addr)}`;
   const key = `w${chain}:${addr}`;
+  const follow = () => {
+    const on = toggleStar(key);
+    toast(on ? "Following" : "Unfollowed");
+    if (on && token) api.addWatchlist({ chain: chain as Chain, address: addr }).catch(() => undefined);
+  };
   return (
     <div className="scr s-prof">
       <Hd
@@ -246,7 +127,7 @@ export function ProfileScreen() {
         right={
           <>
             <Src example={false} />
-            <button className={`hb${star[key] ? " on" : ""}`} type="button" aria-label="Follow" onClick={() => follow(key, addr, chain)}>
+            <button className={`hb${star[key] ? " on" : ""}`} type="button" aria-label="Follow" onClick={follow}>
               <Ic id="star" />
             </button>
           </>
@@ -256,7 +137,7 @@ export function ProfileScreen() {
       <div className="prof">
         <div style={{ display: "grid", gap: 16 }}>
           <div className="phead">
-            <Av t={(alias || addr.replace(/^0x/, "")).slice(0, 2).toUpperCase()} l />
+            <Av t={avOf(addr, alias)} l />
             <div style={{ display: "grid", gap: 6 }}>
               <span className={`tag ${m?.wqs.decision === "eligible" ? "g" : ""}`} style={{ justifySelf: "start" }}>
                 {m ? (m.wqs.decision === "eligible" ? "Proven wallet" : m.wqs.decision.replaceAll("_", " ")) : detail.data?.monitoring ?? "Loading"}
@@ -343,56 +224,52 @@ export function ShadowScreen() {
   const ref = useWalletRef();
   const { shadow, setShadow, toast } = useApp();
   const token = useAuthToken();
-  const liveWallets = useWallets("top");
-  const exNames = D.wOrder;
-
-  useEffect(() => {
-    if (ref.ex) setShadow({ w: ref.ex.name });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref.ex?.name]);
-
-  const [liveRes, setLiveRes] = useState<ShadowResults | null>(null);
+  const ranked = useWallets("top");
+  const [res, setRes] = useState<ShadowResults | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // No wallet in the link: start with the top ranked wallet.
   useEffect(() => {
-    setLiveRes(null);
+    if (!ref.address && ranked.data[0]) router.replace(`/app/shadow/?${walletQuery(ranked.data[0])}`);
+  }, [ref.address, ranked.data, router]);
+  useEffect(() => {
+    setRes(null);
     setErr(null);
   }, [ref.address, shadow.a]);
 
+  if (!ref.address || !ref.chain) {
+    return (
+      <div className="scr s-sh">
+        <Hd title="Shadow test" crumb="Try copying a wallet with pretend money" back />
+        {ranked.loading ? <p className="sub">Finding a wallet to test…</p> : <Empty title="No wallet to test yet">Open any wallet and tap Shadow test, or paste a wallet address into search.</Empty>}
+      </div>
+    );
+  }
+
   const switchWallet = () => {
-    if (!liveWallets.example) {
-      const l = liveWallets.data;
-      const i = l.findIndex((w) => w.address === ref.address);
-      const n = l[(i + 1) % l.length];
-      if (n) router.replace(`/app/shadow/?${walletQuery(n)}`);
-      return;
-    }
-    const i = exNames.indexOf(shadow.w);
-    const n = exNames[(i + 1) % exNames.length];
-    setShadow({ w: n });
-    router.replace(`/app/shadow/?w=${n}`);
+    const l = ranked.data;
+    if (!l.length) return toast("No other ranked wallets yet");
+    const i = l.findIndex((w) => w.address === ref.address);
+    const n = l[(i + 1) % l.length];
+    if (n) router.replace(`/app/shadow/?${walletQuery(n)}`);
   };
 
-  const runLive = async () => {
-    if (!ref.address || !ref.chain) return;
-    if (!token) {
-      router.push("/welcome/?next=" + encodeURIComponent(location.pathname + location.search));
-      return;
-    }
+  const run = async () => {
+    if (!token) return router.push("/welcome/?next=" + encodeURIComponent(location.pathname + location.search));
     setBusy(true);
     setErr(null);
     try {
       const created = await api.createShadowStrategy({
-        wallet: { chain: ref.chain as Chain, address: ref.address },
+        wallet: { chain: ref.chain as Chain, address: ref.address as string },
         budget_usd: String(shadow.a),
         size_rule: "fixed_usd",
         delay_seconds: 30,
         slippage_bps: 100,
         exit_rule: "mirror_sells",
       });
-      saveShadow({ id: created.id, chain: ref.chain, address: ref.address, budget: String(shadow.a), created_at: new Date().toISOString() });
-      const r = await api.shadowResults(created.id);
-      setLiveRes(r);
+      saveShadow({ id: created.id, chain: ref.chain as string, address: ref.address as string, budget: String(shadow.a), created_at: new Date().toISOString() });
+      setRes(await api.shadowResults(created.id));
       toast("Shadow test saved. You can copy this wallet now.");
     } catch (e) {
       setErr(errText(e));
@@ -401,136 +278,23 @@ export function ShadowScreen() {
     }
   };
 
-  const amountSeg = (
-    <div className="r">
-      <span className="lab">Amount</span>
-      <Seg
-        cls="box"
-        opts={[50, 100, 250, 500].map((a) => [a, `$${a}`] as [number, string])}
-        cur={shadow.a}
-        onPick={(a) => setShadow({ a })}
-      />
-    </div>
-  );
-
-  if (ref.address) {
-    const r = liveRes;
-    const start = num(r?.starting_usd) ?? shadow.a;
-    const end = num(r?.ending_usd);
-    const ret = num(r?.return_pct);
-    const name = shortAddr(ref.address);
-    return (
-      <div className="scr s-sh">
-        <Hd title="Shadow test" crumb="Try copying a wallet with pretend money" back right={<Src example={false} />} />
-        <div className="shgrid">
-          <div className="cfg">
-            <div className="r">
-              <span className="lab">Wallet</span>
-              <button className="wpick" type="button" onClick={switchWallet}>
-                <Av t={ref.address.replace(/^0x/, "").slice(0, 2).toUpperCase()} />
-                <span className="grow" style={{ textAlign: "left" }}>
-                  <b style={{ fontWeight: 500 }}>{name}</b>
-                  <span className="sub" style={{ display: "block" }}>
-                    {chainName(ref.chain as string)} · tap to switch
-                  </span>
-                </span>
-                <Ic id="swap" />
-              </button>
-            </div>
-            <div className="r">
-              <span className="lab">Period</span>
-              <span className="sub" style={{ whiteSpace: "normal" }}>
-                Every finalized trade trace has recorded for this wallet.
-              </span>
-            </div>
-            {amountSeg}
-            <button className="bfill" type="button" disabled={busy} onClick={runLive}>
-              {busy ? "Replaying trades" : token ? "Run shadow test" : "Sign in to run it"}
-            </button>
-            {err ? <p className="err">{err}</p> : null}
-          </div>
-          <div style={{ display: "grid", gap: 14 }}>
-            <span className="lab">Your ${start} would now be</span>
-            <div className="res">
-              <span className="big n">{end === null ? "—" : money(end)}</span>
-              {ret !== null ? <span className={`mono ${cl(ret)}`}>{sgn(ret)}%</span> : null}
-            </div>
-            {r ? (
-              <>
-                {r.data_status === "unavailable" ? <p className="sub" style={{ whiteSpace: "normal" }}>{r.coverage_note ?? "Not enough priced trades to replay yet."}</p> : null}
-                <div className="stat">
-                  <div>
-                    <span className="lab">Trades</span>
-                    <b>{r.trades}</b>
-                  </div>
-                  <div>
-                    <span className="lab">Win rate</span>
-                    <b>{r.win_rate_pct === null ? "—" : `${Math.round(Number(r.win_rate_pct))}%`}</b>
-                  </div>
-                  <div>
-                    <span className="lab">Could not copy</span>
-                    <b>{r.skipped_unexecutable}</b>
-                    <em>no price or route</em>
-                  </div>
-                  <div>
-                    <span className="lab">Fees, slippage</span>
-                    <b>−{money(Number(r.fees_and_slippage_usd))}</b>
-                    <em>already counted</em>
-                  </div>
-                </div>
-                <div className="kvl">
-                  {Object.entries(r.baseline).map(([k, v]) => (
-                    <div key={k}>
-                      <span>{k.replaceAll("_", " ")}</span>
-                      <span className="mono">{v === null ? "—" : String(v)}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p className="sub" style={{ whiteSpace: "normal" }}>
-                trace replays this wallet&apos;s real trades with your amount, a 30 second delay and 1% slippage. Nothing is spent.
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="actbar">
-          <button className="bout" type="button" onClick={switchWallet}>
-            Try another wallet
-          </button>
-          <button className="bfill" type="button" onClick={() => router.push(`/app/copy/?chain=${ref.chain}&address=${encodeURIComponent(ref.address as string)}`)}>
-            Copy {name}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const w = D.wallets[shadow.w] ?? D.wallets["0xSun"]!;
-  const wn = D.wallets[shadow.w]! ? shadow.w : "0xSun";
-  const r = (w[`d${shadow.d}` as "d7" | "d30" | "d90"] ?? w.d30) / 100;
-  const res = shadow.a * (1 + r);
-  const hold = shadow.a * (1 + HOLD_SOL[shadow.d]! / 100);
-  const trades = Math.round(shadow.d * 0.4);
-  const wins = Math.round((trades * (w.win - 11)) / 100);
-  const missed = Math.max(1, Math.round(trades / 6));
-  const fees = shadow.a * 0.042;
-  const A = rescale(walk(w.seed + shadow.d, 30, r >= 0 ? 0.5 : -0.1), shadow.a, res);
-  const B = rescale(walk(130 + shadow.d, 30, 0.12), shadow.a, hold);
-
+  const start = num(res?.starting_usd) ?? shadow.a;
+  const end = num(res?.ending_usd);
+  const ret = num(res?.return_pct);
+  const name = shortAddr(ref.address);
   return (
     <div className="scr s-sh">
-      <Hd title="Shadow test" crumb="Try copying a wallet with pretend money" back right={<Src example />} />
+      <Hd title="Shadow test" crumb="Try copying a wallet with pretend money" back right={<Src example={false} />} />
       <div className="shgrid">
         <div className="cfg">
           <div className="r">
             <span className="lab">Wallet</span>
             <button className="wpick" type="button" onClick={switchWallet}>
-              <Av t={w.av} />
+              <Av t={avOf(ref.address)} />
               <span className="grow" style={{ textAlign: "left" }}>
-                <b style={{ fontWeight: 500 }}>{wn}</b>
+                <b style={{ fontWeight: 500 }}>{name}</b>
                 <span className="sub" style={{ display: "block" }}>
-                  {w.win}% win · tap to switch
+                  {chainName(ref.chain)} · tap to switch
                 </span>
               </span>
               <Ic id="swap" />
@@ -538,134 +302,153 @@ export function ShadowScreen() {
           </div>
           <div className="r">
             <span className="lab">Period</span>
-            <Seg
-              cls="box"
-              opts={[
-                [7, "7 days"],
-                [30, "30 days"],
-                [90, "90 days"],
-              ]}
-              cur={shadow.d}
-              onPick={(d) => setShadow({ d })}
-            />
+            <span className="sub" style={{ whiteSpace: "normal" }}>
+              Every finalized trade trace has recorded for this wallet.
+            </span>
           </div>
-          {amountSeg}
+          <div className="r">
+            <span className="lab">Amount</span>
+            <Seg cls="box" opts={[50, 100, 250, 500].map((a) => [a, `$${a}`] as [number, string])} cur={shadow.a} onPick={(a) => setShadow({ a })} />
+          </div>
+          <button className="bfill" type="button" disabled={busy} onClick={run}>
+            {busy ? "Replaying trades" : token ? "Run shadow test" : "Sign in to run it"}
+          </button>
+          {err ? <p className="err">{err}</p> : null}
         </div>
         <div style={{ display: "grid", gap: 14 }}>
-          <span className="lab">Your ${shadow.a} would now be</span>
+          <span className="lab">Your ${start} would now be</span>
           <div className="res">
-            <span className="big n">{money(res)}</span>
-            <span className={`mono ${cl(r)}`}>{sgn(r * 100)}%</span>
-            <span className="mono f3">holding SOL {sgn(HOLD_SOL[shadow.d]!)}%</span>
+            <span className="big n">{end === null ? "—" : money(end)}</span>
+            {ret !== null ? <span className={`mono ${cl(ret)}`}>{sgn(ret)}%</span> : null}
           </div>
-          <Chart2
-            sets={[
-              { v: A },
-              { v: B, c: "rgba(237,242,239,.5)", dash: true, w: 1.3 },
-            ]}
-            base={shadow.a}
-          />
-          <div className="legend">
-            <span>
-              <i />
-              copying {wn}
-            </span>
-            <span>
-              <i className="d" />
-              holding SOL · {money(hold)}
-            </span>
-          </div>
-          <div className="stat">
-            <div>
-              <span className="lab">Trades</span>
-              <b>{trades}</b>
-            </div>
-            <div>
-              <span className="lab">Wins</span>
-              <b>
-                {wins} of {trades}
-              </b>
-            </div>
-            <div>
-              <span className="lab">Could not copy</span>
-              <b>{missed}</b>
-              <em>sold too fast</em>
-            </div>
-            <div>
-              <span className="lab">Fees, slippage</span>
-              <b>−{money(fees)}</b>
-              <em>already counted</em>
-            </div>
-          </div>
+          {res ? (
+            <>
+              {res.data_status === "unavailable" ? (
+                <p className="sub" style={{ whiteSpace: "normal" }}>
+                  {res.coverage_note ?? "Not enough priced trades to replay yet."}
+                </p>
+              ) : null}
+              <div className="stat">
+                <div>
+                  <span className="lab">Trades</span>
+                  <b>{res.trades}</b>
+                </div>
+                <div>
+                  <span className="lab">Win rate</span>
+                  <b>{res.win_rate_pct === null ? "—" : `${Math.round(Number(res.win_rate_pct))}%`}</b>
+                </div>
+                <div>
+                  <span className="lab">Could not copy</span>
+                  <b>{res.skipped_unexecutable}</b>
+                  <em>no price or route</em>
+                </div>
+                <div>
+                  <span className="lab">Fees, slippage</span>
+                  <b>−{money(Number(res.fees_and_slippage_usd))}</b>
+                  <em>already counted</em>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="sub" style={{ whiteSpace: "normal" }}>
+              trace replays this wallet&apos;s real trades with your amount, a 30 second delay and 1% slippage. Nothing is spent.
+            </p>
+          )}
         </div>
       </div>
       <div className="actbar">
         <button className="bout" type="button" onClick={switchWallet}>
           Try another wallet
         </button>
-        <button className="bfill" type="button" onClick={() => router.push(`/app/copy/?w=${wn}`)}>
-          Copy {wn}
+        <button className="bfill" type="button" onClick={() => router.push(`/app/copy/?chain=${ref.chain}&address=${encodeURIComponent(ref.address as string)}`)}>
+          Copy {name}
         </button>
       </div>
     </div>
   );
 }
 
-/* =============================== Copy (NEAR mandate) =============================== */
+/* =============================== Copy (NEAR mandate, signed by the in-app wallet) =============================== */
 
-const GUARDS = ["Only coins with good liquidity", "Skip high-risk coins", "Daily cap from your spending limit", "Expires in 7 days"];
+const GUARDS = ["Only coins with good liquidity", "Skip high-risk coins", "Daily cap", "Expires in 7 days"];
 
 export function CopyScreen() {
   const router = useRouter();
   const ref = useWalletRef();
+  const token = useAuthToken();
   const { copy, setCopy, prefs, toast } = useApp();
-  const near = useNear();
+  const store = useWalletStore();
+  const testnet = store.testnet ?? null;
+  const nearStatus = useApi(() => api.nearStatus(), []);
+  const assets = useApi(() => api.nearAssets(), [token], !!token);
   const [created, setCreated] = useState<NearMandateCreated | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
 
-  const live = !!ref.address;
-  const ex = ref.ex;
-  const name = live ? shortAddr(ref.address as string) : (ex as WalletVM).name;
-  const sub = live ? `${chainName(ref.chain as string)} · ${shortAddr(ref.address as string)}` : (ex as WalletVM).a;
-  const winLine = live ? "Limits are enforced by your NEAR mandate" : `${(ex as WalletVM).win}% win rate · about 4 trades a week`;
-  const shadow = useMemo(() => (live ? savedShadows().find((s) => s.address === ref.address) : undefined), [live, ref.address, done]); // eslint-disable-line react-hooks/exhaustive-deps
-  const delegation = !!near.status.data?.agent.delegation_enabled;
+  const addr = ref.address;
+  // Saved shadow tests live in localStorage: read them after mount so server and client HTML match.
+  const [shadow, setSavedShadow] = useState<ReturnType<typeof savedShadows>[number] | undefined>(undefined);
+  useEffect(() => setSavedShadow(addr ? savedShadows().find((s) => s.address === addr) : undefined), [addr, done]);
+  const delegation = !!nearStatus.data?.agent.delegation_enabled;
   const daily = prefs.lim > 0 ? Math.max(prefs.lim, copy.amt) : copy.amt * 5;
 
-  const step = !near.token ? 0 : !live ? 1 : !shadow ? 1 : !near.wallet ? 2 : !created ? 3 : 4;
-  const label = done
-    ? "Open your copies"
-    : ["Sign in to start", live ? "Run a shadow test first" : "Pick a live wallet to copy", "Connect NEAR wallet", "Prepare NEAR mandate", "Review and sign in NEAR wallet"][step];
+  if (!addr || !ref.chain) {
+    return (
+      <div className="scr s-copy">
+        <div className="sheet">
+          <Hd title="Copy a wallet" back />
+          <Empty title="Pick a wallet first" action={<button className="bfill" type="button" onClick={() => router.push("/app/wallets/")}>Smart wallets</button>}>
+            Choose a ranked wallet, test it with pretend money, then copy it with limits you sign on NEAR.
+          </Empty>
+        </div>
+      </div>
+    );
+  }
+  const name = shortAddr(addr);
+
+  // 0 sign in, 1 shadow test, 2 testnet wallet, 3 prepare, 4 sign
+  const step = !token ? 0 : !shadow ? 1 : !testnet ? 2 : !created ? 3 : 4;
+  const label = done ? "Open your copies" : ["Sign in to start", "Run a shadow test first", "Create your testnet wallet", "Prepare NEAR mandate", "Sign with your trace wallet"][step];
 
   const act = async () => {
     setErr(null);
     if (done) return router.push("/app/wallet/?t=copies");
     if (step === 0) return router.push("/welcome/?next=" + encodeURIComponent(location.pathname + location.search));
-    if (step === 1) return router.push(live ? `/app/shadow/?chain=${ref.chain}&address=${encodeURIComponent(ref.address as string)}` : "/app/wallets/");
-    if (step === 2) return near.connect();
+    if (step === 1) return router.push(`/app/shadow/?chain=${ref.chain}&address=${encodeURIComponent(addr)}`);
     setBusy(true);
     try {
-      if (step === 3) {
-        const items = near.assets.data?.items ?? [];
-        const [origin, destination] = defaultPair(items);
+      if (step === 2) {
+        await createWallet("testnet", "trace");
+        toast("Testnet wallet created with free test NEAR");
+      } else if (step === 3) {
+        const [origin, destination] = defaultPair(assets.data?.items ?? []);
         if (!origin || !destination) throw new Error("NEAR Intents did not return any assets. Try again in a minute.");
-        const c = await near.prepare({
-          shadowId: (shadow as { id: string }).id,
+        const c = await api.createNearMandate({
+          shadow_strategy_id: (shadow as { id: string }).id,
+          owner_near_account: (testnet as { accountId: string }).accountId,
+          agent_near_account: nearStatus.data?.agent.account_id ?? undefined,
           mode: copy.mode === "auto" && delegation ? "delegated" : "approval_required",
-          origin,
-          destination,
-          maxTrade: String(copy.amt),
-          maxDaily: String(daily),
-          slippageBps: copy.g[0] ? 100 : 300,
+          allowed_chains: Array.from(new Set([origin.blockchain, destination.blockchain])),
+          allowed_assets: [
+            { chain: origin.blockchain, asset_id: origin.assetId },
+            { chain: destination.blockchain, asset_id: destination.assetId },
+          ],
+          max_trade_usd: String(copy.amt),
+          max_daily_usd: String(daily),
+          max_slippage_bps: copy.g[0] ? 100 : 300,
+          expires_at: new Date(Date.now() + 7 * 86_400_000).toISOString(),
         });
         setCreated(c);
       } else if (step === 4 && created) {
-        const hash = await near.sign(created);
+        const tx = created.near_transaction;
+        const call = tx?.actions[0]?.params;
+        if (!tx || !call) throw new Error("The API did not return a transaction to sign.");
+        const hash = await signFunctionCall("testnet", tx.receiverId, call);
+        await api.confirmNearAnchor(created.id, { tx_hash: hash, signer_account_id: (testnet as { accountId: string }).accountId });
         setDone(hash);
         setCreated(null);
-        toast(`${copy.mode === "auto" ? "Copying" : "Alerts on for"} ${name} · $${copy.amt} per trade`);
+        toast(`${copy.mode === "auto" && delegation ? "Copying" : "Alerts on for"} ${name} · $${copy.amt} per trade`);
       }
     } catch (e) {
       setErr(errText(e));
@@ -677,15 +460,15 @@ export function CopyScreen() {
   return (
     <div className="scr s-copy">
       <div className="cdim">
-        <Av t={live ? (ref.address as string).replace(/^0x/, "").slice(0, 2).toUpperCase() : (ex as WalletVM).av} />
+        <Av t={avOf(addr)} />
         <div>
           <div className="nm">{name}</div>
-          <div className="sub">{sub}</div>
+          <div className="sub">{chainName(ref.chain)}</div>
         </div>
       </div>
       <div className="sheet">
         <span className="grab" />
-        <Hd title={`Copy ${name}`} crumb={winLine} back />
+        <Hd title={`Copy ${name}`} crumb="Limits are enforced by a NEAR mandate your wallet signs" back />
         <div className="modes">
           <button type="button" className={copy.mode === "auto" ? "on" : ""} onClick={() => setCopy({ mode: "auto" })}>
             <b>Auto copy</b>
@@ -699,9 +482,7 @@ export function CopyScreen() {
         <div style={{ display: "grid", gap: 8 }}>
           <span className="lab">Amount per trade</span>
           <Seg cls="box" opts={[50, 100, 250, 500].map((a) => [a, `$${a}`] as [number, string])} cur={copy.amt} onPick={(amt) => setCopy({ amt })} />
-          <span className="sub">
-            Up to ${daily.toLocaleString()} a day · about ${(copy.amt * 4).toLocaleString()} a week at this pace
-          </span>
+          <span className="sub">Up to ${daily.toLocaleString()} a day</span>
         </div>
         <div>
           <span className="lab">Guardrails</span>
@@ -724,9 +505,9 @@ export function CopyScreen() {
         </div>
         <div className="steps" aria-label="Copy setup steps">
           {[
-            ["Sign in", near.token ? "Passkey account ready" : "A passkey keeps your account"],
-            ["Shadow test", !live ? "Pick a live wallet first" : shadow ? `Tested with $${shadow.budget} pretend money` : "Prove it with pretend money"],
-            ["NEAR wallet", near.wallet ? near.wallet.accountId : `Your wallet signs the limits on ${near.network}`],
+            ["Sign in", token ? "Passkey account ready" : "A passkey keeps your account"],
+            ["Shadow test", shadow ? `Tested with $${shadow.budget} pretend money` : "Prove it with pretend money"],
+            ["Testnet wallet", testnet ? testnet.accountId : "Created in one tap, funded by the NEAR faucet"],
             ["Mandate", done ? "Signed and verified on NEAR" : created ? "Draft ready. Your wallet signs next" : "Amount, daily cap, slippage, expiry"],
           ].map(([t, s], i) => {
             const at = Math.min(step, 3);
@@ -742,23 +523,22 @@ export function CopyScreen() {
             );
           })}
         </div>
-        {err || near.error ? <p className="err">{err || near.error}</p> : null}
+        {err ? <p className="err">{err}</p> : null}
         {done ? (
           <p className="okmsg">
-            Mandate anchored on NEAR.{" "}
-            <a href={nearExplorerTx(near.network, done)} target="_blank" rel="noreferrer" style={{ textDecoration: "underline" }}>
+            Mandate anchored on NEAR testnet.{" "}
+            <a href={explorerTx("testnet", done)} target="_blank" rel="noreferrer" style={{ textDecoration: "underline" }}>
               View the transaction
             </a>
           </p>
         ) : null}
-        <button className="bfill" style={{ height: 50 }} type="button" disabled={busy || near.busy || (step === 3 && near.assets.status === "loading")} onClick={act}>
-          {busy || near.busy ? "Waiting" : label}
+        <button className="bfill" style={{ height: 50 }} type="button" disabled={busy || (step === 3 && assets.status === "loading")} onClick={act}>
+          {busy ? "Working" : label}
         </button>
         <span className="sub" style={{ textAlign: "center", whiteSpace: "normal" }}>
-          trace never holds your keys. Pause or revoke any time from Wallet · Copies.
+          Mandates live on NEAR testnet while the contract is reviewed. Your keys stay on this device.
         </span>
       </div>
     </div>
   );
 }
-

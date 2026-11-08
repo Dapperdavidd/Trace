@@ -190,7 +190,7 @@ async fn mandate_is_a_wallet_signable_draft_and_delegation_stays_off(pool: PgPoo
     );
     assert_eq!(
         body["near_transaction"]["actions"][0]["params"]["args"]["mandate"]["max_trade_usd_micros"],
-        "100000000"
+        100000000_u64
     );
 
     let list = test::call_service(

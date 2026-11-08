@@ -14,6 +14,7 @@ import { useAuthToken } from "@/hooks/useApi";
 import { api } from "@/lib/api/client";
 import type { FieldConfig } from "@/lib/trace/engine";
 import { errText } from "@/lib/trace/near";
+import { GoogleButton } from "./GoogleButton";
 import { FieldView } from "./Three";
 import { Logo } from "./ui";
 
@@ -114,6 +115,7 @@ export function Welcome() {
                     <button className="bout" type="button" onClick={() => setMode("signin")}>
                       I already have one
                     </button>
+                    <GoogleButton onSignedIn={() => router.push(next)} />
                   </>
                 )}
               </div>
@@ -159,6 +161,7 @@ export function Welcome() {
                   {mode === "create" ? "I already have an account" : "Create an account instead"}
                 </button>
               </div>
+              <GoogleButton onSignedIn={() => router.push(next)} />
               <p className="sub" style={{ margin: 0, whiteSpace: "normal" }}>
                 Your face or fingerprint stays on your device. trace stores only a public key, and never holds your wallet keys.
               </p>

@@ -505,6 +505,8 @@ export interface AgentConnectionCreated {
 export interface BriefingItem {
   text: string;
   link?: string;
+  token?: { chain: Chain; address: string };
+  wallet?: { chain: Chain; address: string };
 }
 
 export interface BriefingSection {

@@ -4,30 +4,31 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApi, useAuthToken } from "@/hooks/useApi";
 import { api } from "@/lib/api/client";
-import type { RiskCheck } from "@/lib/api/types";
-import { D, RANGE } from "@/lib/trace/example";
-import {
-  coinHref,
-  exampleCoin,
-  exampleEvents,
-  exampleSeries,
-  useCoin,
-  useCoins,
-  type CoinVM,
-} from "@/lib/trace/data";
+import type { BriefingItem, RiskCheck } from "@/lib/api/types";
+import { coinHref, useCoin, useCoins, useWallets, walletQuery, type CoinVM } from "@/lib/trace/data";
 import type { ChartEvent } from "@/lib/trace/engine";
-import { cl, clamp, hm, money, pf, resample, rng, sgn, walk } from "@/lib/trace/viz";
+import { useWallet, yoctoToNear } from "@/lib/trace/wallet";
+import { cl, clamp, money, pf, resample, sgn, shortAddr } from "@/lib/trace/viz";
 import { useApp } from "../AppState";
+import { usd0 } from "@/lib/trace/viz";
 import { TraceChartView } from "../Three";
-import { Av, Chart2, Hd, Help, Ic, Lk, RiskTag, Row, Seg, Spark, Src, StateTag, Tk } from "../ui";
+import { Av, Hd, Help, Ic, Lk, RiskTag, Row, Seg, Spark, Src, StateTag, Tk } from "../ui";
 
-/* =============================== Today =============================== */
+/* =============================== shared =============================== */
 
-const EX_COPIES = [
-  { w: "0xSun", amt: 120.25, ch: 48.6 },
-  { w: "CryptoNomad", amt: 80.1, ch: 22.3 },
-  { w: "DeFiWhale", amt: 98.4, ch: -3.1 },
-];
+export function Empty({ title, children, action }: { title: string; children?: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="pn" style={{ textAlign: "left" }}>
+      <b style={{ fontWeight: 500, fontSize: 16 }}>{title}</b>
+      {children ? (
+        <span className="sub" style={{ whiteSpace: "normal" }}>
+          {children}
+        </span>
+      ) : null}
+      {action}
+    </div>
+  );
+}
 
 function greeting(d: Date) {
   const h = d.getHours();
@@ -37,19 +38,20 @@ function dateLabel(d: Date) {
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short" }) + " · " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
+/* =============================== Today =============================== */
+
 export function TodayScreen({ meInitials }: { meInitials?: string }) {
   const router = useRouter();
   const token = useAuthToken();
   const coins = useCoins("trending");
   const mandates = useApi(() => api.nearMandates(), [token], !!token);
-  const { toast } = useApp();
-  const [range, setRange] = useState("1D");
+  const { network, wallet, balance, usd } = useWallet();
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => setNow(new Date()), []);
-  const signals = coins.data.filter((c) => c.ch > 0).slice(0, 3);
+  const signals = coins.data.slice(0, 3);
   const flagged = coins.data.find((c) => c.risk === "High");
-  const aw = ["var(--g)", "rgba(237,242,239,.55)", "var(--g-line)", "rgba(237,242,239,.28)", "rgba(237,242,239,.14)"];
   const live = mandates.data?.items ?? [];
+  const near = balance ? Number(yoctoToNear(balance.available, 6).replace(/,/g, "")) : 0;
 
   return (
     <div className="scr s-today">
@@ -63,24 +65,28 @@ export function TodayScreen({ meInitials }: { meInitials?: string }) {
           </div>
           <h1>{now ? greeting(now) : "Hello."}</h1>
           <p>
-            {signals.length} signal{signals.length === 1 ? "" : "s"} today.{" "}
+            {coins.loading
+              ? "Reading the chain…"
+              : coins.data.length
+                ? `${coins.data.length} coin${coins.data.length === 1 ? "" : "s"} moving right now.`
+                : "No coins have cleared the safety filters yet today."}{" "}
             {token ? (live.length ? `You have ${live.length} copy mandate${live.length === 1 ? "" : "s"} on NEAR.` : "Test a wallet with pretend money, then copy it with limits.") : "Sign in to follow wallets and copy them with limits."}
           </p>
         </div>
         <div className="qa">
-          <button className="qb" type="button" onClick={() => router.push("/app/discover/")}>
-            <Ic id="grid" />
-            <span>Discover</span>
+          <button className="qb" type="button" onClick={() => router.push("/app/wallet/?a=send")}>
+            <Ic id="send" />
+            <span>Send</span>
           </button>
-          <button className="qb" type="button" onClick={() => router.push("/app/shadow/")}>
-            <Ic id="flask" />
-            <span>Test</span>
+          <button className="qb" type="button" onClick={() => router.push("/app/wallet/?a=receive")}>
+            <Ic id="recv" />
+            <span>Receive</span>
           </button>
           <button className="qb" type="button" onClick={() => router.push("/app/swap/")}>
             <Ic id="swap" />
             <span>Swap</span>
           </button>
-          <button className="qb pri" type="button" onClick={() => router.push(signals[0] ? `/app/swap/?to=${encodeURIComponent(signals[0].sym)}` : "/app/swap/")}>
+          <button className="qb pri" type="button" onClick={() => router.push("/app/swap/?mode=buy")}>
             <Ic id="plus" />
             <span>Buy</span>
           </button>
@@ -90,20 +96,42 @@ export function TodayScreen({ meInitials }: { meInitials?: string }) {
         <div className="pn">
           <div className="pn-h">
             <span className="lab">
-              Portfolio <Src example />
+              Your wallet <span className={`tag ${network === "mainnet" ? "g" : ""}`}>{network === "mainnet" ? "Mainnet" : "Testnet"}</span>
             </span>
-            <Seg opts={["1H", "1D", "1W", "1M", "1Y"].map((r) => [r, r] as [string, string])} cur={range} onPick={setRange} />
+            <Lk href="/app/wallet/">Wallet</Lk>
           </div>
-          <div className="vrow">
-            <span className="big n">$2,840.25</span>
-            <span className="mono g">{RANGE[range]!.d}</span>
-          </div>
-          <Chart2 sets={[{ v: walk(RANGE[range]!.seed, 72, 0.36) }]} />
+          {wallet ? (
+            <>
+              <div className="vrow">
+                <span className="big n">{balance ? `${yoctoToNear(balance.available, 2)} NEAR` : "…"}</span>
+                {usd !== null && balance ? <span className="mono f2">{money(near * usd)}</span> : null}
+              </div>
+              <div className="kvl">
+                <div>
+                  <span>Account</span>
+                  <span className="mono">{shortAddr(wallet.accountId)}</span>
+                </div>
+                <div>
+                  <span>NEAR price</span>
+                  <span className="mono">{usd === null ? "—" : money(usd)}</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="sub" style={{ whiteSpace: "normal" }}>
+                Create your trace wallet. Your keys stay on this device. On testnet you get free tokens to try everything.
+              </span>
+              <button className="bfill" type="button" onClick={() => router.push("/app/wallet/")}>
+                Create wallet
+              </button>
+            </>
+          )}
         </div>
         <div className="pn">
           <div className="pn-h">
             <span className="lab">
-              Today&apos;s signals <Src example={coins.example} loading={coins.loading} />
+              Moving now <Src example={false} loading={coins.loading} />
             </span>
             <Lk href="/app/briefing/">Briefing</Lk>
           </div>
@@ -115,50 +143,46 @@ export function TodayScreen({ meInitials }: { meInitials?: string }) {
                   <div className="nm">{c.sym}</div>
                   <div className="sub">{c.why}</div>
                 </div>
-                <Spark values={c.spark} seed={c.seed} />
-                <span className="mono g">{sgn(c.ch)}%</span>
+                <Spark values={c.spark} seed={c.seed} up={c.ch >= 0} />
+                <span className={`mono ${cl(c.ch)}`}>{sgn(c.ch)}%</span>
               </Row>
             ))}
-            {!signals.length ? <p className="sub">Nothing is up today yet.</p> : null}
+            {!coins.loading && !signals.length ? (
+              <p className="sub" style={{ whiteSpace: "normal" }}>
+                {coins.note ?? "Nothing has cleared the liquidity and freshness filters yet."} The daily briefing still has today&apos;s most traded coins.
+              </p>
+            ) : null}
           </div>
           {flagged ? (
             <div className="note">
-              <Ic id="shield" />1 risk alert · {flagged.sym} {flagged.why.toLowerCase()}
+              <Ic id="shield" />
+              Risk alert · {flagged.sym}: {flagged.why.toLowerCase()}
             </div>
           ) : null}
         </div>
         <div className="pn">
           <div className="pn-h">
-            <span className="lab">
-              Wallets you copy {token && live.length ? <Src example={false} /> : <Src example />}
-            </span>
+            <span className="lab">Wallets you copy</span>
             <Lk href="/app/wallets/">Find more</Lk>
           </div>
           <div>
-            {token && live.length
-              ? live.slice(0, 3).map((m) => (
-                  <Row key={m.id} href="/app/near/">
-                    <Av t="N" />
-                    <div className="grow">
-                      <div className="nm">{m.owner_near_account}</div>
-                      <div className="sub">
-                        ${m.max_trade_usd} per trade · {m.mode.replaceAll("_", " ")}
-                      </div>
-                    </div>
-                    <span className={`tag ${m.status === "anchored" ? "g" : ""}`}>{m.status === "anchored" ? "Signed" : m.status}</span>
-                  </Row>
-                ))
-              : EX_COPIES.map((c) => (
-                  <Row key={c.w} href={`/app/profile/?w=${c.w}`}>
-                    <Av t={D.wallets[c.w]!.av} />
-                    <div className="grow">
-                      <div className="nm">{c.w}</div>
-                      <div className="sub">{money(c.amt)} allocated</div>
-                    </div>
-                    <span className={`mono ${cl(c.ch)}`}>{sgn(c.ch)}%</span>
-                    <button type="button" className="sw on" aria-label={`Copy ${c.w}`} onClick={() => toast("Example copy. Set up a real one from Smart wallets.")} />
-                  </Row>
-                ))}
+            {live.slice(0, 3).map((m) => (
+              <Row key={m.id} href="/app/near/">
+                <Av t="N" />
+                <div className="grow">
+                  <div className="nm">{shortAddr(m.owner_near_account)}</div>
+                  <div className="sub">
+                    ${usd0(m.max_trade_usd)} per trade · {m.mode.replaceAll("_", " ")}
+                  </div>
+                </div>
+                <span className={`tag ${m.status === "anchored" ? "g" : ""}`}>{m.status === "anchored" ? "Signed" : m.status}</span>
+              </Row>
+            ))}
+            {!live.length ? (
+              <p className="sub" style={{ whiteSpace: "normal" }}>
+                {token ? "You are not copying anyone yet. Pick a smart wallet, test it with pretend money, then copy it with limits you sign on NEAR." : "Sign in to copy a wallet with limits you sign on NEAR."}
+              </p>
+            ) : null}
           </div>
           <div className="note">
             <span>Skip high risk</span>
@@ -168,31 +192,31 @@ export function TodayScreen({ meInitials }: { meInitials?: string }) {
         </div>
         <div className="pn">
           <div className="pn-h">
-            <span className="lab">
-              What you own <Src example />
-            </span>
+            <span className="lab">What you own</span>
             <Lk href="/app/wallet/">Wallet</Lk>
           </div>
-          <div className="alloc">
-            {D.holdings.map((h, k) => (
-              <i key={h[0]} style={{ width: `${h[5]}%`, background: aw[k] }} />
-            ))}
-          </div>
-          <div>
-            {D.holdings.map((h) => (
-              <div className="hrow" key={h[0]}>
-                <Tk s={h[0]} />
+          {wallet && balance ? (
+            <>
+              <div className="alloc">
+                <i style={{ width: "100%", background: "var(--g)" }} />
+              </div>
+              <div className="hrow">
+                <Tk s="NEAR" on />
                 <div style={{ minWidth: 0 }}>
-                  <div className="nm">{h[1]}</div>
-                  <div className="mono">{h[2]}</div>
+                  <div className="nm">NEAR</div>
+                  <div className="mono">{yoctoToNear(balance.available, 4)} NEAR</div>
                 </div>
                 <div className="rt">
-                  <div className="v">{money(h[3])}</div>
-                  <div className={`mono ${cl(h[4])}`}>{sgn(h[4])}%</div>
+                  <div className="v">{usd === null ? "—" : money(near * usd)}</div>
+                  <div className="mono f3">{network}</div>
                 </div>
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <p className="sub" style={{ whiteSpace: "normal" }}>
+              {wallet ? "Reading your balance…" : "No wallet yet. Create one from the Wallet tab."}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -201,118 +225,86 @@ export function TodayScreen({ meInitials }: { meInitials?: string }) {
 
 /* =============================== Briefing =============================== */
 
-const EX_BRIEF = {
-  short: "A quiet morning for majors. Smart money is rotating into two small caps, and one coin on your watchlist failed a risk check.",
-  items: [
-    { acc: true, icon: "bolt", t: "3 new opportunities", s: "NEURA, SOLX, BETA", href: "/app/discover/" },
-    { acc: false, icon: "users", t: "2 wallet moves to watch", s: "0xSun and CryptoNomad bought", href: "/app/wallets/" },
-    { acc: false, icon: "shield", t: "1 risk alert", s: "ORBIT: the same 4 wallets are trading it", href: "/app/token/?sym=ORBIT&tab=rk" },
-    { acc: false, icon: "copy", t: "Yesterday's copy trades", s: "+8.4% across 3 wallets", href: "/app/wallet/?t=copies" },
-  ],
-};
+function itemHref(it: BriefingItem): string | undefined {
+  if (it.token) return `/app/token/?chain=${it.token.chain}&address=${encodeURIComponent(it.token.address)}`;
+  if (it.wallet) return `/app/profile/?chain=${it.wallet.chain}&address=${encodeURIComponent(it.wallet.address)}`;
+  return undefined;
+}
+function sectionIcon(title: string): string {
+  if (/risk/i.test(title)) return "shield";
+  if (/wallet/i.test(title)) return "users";
+  if (/move|coin|traded|crowd/i.test(title)) return "bolt";
+  if (/chain/i.test(title)) return "globe";
+  return "book";
+}
 
 export function BriefingScreen() {
   const b = useApi(() => api.briefings(), []);
-  const { prefs, setPrefs } = useApp();
   const [now, setNow] = useState<Date | null>(null);
-  const [elapsed, setElapsed] = useState(0);
   useEffect(() => setNow(new Date()), []);
-  const live = b.data && !b.data.demo && b.data.sections.length ? b.data : null;
+  const live = b.data && !b.data.demo ? b.data : null;
   const sections = live?.sections ?? [];
-  const short = live ? sections.map((s) => s.items[0]?.text).filter(Boolean).join(" ") : EX_BRIEF.short;
-  const items = live
-    ? sections.flatMap((s, si) =>
-        s.items.map((it, k) => ({
-          acc: si === 0 && k === 0,
-          icon: /risk/i.test(s.title) ? "shield" : /wallet/i.test(s.title) ? "users" : /signal|mover|opportun/i.test(s.title) ? "bolt" : "book",
-          t: s.title,
-          s: it.text,
-          href: it.link || undefined,
-        })),
-      )
-    : EX_BRIEF.items;
-  const speech = typeof window !== "undefined" && "speechSynthesis" in window;
-  const text = [short, ...items.map((i) => `${i.t}. ${i.s}.`)].join(" ");
-  const secs = Math.max(20, Math.round(text.split(/\s+/).length / 2.6));
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const stop = () => {
-    if (speech) window.speechSynthesis.cancel();
-    if (timer.current) clearInterval(timer.current);
-    setPrefs({ playing: false });
-  };
-  useEffect(() => () => {
-    if (speech) window.speechSynthesis.cancel();
-    if (timer.current) clearInterval(timer.current);
-  }, [speech]);
-  const play = () => {
-    if (prefs.playing) return stop();
-    if (!speech) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1;
-    u.onend = stop;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-    setElapsed(0);
-    timer.current = setInterval(() => setElapsed((e) => e + 1), 1000);
-    setPrefs({ playing: true });
-  };
-  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  const playedBars = prefs.playing ? Math.min(40, Math.round((elapsed / secs) * 40)) : 11;
+  const short = sections.find((s) => s.title === "The short version");
+  const rest = sections.filter((s) => s !== short);
 
   return (
     <div className="scr s-brief">
       <Hd
         title="Daily briefing"
-        crumb={now ? `${now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} · ${prefs.bt}` : " "}
-        right={<Src example={!live} loading={b.status === "loading"} />}
+        crumb={now ? `${now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} · last 24 hours` : " "}
+        right={<Src example={false} loading={b.status === "loading"} />}
         back
       />
-      <div className="brief">
-        <div style={{ display: "grid", gap: 14 }}>
-          <div className="sumcard">
-            <span className="lab">
-              <b>The short version</b>
-            </span>
-            {short}
-          </div>
-          <div className={`player${prefs.playing ? " on" : ""}`}>
-            <button className="pb" type="button" onClick={play} aria-label={`${prefs.playing ? "Pause" : "Play"} briefing`} disabled={!speech}>
-              <Ic id={prefs.playing ? "pause" : "play"} />
-            </button>
-            <div className="wave">
-              {Array.from({ length: 40 }, (_, k) => (
-                <i key={k} className={k < playedBars ? "p" : ""} style={{ height: 5 + Math.round(rng(k + 3)() * 18) }} />
-              ))}
-            </div>
-            <span className="mono f3" style={{ fontSize: 11 }}>
-              {prefs.playing ? fmt(elapsed) : fmt(secs)}
-            </span>
-          </div>
-          {live?.coverage_note ? <span className="sub" style={{ whiteSpace: "normal" }}>{live.coverage_note}</span> : null}
-        </div>
-        <div>
-          {items.map((it, i) => (
-            <Row key={i} href={it.href}>
-              <span className={`tk${it.acc ? " on" : ""}`}>
-                <Ic id={it.icon} />
-              </span>
-              <div className="grow">
-                <div className="nm">{it.t}</div>
-                <div className="sub">{it.s}</div>
+      {b.status === "loading" ? <p className="sub">Writing today&apos;s report from the chain…</p> : null}
+      {b.status === "error" ? <Empty title="The briefing could not load">trace could not reach its API. It may be waking up; try again in a moment.</Empty> : null}
+      {b.status === "ok" && !sections.length ? <Empty title="Not enough activity yet">{live?.coverage_note ?? "The report fills in as trace reads more trades."}</Empty> : null}
+      {sections.length ? (
+        <div className="brief">
+          <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
+            {short ? (
+              <div className="sumcard">
+                <span className="lab">
+                  <b>The short version</b>
+                </span>
+                {short.items.map((i) => i.text).join(" ")}
               </div>
-              {it.href ? <Ic id="arr" /> : null}
-            </Row>
-          ))}
+            ) : null}
+            <span className="sub" style={{ whiteSpace: "normal" }}>
+              Written by trace from finalized on-chain trades, prices and safety checks. Facts only, no predictions. Tap any line to open the coin or wallet.
+            </span>
+          </div>
+          <div style={{ display: "grid", gap: 18 }}>
+            {rest.map((s) => (
+              <div key={s.title} style={{ display: "grid", gap: 4 }}>
+                <span className="lab">
+                  <b>{s.title}</b>
+                </span>
+                {s.items.map((it, i) => {
+                  const href = itemHref(it);
+                  return (
+                    <Row key={i} href={href}>
+                      <span className={`tk${i === 0 ? " on" : ""}`}>
+                        <Ic id={sectionIcon(s.title)} />
+                      </span>
+                      <div className="grow">
+                        <div className="sub" style={{ whiteSpace: "normal", color: "var(--fg)", fontSize: 14 }}>
+                          {it.text}
+                        </div>
+                      </div>
+                      {href ? <Ic id="arr" /> : null}
+                    </Row>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
 
 /* =============================== Discover =============================== */
-
-const NEW_EX = ["BETA", "MIND", "LUNA", "ZETA"];
 
 export function DiscoverScreen() {
   const params = useSearchParams();
@@ -324,27 +316,22 @@ export function DiscoverScreen() {
   const { star, toggleStar, toast } = useApp();
 
   const list = useMemo(() => {
-    let l = coins.data.slice();
-    if (coins.example) {
-      if (f === "early") l = l.filter((c) => c.early);
-      else if (f === "smart") l.sort((a, b) => (b.sm ?? 0) - (a.sm ?? 0));
-      else if (f === "new") l = NEW_EX.map((s) => exampleCoin(s) as CoinVM);
-      else l = l.slice(0, 6);
-    }
     const Q = q.trim().toUpperCase();
-    if (Q) l = coins.data.filter((c) => c.sym.toUpperCase().includes(Q) || c.name.toUpperCase().includes(Q) || c.why.toUpperCase().includes(Q) || (c.address ?? "").toUpperCase() === Q);
-    return l;
-  }, [coins.data, coins.example, f, q]);
+    if (!Q) return coins.data;
+    return coins.data.filter((c) => c.sym.toUpperCase().includes(Q) || c.name.toUpperCase().includes(Q) || c.why.toUpperCase().includes(Q) || (c.address ?? "").toUpperCase() === Q);
+  }, [coins.data, q]);
 
-  const looksLikeAddress = /^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/.test(q.trim());
+  const addr = q.trim();
+  const looksLikeAddress = /^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/.test(addr);
+  const chainOf = addr.startsWith("0x") ? "ethereum" : "solana";
 
   return (
     <div className="scr s-disc">
-      <Hd title="Discover" crumb="Coins people are buying right now" right={<Src example={coins.example} loading={coins.loading} />} />
+      <Hd title="Discover" crumb="Coins people are buying right now" right={<Src example={false} loading={coins.loading} />} />
       <div className="topf">
         <label className="search">
           <Ic id="srch" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search coins or reasons" autoComplete="off" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search coins, or paste a coin or wallet address" autoComplete="off" />
         </label>
         <Seg
           cls="box"
@@ -363,31 +350,33 @@ export function DiscoverScreen() {
       </div>
       <span className="lab">
         <i className="dot live" />
-        {coins.example ? (coins.note ? `${coins.note} Showing example coins so you can explore.` : "Example coins. Live coins appear here as soon as trace has price snapshots.") : `Live from the chain${coins.window === "1h" ? ", last hour (the 24 hour view fills in after a day of prices)" : ""}. Tap a coin to see who is buying.`}
+        {coins.loading ? "Reading the chain…" : `Live from Ethereum and Solana${coins.window === "1h" ? ", last hour (the 24 hour view fills in after a day of prices)" : ""}. Tap a coin to see who is buying.`}
       </span>
       {f === "early" ? (
         <Help>
           <b style={{ color: "var(--fg)", fontWeight: 500 }}>Early</b> means proven wallets are buying but the price has barely moved yet.
         </Help>
       ) : null}
+      {looksLikeAddress ? (
+        <div className="bset">
+          <button className="bout sm" type="button" onClick={() => router.push(`/app/token/?chain=${chainOf}&address=${encodeURIComponent(addr)}`)}>
+            Open as a coin
+          </button>
+          <button className="bout sm" type="button" onClick={() => router.push(`/app/profile/?chain=${chainOf}&address=${encodeURIComponent(addr)}`)}>
+            Open as a wallet
+          </button>
+        </div>
+      ) : null}
       <div>
-        {!list.length ? (
-          <div style={{ padding: "16px 0", display: "grid", gap: 10 }}>
-            <p className="f2" style={{ margin: 0 }}>
-              No coins match “{q}”. {coins.example ? "Try NEURA or SOLX." : ""}
-            </p>
-            {looksLikeAddress ? (
-              <div className="bset">
-                <button className="bout sm" type="button" onClick={() => router.push(`/app/token/?chain=${q.startsWith("0x") ? "ethereum" : "solana"}&address=${encodeURIComponent(q.trim())}`)}>
-                  Open as a coin
-                </button>
-                <button className="bout sm" type="button" onClick={() => router.push(`/app/profile/?chain=${q.startsWith("0x") ? "ethereum" : "solana"}&address=${encodeURIComponent(q.trim())}`)}>
-                  Open as a wallet
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : (
+        {!coins.loading && !list.length ? (
+          <Empty title={q ? `No live coins match “${q}”` : "No coins in this list right now"}>
+            {q
+              ? "Paste a full coin or wallet address to open it directly."
+              : coins.note
+                ? `${coins.note} trace only lists coins with fresh prices and enough liquidity to trade, so the list can be short.`
+                : "trace only lists coins with fresh prices and enough liquidity to trade. Check the daily briefing for today's most traded coins."}
+          </Empty>
+        ) : list.length ? (
           <>
             <div className="dhead">
               <span />
@@ -395,7 +384,7 @@ export function DiscoverScreen() {
               <span>Price</span>
               <span>{coins.window}</span>
               <span>Volume</span>
-              <span>7d</span>
+              <span>Trend</span>
               <span>Why it is moving</span>
               <span>Risk</span>
               <span />
@@ -406,7 +395,9 @@ export function DiscoverScreen() {
                 <div style={{ minWidth: 0 }}>
                   <div className="nm">{c.sym}</div>
                   <div className="sub dm">{c.why}</div>
-                  <div className="sub dc">{c.name}</div>
+                  <div className="sub dc">
+                    {c.name} · {c.chain}
+                  </div>
                 </div>
                 <span className="mono dc">{pf(c.p)}</span>
                 <span className={`mono ${cl(c.ch)} dc`}>{sgn(c.ch)}%</span>
@@ -438,7 +429,7 @@ export function DiscoverScreen() {
               </Row>
             ))}
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -455,26 +446,19 @@ const CHECK_LABEL: Record<string, string> = {
 };
 const CHECK_STATE: Record<string, string> = { pass: "Good", warn: "Watch", block: "Flag", unknown: "Unknown" };
 
-function exampleRisk(c: CoinVM): { s: string; c: [string, string, string][] } {
-  return (
-    D.risk[c.sym] || {
-      s: c.risk === "Low" ? "No red flags. Liquidity is locked and the contract is verified." : "A couple of things to watch before you size up.",
-      c: [
-        ["Liquidity", `${c.liq}, locked 6 months`, (c.liqN ?? 0) > 1 ? "Good" : "Watch"],
-        ["Can you sell?", "A test sell went through", "Pass"],
-        ["Holder concentration", `Top 10 wallets hold ${20 + c.rn * 6}%`, c.rn > 2 ? "Watch" : "Good"],
-        ["Contract", "Verified, no mint function", "Good"],
-        ["Suspicious trading", "No wash trading found", "None"],
-      ],
-    }
-  );
-}
-
 function liveRisk(checks: RiskCheck[]): { s: string; c: [string, string, string][] } {
   const flags = checks.filter((k) => k.state === "block").length;
   const warns = checks.filter((k) => k.state === "warn").length;
   const unknown = checks.filter((k) => k.state === "unknown").length;
-  const s = flags ? `${flags} check${flags > 1 ? "s" : ""} failed. Read them before you buy.` : warns ? `${warns} thing${warns > 1 ? "s" : ""} to watch before you size up.` : unknown === checks.length ? "These checks have not run for this coin yet." : "No red flags in the checks that ran.";
+  const s = !checks.length
+    ? "These checks have not run for this coin yet."
+    : flags
+      ? `${flags} check${flags > 1 ? "s" : ""} failed. Read them before you buy.`
+      : warns
+        ? `${warns} thing${warns > 1 ? "s" : ""} to watch before you size up.`
+        : unknown === checks.length
+          ? "These checks have not run for this coin yet."
+          : "No red flags in the checks that ran.";
   return { s, c: checks.map((k) => [CHECK_LABEL[k.key] ?? k.key, k.note, CHECK_STATE[k.state] ?? "Unknown"]) };
 }
 
@@ -486,7 +470,7 @@ function minutesIntoDay(iso: string, nowMs: number): number {
 export function TokenScreen() {
   const params = useSearchParams();
   const router = useRouter();
-  const ref = { sym: params.get("sym") ?? undefined, chain: params.get("chain") ?? undefined, address: params.get("address") ?? undefined };
+  const ref = { chain: params.get("chain") ?? undefined, address: params.get("address") ?? undefined };
   const [tab, setTab] = useState(params.get("tab") ?? "ov");
   const s = useCoin(ref);
   const movers = useCoins("trending");
@@ -495,18 +479,18 @@ export function TokenScreen() {
   if (!s.data) {
     return (
       <div className="scr s-token">
-        <Hd title={s.loading ? "Loading coin" : "Coin not found"} crumb={ref.address ? `${ref.chain} · ${ref.address.slice(0, 10)}…` : undefined} back />
+        <Hd title={s.loading ? "Loading coin" : "Coin not found"} crumb={ref.address ? `${ref.chain} · ${shortAddr(ref.address)}` : undefined} back />
         {!s.loading ? (
-          <div className="pn">
-            <p className="f2" style={{ margin: 0 }}>
-              trace has no market data for this coin yet. It may be on a protocol trace does not read, or nobody has traded it since we started watching.
-            </p>
-            <div className="bset">
+          <Empty
+            title={ref.address ? "trace has no market data for this coin yet" : "No coin selected"}
+            action={
               <button className="bout" type="button" onClick={() => router.push("/app/discover/")}>
                 Back to Discover
               </button>
-            </div>
-          </div>
+            }
+          >
+            {ref.address ? "It may trade on a protocol trace does not read yet, or nobody has traded it since trace started watching." : "Open a coin from Discover or the daily briefing."}
+          </Empty>
         ) : null}
       </div>
     );
@@ -514,64 +498,22 @@ export function TokenScreen() {
   const { coin: c, detail, timeline } = s.data;
   const sym = c.sym;
   const nowMs = detail ? new Date(detail.as_of).getTime() : 0;
-
-  /* chart data */
-  let series: number[] = [];
-  let events: ChartEvent[] = [];
-  if (c.example) {
-    series = exampleSeries(sym, 64);
-    events = exampleEvents(sym);
-  } else {
-    const spark = movers.data.find((m) => m.address === c.address)?.spark;
-    if (spark && spark.length > 1) series = resample(spark, 64);
-    events = (timeline?.items ?? [])
-      .filter((t) => t.kind === "fact")
-      .slice(0, 6)
-      .map((t) => ({ t: minutesIntoDay(t.time, nowMs), w: t.title, amt: "", label: `${t.title} at ${new Date(t.time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` }));
-  }
-  const ev = c.example ? D.events[sym] || [] : [];
-  const firstWallet = ev[0]?.w || "0xSun";
+  const spark = movers.data.find((m) => m.address === c.address)?.spark;
+  const series = spark && spark.length > 1 ? resample(spark, 64) : [];
+  const events: ChartEvent[] = (timeline?.items ?? [])
+    .filter((t) => t.kind === "fact")
+    .slice(0, 6)
+    .map((t) => ({ t: minutesIntoDay(t.time, nowMs), w: t.title, amt: "", label: `${t.title} at ${new Date(t.time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` }));
   const buyer = detail?.buyers[0];
-  const shadowHref = c.example ? `/app/shadow/?w=${firstWallet}` : buyer ? `/app/shadow/?chain=${buyer.chain}&address=${encodeURIComponent(buyer.address)}` : "/app/shadow/";
-
-  const why: [string, string, string][] = c.example
-    ? sym === "NEURA"
-      ? [
-          ["users", "Smart wallets buying.", "3 with a 70%+ win rate, 51 min before the breakout"],
-          ["bolt", "Volume spike.", "4.8x its normal level"],
-          ["chat", "Social attention.", "Mentions up 320%"],
-        ]
-      : [
-          ["bolt", `${c.why}.`, `Volume ${c.vx} normal`],
-          ["users", `${c.sm} smart wallet${c.sm === 1 ? "" : "s"}.`, "Bought in the last 24 hours"],
-        ]
-    : (detail?.why_moving ?? []).map((w) => [w.kind === "fact" ? "bolt" : "chat", w.kind === "fact" ? "Fact." : "Possible reason.", w.text]);
-
-  /* timeline */
-  const P = (t: number) => (series.length ? pf(series[Math.round(clamp(t / 190, 0, 1) * (series.length - 1))]!) : "");
-  const tItems: Array<{ tm: string; b: string; p: string; hot: boolean; px: string }> = c.example
-    ? (sym === "NEURA"
-        ? ([
-            [10, "Unusual activity", "Volume crossed 2x its 7-day average"],
-            [24, "Smart wallets buying", "0xSun, CryptoNomad and AlphaHunter bought $41K", 1],
-            [32, "Social attention", "Mentions up 320% in 30 minutes"],
-            [75, "Breakout", "Up 18.4% in 45 minutes"],
-            [176, "0xSun added", "Bought another $127K", 1],
-            [190, "Now", "Up 42.7%, buying still active", 1],
-          ] as Array<[number, string, string, number?]>)
-        : [...ev.map((e) => [e.t, `${e.w}${e.sell ? " sold" : " bought"}`, `${e.amt} at ${hm(e.t)}`, e.sell ? 0 : 1] as [number, string, string, number]), [190, "Now", `${sgn(c.ch)}% today`, 1] as [number, string, string, number]]
-      ).map((it) => ({ tm: hm(it[0]), b: it[1], p: it[2], hot: !!it[3], px: P(it[0]) }))
-    : (timeline?.items ?? []).map((it) => ({
-        tm: new Date(it.time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
-        b: it.title,
-        p: it.detail + (it.kind === "hypothesis" ? " (possible reason, not confirmed)" : ""),
-        hot: it.kind === "fact",
-        px: "",
-      }));
-  const sum = c.example ? (sym === "NEURA" ? "+42.7% in 3 hours. Smart money arrived 51 minutes before the breakout." : `${sgn(c.ch)}% today. ${c.why}.`) : `${sgn(c.ch)}% in 24 hours. ${c.why}.`;
-
-  const R = c.example ? exampleRisk(c) : liveRisk(detail?.risk.checks ?? []);
-  const starKey = c.key;
+  const shadowHref = buyer ? `/app/shadow/?chain=${buyer.chain}&address=${encodeURIComponent(buyer.address)}` : "/app/shadow/";
+  const why: [string, string, string][] = (detail?.why_moving ?? []).map((w) => [w.kind === "fact" ? "bolt" : "chat", w.kind === "fact" ? "Fact." : "Possible reason.", w.text]);
+  const tItems = (timeline?.items ?? []).map((it) => ({
+    tm: new Date(it.time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+    b: it.title,
+    p: it.detail + (it.kind === "hypothesis" ? " (possible reason, not confirmed)" : ""),
+    hot: it.kind === "fact",
+  }));
+  const R = liveRisk(detail?.risk.checks ?? []);
 
   return (
     <div className="scr s-token" data-tab={tab}>
@@ -585,13 +527,8 @@ export function TokenScreen() {
         back
         right={
           <>
-            <Src example={c.example} />
-            <button
-              className={`hb${star[starKey] ? " on" : ""}`}
-              type="button"
-              aria-label="Watch"
-              onClick={() => toast(toggleStar(starKey) ? `${sym} added to watchlist` : "Removed from watchlist")}
-            >
+            <Src example={false} />
+            <button className={`hb${star[c.key] ? " on" : ""}`} type="button" aria-label="Watch" onClick={() => toast(toggleStar(c.key) ? `${sym} added to watchlist` : "Removed from watchlist")}>
               <Ic id="star" />
             </button>
             <button
@@ -610,7 +547,7 @@ export function TokenScreen() {
       />
       <div className="pxrow">
         <span className="big n">{pf(c.p)}</span>
-        <span className={`mono ${cl(c.ch)}`}>{sgn(c.ch)}% today</span>
+        <span className={`mono ${cl(c.ch)}`}>{sgn(c.ch)}% 24h</span>
         <RiskTag r={c.risk} />
       </div>
       <Seg
@@ -631,7 +568,7 @@ export function TokenScreen() {
               <span className="lk">Drag to turn</span>
             </div>
             {series.length ? (
-              <TraceChartView series={series} events={events} seed={c.seed} heavy={sym === "ORBIT"} />
+              <TraceChartView series={series} events={events} seed={c.seed} />
             ) : (
               <div className="tv" style={{ display: "grid", placeItems: "center", padding: 20, textAlign: "center" }}>
                 <span className="sub" style={{ whiteSpace: "normal" }}>
@@ -642,7 +579,7 @@ export function TokenScreen() {
             <div className="tvf legend">
               <span>
                 <i />
-                Price today
+                Price
               </span>
               <span>
                 <i className="w" />
@@ -650,7 +587,7 @@ export function TokenScreen() {
               </span>
               <span>
                 <i />
-                Each green line is a proven wallet buying
+                Each green line is a recorded event
               </span>
             </div>
           </div>
@@ -662,7 +599,6 @@ export function TokenScreen() {
             <div>
               <span className="lab">Volume 24h</span>
               <b>{c.vol}</b>
-              {c.vx ? <em>{c.vx} normal</em> : null}
             </div>
             <div>
               <span className="lab">Liquidity</span>
@@ -688,12 +624,29 @@ export function TokenScreen() {
               <span className="sub">No reason recorded yet.</span>
             )}
           </div>
+          {detail?.buyers.length ? (
+            <div style={{ display: "grid", gap: 6 }}>
+              <span className="lab">Wallets trace saw buying</span>
+              {detail.buyers.slice(0, 5).map((w) => (
+                <Row key={w.address} href={`/app/profile/?chain=${w.chain}&address=${encodeURIComponent(w.address)}`}>
+                  <Av t={(w.alias || w.address.replace(/^0x/, "")).slice(0, 2).toUpperCase()} />
+                  <div className="grow">
+                    <div className="nm">{w.alias || shortAddr(w.address)}</div>
+                    <div className="sub">{w.chain}</div>
+                  </div>
+                  <Ic id="arr" />
+                </Row>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="tp p-tl">
           <span className="lab">
-            <b>How it moved today</b>
+            <b>How it moved</b>
           </span>
-          <div style={{ fontSize: 16, fontWeight: 500, letterSpacing: "-.02em" }}>{sum}</div>
+          <div style={{ fontSize: 16, fontWeight: 500, letterSpacing: "-.02em" }}>
+            {sgn(c.ch)}% in 24 hours. {c.why}.
+          </div>
           <div className="tl">
             {tItems.length ? (
               tItems.map((it, i) => (
@@ -704,7 +657,7 @@ export function TokenScreen() {
                     <b>{it.b}</b>
                     <p>{it.p}</p>
                   </div>
-                  <span className="px">{it.px}</span>
+                  <span className="px" />
                 </div>
               ))
             ) : (
@@ -740,13 +693,13 @@ export function TokenScreen() {
         </div>
       </div>
       <div className="actbar">
-        <button className="bout" type="button" onClick={() => router.push(`/app/compare/?a=${encodeURIComponent(c.example ? sym : c.key)}`)}>
+        <button className="bout" type="button" onClick={() => router.push(`/app/compare/?a=${encodeURIComponent(c.key)}`)}>
           Compare
         </button>
         <button className="bout" type="button" onClick={() => router.push(shadowHref)}>
           Shadow test
         </button>
-        <button className="bfill" type="button" onClick={() => router.push(`/app/swap/?to=${encodeURIComponent(sym)}`)}>
+        <button className="bfill" type="button" onClick={() => router.push(`/app/swap/?mode=buy&sym=${encodeURIComponent(sym)}`)}>
           Buy
         </button>
       </div>
@@ -772,7 +725,7 @@ export function CompareScreen() {
   const keys = coins.data.map((c) => c.key);
   const [pair, setPair] = useState<[string, string] | null>(null);
   useEffect(() => {
-    if (!keys.length) return;
+    if (keys.length < 2) return;
     const a = params.get("a");
     const A = (a && keys.includes(a) ? a : keys[0]) as string;
     const B = keys.find((k) => k !== A) ?? A;
@@ -780,17 +733,18 @@ export function CompareScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keys.join("|")]);
   const byKey = (k: string) => coins.data.find((c) => c.key === k) as CoinVM;
-  const verdictLive = useApi(
-    () => api.compare(byKey(pair![0]).address as string, byKey(pair![1]).address as string),
-    [pair?.[0], pair?.[1]],
-    !!pair && !coins.example,
-  );
-  if (!pair || !byKey(pair[0]) || !byKey(pair[1])) return <div className="scr s-cmp"><Hd title="Compare" crumb="Loading coins" back /></div>;
+  const verdict = useApi(() => api.compare(byKey(pair![0]).address as string, byKey(pair![1]).address as string), [pair?.[0], pair?.[1]], !!pair);
+
+  if (!pair || !byKey(pair[0]) || !byKey(pair[1])) {
+    return (
+      <div className="scr s-cmp">
+        <Hd title="Compare" crumb="Two live coins side by side" back />
+        {coins.loading ? <p className="sub">Loading live coins…</p> : <Empty title="Not enough live coins to compare">Compare needs at least two coins that cleared trace&apos;s liquidity and freshness filters. Check back soon.</Empty>}
+      </div>
+    );
+  }
   const a = byKey(pair[0]);
   const b = byKey(pair[1]);
-  const A = a.sym;
-  const B = b.sym;
-
   function row(lbl: string, va: string, vb: string, na: number, nb: number, hi: boolean) {
     const wa = hi ? na >= nb : na <= nb;
     const mxv = Math.max(Math.abs(na), Math.abs(nb)) || 1;
@@ -810,35 +764,28 @@ export function CompareScreen() {
   }
   const mom = a.ch >= b.ch ? a : b;
   const safe = a.rn < b.rn ? a : b.rn < a.rn ? b : (a.liqN ?? 0) >= (b.liqN ?? 0) ? a : b;
-  const v =
-    verdictLive.data?.verdict_note ||
-    (mom === safe
-      ? `${mom.sym} leads on momentum and on safety. ${mom === a ? B : A} trails on both today.`
-      : `${mom.sym} has more momentum. ${safe.sym} is the steadier pick, with ${(safe.liqN ?? 0) > (mom.liqN ?? 0) ? "deeper liquidity and " : ""}lower risk.`);
+  const v = verdict.data?.verdict_note || (mom === safe ? `${mom.sym} leads on momentum and on safety today.` : `${mom.sym} has more momentum. ${safe.sym} is the steadier pick.`);
 
   return (
     <div className="scr s-cmp">
-      <Hd title="Compare" crumb="Tap a coin to change it" back right={<Src example={coins.example} loading={coins.loading} />} />
+      <Hd title="Compare" crumb="Tap a coin to change it" back right={<Src example={false} />} />
       <div className="cmpbody" style={{ display: "grid", gap: 14 }}>
         <div className="cmph">
           <button type="button" onClick={() => setPair([cycle(keys, pair[0], pair[1]), pair[1]])}>
-            <Tk s={A} on l />
-            <b>{A}</b>
+            <Tk s={a.sym} on l />
+            <b>{a.sym}</b>
             <span className="lab">Change</span>
           </button>
           <span className="vs">VS</span>
           <button type="button" onClick={() => setPair([pair[0], cycle(keys, pair[1], pair[0])])}>
-            <Tk s={B} l />
-            <b>{B}</b>
+            <Tk s={b.sym} l />
+            <b>{b.sym}</b>
             <span className="lab">Change</span>
           </button>
         </div>
         <div>
-          {row("24h change", `${sgn(a.ch)}%`, `${sgn(b.ch)}%`, a.ch, b.ch, true)}
-          {a.mcN !== null && b.mcN !== null ? row("Market cap", a.mc, b.mc, a.mcN, b.mcN, true) : null}
+          {row("Change", `${sgn(a.ch)}%`, `${sgn(b.ch)}%`, a.ch, b.ch, true)}
           {a.liqN !== null && b.liqN !== null ? row("Liquidity", a.liq, b.liq, a.liqN, b.liqN, true) : null}
-          {a.sm !== null && b.sm !== null ? row("Smart wallets buying", String(a.sm), String(b.sm), a.sm, b.sm, true) : null}
-          {a.vx && b.vx ? row("Volume vs normal", a.vx, b.vx, parseFloat(a.vx), parseFloat(b.vx), true) : null}
           {row("Risk (lower is safer)", a.risk, b.risk, a.rn, b.rn, false)}
         </div>
         <div className="verdict">
@@ -847,10 +794,10 @@ export function CompareScreen() {
         </div>
         <div className="bset">
           <button className="bout" type="button" onClick={() => router.push(coinHref(a))}>
-            Open {A}
+            Open {a.sym}
           </button>
           <button className="bout" type="button" onClick={() => router.push(coinHref(b))}>
-            Open {B}
+            Open {b.sym}
           </button>
         </div>
       </div>
@@ -863,75 +810,67 @@ export function CompareScreen() {
 interface Answer {
   t: string;
   coins?: CoinVM[];
-  wallets?: Array<{ w: string; sub: string; win: string; href: string; av: string }>;
+  wallets?: Array<{ name: string; sub: string; href: string; av: string }>;
   f: string[];
   go?: string;
 }
 
-function answer(q: string, coins: CoinVM[]): Answer {
+function answer(q: string, coins: CoinVM[], walletsLive: ReturnType<typeof useWallets>["data"]): Answer {
   const Q = q.toUpperCase();
-  const c = coins.find((x) => Q.includes(x.sym.toUpperCase()));
-  if (c && /SAFE|RISK|SCAM|RUG/.test(Q)) {
-    const R = c.example ? exampleRisk(c) : null;
-    return { t: `${c.sym} is ${c.risk === "Unrated" ? "not rated yet" : c.risk.toLowerCase() + " risk"}. ${R ? R.s : ""}`, coins: [c], f: [`Open the full risk check for ${c.sym}`, `Compare ${c.sym} and ${coins.find((x) => x !== c)?.sym ?? "SOLX"}`] };
-  }
-  if (c && /WALLET|WHO|BUY/.test(Q)) {
-    const ev = c.example ? D.events[c.sym] || [] : [];
-    if (!c.example) return { t: `Open ${c.sym} to see the wallets trace saw buying it.`, coins: [c], f: [`Is ${c.sym} safe?`] };
+  const words = ` ${Q.replace(/[^A-Z0-9 ]/g, " ")} `;
+  const c = coins.find((x) => {
+    const s = x.sym.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    return s.length > 1 && words.includes(` ${s} `);
+  });
+  if (!coins.length && !walletsLive.length) return { t: "trace has no live coins or ranked wallets to answer from yet. Try the daily briefing for today's most traded coins.", f: [] };
+  if (c && /^OPEN THE RISK CHECK/.test(Q)) return { t: "Opening the risk check.", coins: [c], f: [], go: coinHref(c, "&tab=rk") };
+  if (c && /SAFE|RISK|SCAM|RUG/.test(Q)) return { t: `${c.sym} is ${c.risk === "Unrated" ? "not rated yet" : c.risk.toLowerCase() + " risk"}. Open it for each check.`, coins: [c], f: [`Open the risk check for ${c.sym}`] };
+  if (c && /COMPARE/.test(Q)) return { t: "Opening a side by side view.", coins: [c], f: [], go: `/app/compare/?a=${encodeURIComponent(c.key)}` };
+  if (c && /WALLET|WHO|BUY/.test(Q)) return { t: `Open ${c.sym} to see the wallets trace saw buying it.`, coins: [c], f: [`Is ${c.sym} safe?`] };
+  if (c) return { t: `${c.sym} is ${sgn(c.ch)}% now. ${c.why}.`, coins: [c], f: [`Is ${c.sym} safe?`, `Compare ${c.sym}`] };
+  if (/WALLET|SMART|COPY|TRADER/.test(Q)) {
+    if (!walletsLive.length) return { t: "No wallets have enough evidence to be ranked yet.", f: ["What is moving right now?"] };
     return {
-      t: `${ev.length} tracked wallet${ev.length === 1 ? "" : "s"} traded ${c.sym} today.`,
-      wallets: ev.map((e) => ({ w: e.w, sub: `${e.sell ? "sold " : "bought "}${e.amt} at ${hm(e.t)}`, win: `${D.wallets[e.w]!.win}% win`, href: `/app/profile/?w=${e.w}`, av: D.wallets[e.w]!.av })),
-      f: [`Shadow test ${ev[0]?.w || "0xSun"}`, `Is ${c.sym} safe?`],
+      t: "These are the top ranked wallets right now. Test one with pretend money before you copy it.",
+      wallets: walletsLive.slice(0, 4).map((w) => ({ name: w.name, sub: `${w.chain} · ${w.win === null ? `${w.trades} trades` : `${w.win}% win`}`, href: `/app/profile/?${walletQuery(w)}`, av: w.av })),
+      f: ["What is moving right now?"],
     };
   }
-  if (/COMPARE/.test(Q) && c) {
-    const other = coins.find((x) => x !== c);
-    return { t: "Opening a side by side view.", coins: other ? [c, other] : [c], f: [`Is ${c.sym} safe?`], go: `/app/compare/?a=${encodeURIComponent(c.example ? c.sym : c.key)}` };
+  if (/EARLY|HAVEN'T|NOT PUMPED|FLAT|QUIET/.test(Q)) {
+    const early = coins.filter((x) => x.early || Math.abs(x.ch) < 5).slice(0, 3);
+    if (early.length) return { t: `${early.length} live coin${early.length === 1 ? "" : "s"} with activity and little price move yet.`, coins: early, f: early[0] ? [`Is ${early[0].sym} safe?`] : [] };
+    return { t: "No live coin fits that right now: every listed coin has already moved more than 5%.", coins: coins.slice(0, 3), f: [] };
   }
-  if (/^OPEN THE FULL RISK CHECK FOR/.test(Q) && c) return { t: "Opening the risk check.", coins: [c], f: [], go: coinHref(c, "&tab=rk") };
-  if (/^SHADOW TEST/.test(Q)) {
-    const w = Object.keys(D.wallets).find((n) => Q.includes(n.toUpperCase())) ?? "0xSun";
-    return { t: `Opening a shadow test for ${w}.`, f: [], go: `/app/shadow/?w=${w}` };
-  }
-  if (c) return { t: `${c.sym} is ${sgn(c.ch)}% today. ${c.why}.`, coins: [c], f: [`Which wallets are buying ${c.sym}?`, `Is ${c.sym} safe?`] };
-  const early = coins.filter((x) => x.early || (x.ch < 5 && (x.sm ?? 0) >= 3)).slice(0, 3);
-  if (early.length)
-    return {
-      t: `${early.length} coin${early.length === 1 ? "" : "s"} match. Each has proven wallets buying, and the price is up less than 5%.`,
-      coins: early,
-      f: [`Is ${early[early.length - 1]!.sym} safe?`, `Which wallets are buying ${early[0]!.sym}?`],
-    };
   const top = coins.slice(0, 3);
-  return { t: "Here is what is moving most right now.", coins: top, f: top[0] ? [`Is ${top[0].sym} safe?`] : [] };
+  return { t: top.length ? "Here is what is moving most right now." : "No coins have cleared the filters yet. Ask about wallets instead.", coins: top, f: top[0] ? [`Is ${top[0].sym} safe?`, "Which smart wallets should I look at?"] : ["Which smart wallets should I look at?"] };
 }
 
 export function AskScreen() {
   const router = useRouter();
   const coins = useCoins("trending");
+  const ws = useWallets("top");
   const [thread, setThread] = useState<Array<{ q: string; a: Answer }>>([]);
   const [input, setInput] = useState("");
   const end = useRef<HTMLDivElement>(null);
-  const seeded = useRef(false);
-  useEffect(() => {
-    if (seeded.current || coins.loading) return;
-    seeded.current = true;
-    const q = "Which coins are smart wallets buying that haven't pumped yet?";
-    setThread([{ q, a: answer(q, coins.data) }]);
-  }, [coins.loading, coins.data]);
   const ask = (q: string) => {
-    const a = answer(q, coins.data);
-    setThread((t) => [...t, { q, a }].slice(-4));
+    const a = answer(q, coins.data, ws.data);
+    setThread((t) => [...t, { q, a }].slice(-6));
     setInput("");
     if (a.go) setTimeout(() => router.push(a.go as string), 700);
     setTimeout(() => end.current?.scrollIntoView({ block: "end" }), 50);
   };
   const last = thread[thread.length - 1];
-  const fol = last ? last.a.f : ["Which coins are smart wallets buying that haven't pumped yet?"];
+  const fol = last ? last.a.f : ["What is moving right now?", "Which smart wallets should I look at?", "Which coins haven't pumped yet?"];
 
   return (
     <div className="scr s-ask">
-      <Hd title="Ask trace" crumb="Answers come from the coins and wallets trace can see" right={<Src example={coins.example} loading={coins.loading} />} />
+      <Hd title="Ask trace" crumb="Answers come from live coins, wallets and safety checks" right={<Src example={false} loading={coins.loading} />} />
       <div className="thread">
+        {!thread.length ? (
+          <p className="sub" style={{ whiteSpace: "normal" }}>
+            Ask about any coin or wallet trace can see. Tap a suggestion to start.
+          </p>
+        ) : null}
         {thread.map((m, i) => (
           <div key={i} style={{ display: "contents" }}>
             <div className="qb2">{m.q}</div>
@@ -958,13 +897,13 @@ export function AskScreen() {
               {m.a.wallets?.length ? (
                 <div className="box">
                   {m.a.wallets.map((w) => (
-                    <Row key={w.w + w.sub} href={w.href}>
+                    <Row key={w.href} href={w.href}>
                       <Av t={w.av} />
                       <div className="grow">
-                        <div className="nm">{w.w}</div>
+                        <div className="nm">{w.name}</div>
                         <div className="sub">{w.sub}</div>
                       </div>
-                      <span className="mono">{w.win}</span>
+                      <Ic id="arr" />
                     </Row>
                   ))}
                 </div>

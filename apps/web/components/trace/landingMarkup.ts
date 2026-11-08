@@ -68,7 +68,7 @@ export const LANDING_HTML = `<section id="landing" class="L" aria-label="Landing
     <article class="sk" style="--i:2">
       <h3>Safety check</h3>
       <div class="sk-g">
-        <div class="sk-l"><div class="sk-tag"><span>03</span>What's inside</div><p>Five tests on every coin before you buy. Each one says what was checked, in plain words.</p><div class="sk-ht"><span>Can you sell</span><span>Who holds it</span><span>Is the trading real</span></div><a class="Ow-cta sm" href="/app/token/?sym=NEURA&amp;tab=rk"><span>Try it</span><i><svg class="i"><use href="#arr"/></svg></i></a></div>
+        <div class="sk-l"><div class="sk-tag"><span>03</span>What's inside</div><p>Five tests on every coin before you buy. Each one says what was checked, in plain words.</p><div class="sk-ht"><span>Can you sell</span><span>Who holds it</span><span>Is the trading real</span></div><a class="Ow-cta sm" href="/app/discover/"><span>Try it</span><i><svg class="i"><use href="#arr"/></svg></i></a></div>
         <div class="sk-v"><div class="sv"><div class="sfm"><b>NEURA · Medium risk</b><span>3 of 5</span></div><div class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div><div class="sv-rows"><div><b>Can you sell?</b><span class="tag g">Passed</span></div><div><b>Liquidity locked 6 months</b><span class="tag g">Looks good</span></div><div><b>Top 10 wallets hold 38%</b><span class="tag">Keep an eye on it</span></div><div><b>Contract verified</b><span class="tag g">Looks good</span></div></div></div></div>
       </div>
     </article>
@@ -82,7 +82,7 @@ export const LANDING_HTML = `<section id="landing" class="L" aria-label="Landing
     <article class="sk" style="--i:4">
       <h3>Copy with limits</h3>
       <div class="sk-g">
-        <div class="sk-l"><div class="sk-tag"><span>05</span>What's inside</div><p>Copy a wallet you trust with safety limits switched on from the very first trade. The limits live in a NEAR mandate that only your wallet can sign, pause or revoke.</p><div class="sk-ht"><span>Amount per trade</span><span>Skip risky coins</span><span>Signed on NEAR</span></div><a class="Ow-cta sm" href="/app/copy/"><span>Try it</span><i><svg class="i"><use href="#arr"/></svg></i></a></div>
+        <div class="sk-l"><div class="sk-tag"><span>05</span>What's inside</div><p>Copy a wallet you trust with safety limits switched on from the very first trade. The limits live in a NEAR mandate that only your wallet can sign, pause or revoke.</p><div class="sk-ht"><span>Amount per trade</span><span>Skip risky coins</span><span>Signed on NEAR</span></div><a class="Ow-cta sm" href="/app/wallets/"><span>Try it</span><i><svg class="i"><use href="#arr"/></svg></i></a></div>
         <div class="sk-v"><div class="sv"><span class="sv-k">Copy 0xSun · right 78% of the time</span><div class="amtb"><span>$50</span><span class="on">$100</span><span>$250</span><span>$500</span></div><div class="cpl"><div><span>Only coins with good liquidity</span><i class="sw on"></i></div><div><span>Skip high-risk coins</span><i class="sw on"></i></div><div><span>Max 5% of portfolio per trade</span><i class="sw on"></i></div><div><span>Expires in 7 days unless you renew</span><i class="sw on"></i></div></div></div></div>
       </div>
     </article>

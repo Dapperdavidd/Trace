@@ -89,6 +89,8 @@ export function num(v: string | number | null | undefined): number | null {
 }
 
 export function shortAddr(a: string): string {
+  // Readable NEAR names (alice.near, trace-3buai.testnet) are shown whole.
+  if (/^[a-z0-9_.-]+\.(near|testnet)$/.test(a) && a.length <= 30) return a;
   return a.length > 12 ? `${a.slice(0, 4)}…${a.slice(-3)}` : a;
 }
 
@@ -146,4 +148,11 @@ export function chart2Svg(sets: ChartSet[], opt: { base?: number } = {}): string
   const first = sets[0]!.v;
   const ey = ((Y(first[first.length - 1]!) / H) * 100).toFixed(1);
   return `<div class="chart2"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${g}${paths}</svg><span class="endm" style="top:${ey}%"></span></div>`;
+}
+
+/** "100.000000" -> "100", "12.5" -> "12.50". */
+export function usd0(v: string | number): string {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return String(v);
+  return Number.isInteger(n) ? n.toLocaleString("en-US") : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

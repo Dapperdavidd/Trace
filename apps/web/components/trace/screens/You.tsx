@@ -5,13 +5,12 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useApi, useAuthToken } from "@/hooks/useApi";
 import { api } from "@/lib/api/client";
 import type { AgentConnectionCreated, AlertPreferences } from "@/lib/api/types";
-import { D } from "@/lib/trace/example";
-import { exampleCoin } from "@/lib/trace/data";
+import { useWallet, yoctoToNear } from "@/lib/trace/wallet";
 import { errText, savedShadows } from "@/lib/trace/near";
-import { cl, sgn, shortAddr, walk } from "@/lib/trace/viz";
+import { shortAddr } from "@/lib/trace/viz";
 import { useApp } from "../AppState";
 import { initials } from "../AppFrame";
-import { Av, Chart2, Hd, Help, Ic, Row, Seg, Src, Sw, Tk } from "../ui";
+import { Av, Hd, Help, Ic, Lk, Row, Seg, Sw, Tk } from "../ui";
 
 function MRow({ href, onClick, icon, t, sub, extra }: { href?: string; onClick?: () => void; icon: string; t: string; sub?: string; extra?: ReactNode }) {
   return (
@@ -54,12 +53,13 @@ export function MeScreen() {
   const watch = useApi(() => api.watchlists(), [token], !!token);
   const mandates = useApi(() => api.nearMandates(), [token], !!token);
   const prefsLive = useApi(() => api.alertPreferences(), [token], !!token);
-  const coins = Object.keys(star).filter((k) => star[k] && k[0] !== "w").length;
+  const coins = Object.keys(star).filter((k) => star[k] && k[0] !== "w" && k.includes(":")).length;
   const follows = watch.data?.items.length ?? 0;
   const onCount = prefsLive.data ? Object.values(prefsLive.data).filter(Boolean).length : 0;
   const [shadowN, setShadowN] = useState(0);
   useEffect(() => setShadowN(savedShadows().length), []);
   const name = me.data?.name || me.data?.email || "Your account";
+  const { network, wallet, balance } = useWallet();
 
   return (
     <div className="scr s-me">
@@ -121,17 +121,29 @@ export function MeScreen() {
           )}
           <div className="pn">
             <div className="pn-h">
-              <span className="lab">
-                This month <Src example />
+              <span className="lab">Your wallet</span>
+              <Lk href="/app/wallet/">Wallet</Lk>
+            </div>
+            {wallet ? (
+              <div className="kvl">
+                <div>
+                  <span>Network</span>
+                  <span className="mono">{network}</span>
+                </div>
+                <div>
+                  <span>Account</span>
+                  <span className="mono">{shortAddr(wallet.accountId)}</span>
+                </div>
+                <div>
+                  <span>Balance</span>
+                  <span className="mono">{balance ? `${yoctoToNear(balance.available, 3)} NEAR` : "…"}</span>
+                </div>
+              </div>
+            ) : (
+              <span className="sub" style={{ whiteSpace: "normal" }}>
+                No wallet on {network} yet. Create one from the Wallet tab.
               </span>
-              <span className="mono g">+$402.10 · +16.5%</span>
-            </div>
-            <Chart2 sets={[{ v: walk(33, 40, 0.36) }]} />
-            <div className="note">
-              <span>Copies +18.7%</span>
-              <span>Your own trades +6.2%</span>
-              <span>Fees $3.84</span>
-            </div>
+            )}
           </div>
         </div>
         <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
@@ -505,7 +517,7 @@ export function FollowingScreen() {
   const watch = useApi(() => api.watchlists(), [token], !!token);
   const [fl, setFl] = useState("w");
   const items = watch.data?.items ?? [];
-  const coinKeys = Object.keys(star).filter((k) => star[k] && k[0] !== "w");
+  const coinKeys = Object.keys(star).filter((k) => star[k] && k[0] !== "w" && k.includes(":"));
 
   return (
     <div className="scr s-fl">
@@ -556,17 +568,15 @@ export function FollowingScreen() {
             )
           ) : coinKeys.length ? (
             coinKeys.map((k) => {
-              const ex = exampleCoin(k);
-              const sym = ex ? ex.sym : shortAddr(k.split(":")[1] ?? k);
-              const href = ex ? `/app/token/?sym=${k}` : `/app/token/?chain=${k.split(":")[0]}&address=${encodeURIComponent(k.split(":")[1] ?? "")}`;
+              const [chain, address] = k.includes(":") ? (k.split(":") as [string, string]) : ["", ""];
+              if (!address) return null;
               return (
-                <Row key={k} href={href}>
-                  <Tk s={sym} on />
+                <Row key={k} href={`/app/token/?chain=${chain}&address=${encodeURIComponent(address)}`}>
+                  <Tk s={shortAddr(address)} on />
                   <div className="grow">
-                    <div className="nm">{sym}</div>
-                    <div className="sub">{ex ? ex.why : "Live coin"}</div>
+                    <div className="nm">{shortAddr(address)}</div>
+                    <div className="sub">{chain}</div>
                   </div>
-                  {ex ? <span className={`mono ${cl(ex.ch)}`}>{sgn(ex.ch)}%</span> : null}
                   <button
                     className="bout sm"
                     type="button"
@@ -590,7 +600,6 @@ export function FollowingScreen() {
       <button className="bout" type="button" onClick={() => router.push("/app/wallets/")}>
         Find more wallets
       </button>
-      {!token ? null : <span className="sub">{D.wOrder.length} example wallets are always in Smart wallets to explore.</span>}
     </div>
   );
 }
