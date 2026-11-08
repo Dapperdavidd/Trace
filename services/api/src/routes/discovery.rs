@@ -136,6 +136,104 @@ fn parse_dex_pairs(
     }
 }
 
+async fn add_trending_pools(
+    client: &reqwest::Client,
+    win: &str,
+    best: &mut HashMap<String, DexMover>,
+) {
+    let base = std::env::var("TRACE_MARKET_TRENDS_API_BASE")
+        .unwrap_or_else(|_| "https://api.geckoterminal.com/api/v2".into());
+    for (network, chain) in [("eth", "ethereum"), ("solana", "solana")] {
+        let url = format!(
+            "{}/networks/{network}/trending_pools?page=1&include=base_token",
+            base.trim_end_matches('/')
+        );
+        let body: Value = match client.get(url).send().await {
+            Ok(response) if response.status().is_success() => match response.json().await {
+                Ok(value) => value,
+                Err(error) => {
+                    tracing::warn!(%error, network, "trending pools response was not JSON");
+                    continue;
+                }
+            },
+            Ok(response) => {
+                tracing::warn!(status = %response.status(), network, "trending pools request refused");
+                continue;
+            }
+            Err(error) => {
+                tracing::warn!(%error, network, "trending pools request failed");
+                continue;
+            }
+        };
+        let mut tokens: HashMap<String, (String, Option<String>, Option<String>)> = HashMap::new();
+        for token in body["included"].as_array().into_iter().flatten() {
+            let (Some(id), Some(address)) = (
+                token["id"].as_str(),
+                token["attributes"]["address"].as_str(),
+            ) else {
+                continue;
+            };
+            tokens.insert(
+                id.to_string(),
+                (
+                    address.to_string(),
+                    token["attributes"]["symbol"].as_str().map(str::to_string),
+                    token["attributes"]["name"].as_str().map(str::to_string),
+                ),
+            );
+        }
+        for pool in body["data"].as_array().into_iter().flatten() {
+            let Some(token_id) = pool["relationships"]["base_token"]["data"]["id"].as_str() else {
+                continue;
+            };
+            let Some((raw_address, symbol, name)) = tokens.get(token_id) else {
+                continue;
+            };
+            let attributes = &pool["attributes"];
+            let (Some(price_usd), Some(change_pct), Some(volume_usd), Some(liquidity_usd)) = (
+                dex_decimal(&attributes["base_token_price_usd"]),
+                dex_decimal(&attributes["price_change_percentage"][win]),
+                dex_decimal(&attributes["volume_usd"][win]),
+                dex_decimal(&attributes["reserve_in_usd"]),
+            ) else {
+                continue;
+            };
+            if price_usd <= Decimal::ZERO
+                || volume_usd < Decimal::ZERO
+                || liquidity_usd < Decimal::from(25_000)
+            {
+                continue;
+            }
+            let Some(pool_address) = attributes["address"].as_str() else {
+                continue;
+            };
+            let token = if chain == "solana" {
+                raw_address.clone()
+            } else {
+                raw_address.to_ascii_lowercase()
+            };
+            let candidate = DexMover {
+                chain: chain.to_string(),
+                token: token.clone(),
+                symbol: symbol.clone(),
+                name: name.clone(),
+                pool: pool_address.to_string(),
+                price_usd,
+                change_pct,
+                volume_usd,
+                liquidity_usd,
+            };
+            let key = dex_key(chain, &token);
+            if best
+                .get(&key)
+                .is_none_or(|current| candidate.liquidity_usd > current.liquidity_usd)
+            {
+                best.insert(key, candidate);
+            }
+        }
+    }
+}
+
 async fn live_dex_movers(
     rows: &[crate::analysis::SnapshotRow],
     win: &str,
@@ -201,6 +299,82 @@ async fn live_dex_movers(
             };
             parse_dex_pairs(&body, &chain, &tokens, change_key, volume_key, &mut best);
         }
+    }
+    // A new deployment can have chain events before it has useful token metadata or
+    // liquidity snapshots. In that case, use the provider's newest token profiles as
+    // discovery candidates instead of returning an empty market screen. These rows are
+    // deliberately Partial because they do not yet carry TRACE wallet-flow attribution.
+    if best.is_empty() {
+        let profiles_url = format!("{}/token-profiles/latest/v1", base.trim_end_matches('/'));
+        let profiles: Value = match client.get(profiles_url).send().await {
+            Ok(response) if response.status().is_success() => match response.json().await {
+                Ok(value) => value,
+                Err(error) => {
+                    tracing::warn!(%error, "live DEX profiles response was not JSON");
+                    Value::Null
+                }
+            },
+            Ok(response) => {
+                tracing::warn!(status = %response.status(), "live DEX profiles request refused");
+                Value::Null
+            }
+            Err(error) => {
+                tracing::warn!(%error, "live DEX profiles request failed");
+                Value::Null
+            }
+        };
+        let mut discovered: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+        for profile in profiles.as_array().into_iter().flatten() {
+            let (Some(chain), Some(address)) = (
+                profile["chainId"].as_str(),
+                profile["tokenAddress"].as_str(),
+            ) else {
+                continue;
+            };
+            if !["ethereum", "solana"].contains(&chain) {
+                continue;
+            }
+            let address = if chain == "solana" {
+                address.to_string()
+            } else {
+                address.to_ascii_lowercase()
+            };
+            discovered
+                .entry(chain.to_string())
+                .or_default()
+                .insert(address);
+        }
+        for (chain, tokens) in discovered {
+            let all: Vec<String> = tokens.iter().cloned().collect();
+            for batch in all.chunks(30) {
+                let url = format!(
+                    "{}/tokens/v1/{chain}/{}",
+                    base.trim_end_matches('/'),
+                    batch.join(",")
+                );
+                let body: Value = match client.get(&url).send().await {
+                    Ok(response) if response.status().is_success() => match response.json().await {
+                        Ok(value) => value,
+                        Err(error) => {
+                            tracing::warn!(%error, "discovered DEX mover response was not JSON");
+                            continue;
+                        }
+                    },
+                    Ok(response) => {
+                        tracing::warn!(status = %response.status(), "discovered DEX mover request refused");
+                        continue;
+                    }
+                    Err(error) => {
+                        tracing::warn!(%error, "discovered DEX mover request failed");
+                        continue;
+                    }
+                };
+                parse_dex_pairs(&body, &chain, &tokens, change_key, volume_key, &mut best);
+            }
+        }
+    }
+    if best.len() < 10 {
+        add_trending_pools(&client, win, &mut best).await;
     }
     let mut movers: Vec<DexMover> = best.into_values().collect();
     movers.sort_by(|a, b| {
