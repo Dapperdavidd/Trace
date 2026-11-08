@@ -4,7 +4,8 @@ use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sqlx::Row;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::str::FromStr;
 use trace_discovery::{
     candidates::{classify, summarize, CandidateConfig, CandidateDecision},
     movers::{rank, MoverConfig, Tab},
@@ -45,6 +46,191 @@ fn parse_tab(s: &str) -> Result<Tab, ApiError> {
     })
 }
 
+#[derive(Clone)]
+struct DexMover {
+    chain: String,
+    token: String,
+    symbol: Option<String>,
+    name: Option<String>,
+    pool: String,
+    price_usd: Decimal,
+    change_pct: Decimal,
+    volume_usd: Decimal,
+    liquidity_usd: Decimal,
+}
+
+fn dex_decimal(value: &Value) -> Option<Decimal> {
+    match value {
+        Value::String(s) => Decimal::from_str(s).ok(),
+        Value::Number(n) => Decimal::from_str(&n.to_string()).ok(),
+        _ => None,
+    }
+}
+
+fn dex_key(chain: &str, address: &str) -> String {
+    if chain == "solana" {
+        format!("{chain}:{address}")
+    } else {
+        format!("{chain}:{}", address.to_ascii_lowercase())
+    }
+}
+
+fn parse_dex_pairs(
+    body: &Value,
+    chain: &str,
+    requested: &BTreeSet<String>,
+    change_key: &str,
+    volume_key: &str,
+    best: &mut HashMap<String, DexMover>,
+) {
+    for pair in body.as_array().into_iter().flatten() {
+        if pair["chainId"].as_str() != Some(chain) {
+            continue;
+        }
+        let Some(raw_token) = pair["baseToken"]["address"].as_str() else {
+            continue;
+        };
+        let token = if chain == "solana" {
+            raw_token.to_string()
+        } else {
+            raw_token.to_ascii_lowercase()
+        };
+        if !requested.contains(&token) {
+            continue;
+        }
+        let (Some(price_usd), Some(change_pct), Some(volume_usd), Some(liquidity_usd)) = (
+            dex_decimal(&pair["priceUsd"]),
+            dex_decimal(&pair["priceChange"][change_key]),
+            dex_decimal(&pair["volume"][volume_key]),
+            dex_decimal(&pair["liquidity"]["usd"]),
+        ) else {
+            continue;
+        };
+        if price_usd <= Decimal::ZERO
+            || volume_usd < Decimal::ZERO
+            || liquidity_usd < Decimal::from(25_000)
+        {
+            continue;
+        }
+        let Some(pool) = pair["pairAddress"].as_str() else {
+            continue;
+        };
+        let candidate = DexMover {
+            chain: chain.to_string(),
+            token: token.clone(),
+            symbol: pair["baseToken"]["symbol"].as_str().map(str::to_string),
+            name: pair["baseToken"]["name"].as_str().map(str::to_string),
+            pool: pool.to_string(),
+            price_usd,
+            change_pct,
+            volume_usd,
+            liquidity_usd,
+        };
+        let key = dex_key(chain, &token);
+        if best
+            .get(&key)
+            .is_none_or(|current| candidate.liquidity_usd > current.liquidity_usd)
+        {
+            best.insert(key, candidate);
+        }
+    }
+}
+
+async fn live_dex_movers(
+    rows: &[crate::analysis::SnapshotRow],
+    win: &str,
+    now: chrono::DateTime<Utc>,
+) -> Vec<Value> {
+    let (change_key, volume_key) = match win {
+        "1h" => ("h1", "h1"),
+        "24h" => ("h24", "h24"),
+        _ => return vec![],
+    };
+    let mut by_chain: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for row in rows {
+        let chain = row.snap.token.chain.as_str();
+        if !["ethereum", "solana"].contains(&chain) {
+            continue;
+        }
+        let address = row.snap.token.contract_or_mint.as_str();
+        let address = if chain == "solana" {
+            address.to_string()
+        } else {
+            address.to_ascii_lowercase()
+        };
+        by_chain
+            .entry(chain.to_string())
+            .or_default()
+            .insert(address);
+    }
+    let base = std::env::var("TRACE_LIQUIDITY_API_BASE")
+        .unwrap_or_else(|_| "https://api.dexscreener.com".into());
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(12))
+        .user_agent("trace-api")
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return vec![],
+    };
+    let mut best = HashMap::new();
+    for (chain, tokens) in by_chain {
+        let all: Vec<String> = tokens.iter().cloned().collect();
+        for batch in all.chunks(30) {
+            let url = format!(
+                "{}/tokens/v1/{chain}/{}",
+                base.trim_end_matches('/'),
+                batch.join(",")
+            );
+            let body: Value = match client.get(&url).send().await {
+                Ok(response) if response.status().is_success() => match response.json().await {
+                    Ok(value) => value,
+                    Err(error) => {
+                        tracing::warn!(%error, "live DEX mover response was not JSON");
+                        continue;
+                    }
+                },
+                Ok(response) => {
+                    tracing::warn!(status = %response.status(), "live DEX mover request refused");
+                    continue;
+                }
+                Err(error) => {
+                    tracing::warn!(%error, "live DEX mover request failed");
+                    continue;
+                }
+            };
+            parse_dex_pairs(&body, &chain, &tokens, change_key, volume_key, &mut best);
+        }
+    }
+    let mut movers: Vec<DexMover> = best.into_values().collect();
+    movers.sort_by(|a, b| {
+        b.change_pct
+            .cmp(&a.change_pct)
+            .then_with(|| b.volume_usd.cmp(&a.volume_usd))
+    });
+    movers
+        .into_iter()
+        .take(20)
+        .enumerate()
+        .map(|(index, mover)| {
+            json!({
+                "rank": index + 1,
+                "token": token_ref(&mover.chain, &mover.token, mover.symbol.as_deref(), mover.name.as_deref()),
+                "price_usd": dec_str(mover.price_usd),
+                "change_pct": dec_str(mover.change_pct.round_dp(2)),
+                "volume_usd": dec_str(mover.volume_usd),
+                "liquidity_usd": dec_str(mover.liquidity_usd),
+                "pool": mover.pool,
+                "reason": { "code": "market_movement", "label": format!("{} market movement", win) },
+                "sparkline": [],
+                "risk": "unknown",
+                "risk_notes": ["Live DEX market data. TRACE wallet-flow and contract-risk evidence is not complete yet."],
+                "source_timestamp": now,
+            })
+        })
+        .collect()
+}
+
 async fn movers(
     state: web::Data<AppState>,
     q: web::Query<MoversQuery>,
@@ -65,7 +251,7 @@ async fn movers(
         .map(|r| ((r.snap.token.clone(), r.snap.pool.clone()), r))
         .collect();
 
-    let items: Vec<Value> = ranked
+    let mut items: Vec<Value> = ranked
         .iter()
         .map(|m| {
             let row = by_key.get(&(m.token.clone(), m.pool.clone()));
@@ -112,20 +298,44 @@ async fn movers(
     if status == DataStatus::Live && excluded.unavailable_liquidity > 0 {
         status = DataStatus::Partial;
     }
-    let mut env = Envelope::new(status, newest.unwrap_or(now), used_demo);
+    let mut fallback_used = false;
+    if items.is_empty() && !rows.is_empty() && !used_demo {
+        let fallback = live_dex_movers(&rows, win, now).await;
+        if !fallback.is_empty() {
+            items = fallback;
+            status = DataStatus::Partial;
+            fallback_used = true;
+        }
+    }
+    let mut env = Envelope::new(
+        status,
+        if fallback_used {
+            now
+        } else {
+            newest.unwrap_or(now)
+        },
+        used_demo,
+    );
     let mut notes = vec![];
-    if rows.is_empty() {
+    if fallback_used {
+        notes.push(
+            "Live DEX market data. Wallet-flow attribution and contract-risk evidence are incomplete."
+                .to_string(),
+        );
+    } else if rows.is_empty() {
         notes.push("No market snapshots are available yet.".to_string());
     }
-    for (n, what) in [
-        (excluded.stale, "stale"),
-        (excluded.unavailable_liquidity, "liquidity unavailable"),
-        (excluded.thin_liquidity, "thin liquidity"),
-        (excluded.invalid_price, "invalid price"),
-        (excluded.blocked_risk, "blocked by risk checks"),
-    ] {
-        if n > 0 {
-            notes.push(format!("{n} excluded: {what}."));
+    if !fallback_used {
+        for (n, what) in [
+            (excluded.stale, "stale"),
+            (excluded.unavailable_liquidity, "liquidity unavailable"),
+            (excluded.thin_liquidity, "thin liquidity"),
+            (excluded.invalid_price, "invalid price"),
+            (excluded.blocked_risk, "blocked by risk checks"),
+        ] {
+            if n > 0 {
+                notes.push(format!("{n} excluded: {what}."));
+            }
         }
     }
     if !notes.is_empty() {
@@ -319,4 +529,73 @@ fn finish_wallets(
     body["items"] = Value::Array(page.iter().map(|e| e.json.clone()).collect());
     body["next_cursor"] = json!(next);
     Ok(HttpResponse::Ok().json(body))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dex_fallback_keeps_the_most_liquid_requested_base_pair() {
+        let body = json!([
+            {
+                "chainId": "solana",
+                "pairAddress": "thin-pair",
+                "baseToken": {"address": "MintA", "symbol": "AAA", "name": "Alpha"},
+                "quoteToken": {"address": "USDC"},
+                "priceUsd": "1.25",
+                "priceChange": {"h24": 12.5},
+                "volume": {"h24": 500000},
+                "liquidity": {"usd": 30000}
+            },
+            {
+                "chainId": "solana",
+                "pairAddress": "deep-pair",
+                "baseToken": {"address": "MintA", "symbol": "AAA", "name": "Alpha"},
+                "quoteToken": {"address": "SOL"},
+                "priceUsd": "1.24",
+                "priceChange": {"h24": "11.75"},
+                "volume": {"h24": "900000"},
+                "liquidity": {"usd": "250000"}
+            },
+            {
+                "chainId": "solana",
+                "pairAddress": "wrong-token",
+                "baseToken": {"address": "MintB", "symbol": "BBB"},
+                "quoteToken": {"address": "MintA"},
+                "priceUsd": "9",
+                "priceChange": {"h24": 99},
+                "volume": {"h24": 999999},
+                "liquidity": {"usd": 999999}
+            }
+        ]);
+        let requested = BTreeSet::from(["MintA".to_string()]);
+        let mut best = HashMap::new();
+        parse_dex_pairs(&body, "solana", &requested, "h24", "h24", &mut best);
+
+        let item = best.get("solana:MintA").expect("requested token pair");
+        assert_eq!(item.pool, "deep-pair");
+        assert_eq!(item.change_pct, Decimal::from_str("11.75").unwrap());
+        assert_eq!(best.len(), 1);
+    }
+
+    #[test]
+    fn dex_fallback_rejects_thin_liquidity() {
+        let body = json!([{
+            "chainId": "ethereum",
+            "pairAddress": "0x0000000000000000000000000000000000000002",
+            "baseToken": {
+                "address": "0x0000000000000000000000000000000000000001",
+                "symbol": "TINY"
+            },
+            "priceUsd": "0.01",
+            "priceChange": {"h24": 20},
+            "volume": {"h24": 100000},
+            "liquidity": {"usd": 24999}
+        }]);
+        let requested = BTreeSet::from(["0x0000000000000000000000000000000000000001".to_string()]);
+        let mut best = HashMap::new();
+        parse_dex_pairs(&body, "ethereum", &requested, "h24", "h24", &mut best);
+        assert!(best.is_empty());
+    }
 }
