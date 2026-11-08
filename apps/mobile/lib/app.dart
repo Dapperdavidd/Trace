@@ -11,6 +11,7 @@ import 'screens/briefing_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/near_screen.dart';
 import 'screens/more_screen.dart';
+import 'screens/movers_screen.dart';
 import 'screens/research_screens.dart';
 import 'screens/shadow_screens.dart';
 import 'screens/token_screen.dart';
@@ -128,6 +129,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/watchlist', builder: (_, __) => const WatchlistScreen()),
       GoRoute(path: '/more', builder: (_, __) => const MoreScreen()),
       GoRoute(path: '/briefing', builder: (_, __) => const BriefingScreen()),
+      GoRoute(path: '/movers', builder: (_, __) => const MoversScreen()),
       GoRoute(path: '/alerts', builder: (_, __) => const AlertsScreen()),
       GoRoute(path: '/near', builder: (_, __) => const NearScreen()),
       GoRoute(
