@@ -57,11 +57,6 @@ export interface Me {
   wallets: { watch_only: number; connected: 0 };
 }
 
-export interface PasskeyOptions<T = Record<string, unknown>> {
-  ceremony_id: string;
-  options: T;
-}
-
 export interface MyWallets {
   watch_only: WalletRef[];
   connected: [];

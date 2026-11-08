@@ -16,7 +16,7 @@ declare global {
 export const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 const SRC = "https://accounts.google.com/gsi/client";
 
-/** Google Identity Services button. Renders nothing unless a web client id is configured. */
+/** Google Identity Services button. */
 export function GoogleButton({ onSignedIn }: { onSignedIn: () => void }) {
   const holder = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export function GoogleButton({ onSignedIn }: { onSignedIn: () => void }) {
         },
       });
       const width = Math.min(400, holder.current.getBoundingClientRect().width || 320);
-      window.google.accounts.id.renderButton(holder.current, { theme: "filled_black", size: "large", text: "continue_with", shape: "pill", width });
+      window.google.accounts.id.renderButton(holder.current, { theme: "outline", size: "large", text: "signin_with", shape: "pill", width });
     };
     if (window.google) init();
     else {
@@ -60,7 +60,32 @@ export function GoogleButton({ onSignedIn }: { onSignedIn: () => void }) {
     };
   }, []);
 
-  if (!GOOGLE_CLIENT_ID) return null;
+  if (!GOOGLE_CLIENT_ID) {
+    return (
+      <button
+        type="button"
+        className="google-unconfigured"
+        onClick={() => setError("Google sign-in is not configured for this site yet.")}
+      >
+        <span aria-hidden="true">G</span>
+        Sign in with Google
+        <style jsx>{`
+          .google-unconfigured {
+            width: 100%;
+            min-height: 62px;
+            border: 0;
+            border-radius: 999px;
+            background: #fff;
+            color: #101116;
+            font: 600 18px/1 system-ui, sans-serif;
+            cursor: pointer;
+          }
+          .google-unconfigured span { color: #4285f4; font-size: 25px; margin-right: 14px; }
+        `}</style>
+        {error ? <span className="err">{error}</span> : null}
+      </button>
+    );
+  }
   return (
     <div style={{ display: "grid", gap: 6 }}>
       <div ref={holder} style={{ minHeight: 44, display: "flex", justifyContent: "center" }} />

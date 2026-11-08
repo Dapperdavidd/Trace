@@ -261,66 +261,6 @@ void main() {
       expect(seen.method, 'POST');
       expect(seen.url.path, '/v1/auth/logout-all');
     });
-    test('passkey registration preserves the ceremony and credential', () async {
-      final seen = <http.Request>[];
-      final c = ApiClient(
-        baseUrl: 'http://h',
-        client: MockClient((req) async {
-          seen.add(req);
-          if (req.url.path.endsWith('/options')) {
-            return _json({
-              'ceremony_id': 'ceremony-1',
-              'options': {'challenge': 'challenge-1'}
-            });
-          }
-          return _json({
-            'access_token': 'passkey-token',
-            'expires_at': '2026-11-29T00:00:00Z',
-            'user': {'id': 'u', 'name': 'Dapper'}
-          });
-        }),
-      );
-
-      final options = await c.passkeyRegisterOptions('dapper', 'Dapper');
-      final result = await c.passkeyRegisterFinish(
-          'ceremony-1', {'id': 'credential-1'});
-      expect(options['ceremony_id'], 'ceremony-1');
-      expect(result.accessToken, 'passkey-token');
-      expect(jsonDecode(seen[0].body), {
-        'username': 'dapper',
-        'display_name': 'Dapper',
-      });
-      expect(jsonDecode(seen[1].body), {
-        'ceremony_id': 'ceremony-1',
-        'credential': {'id': 'credential-1'},
-      });
-    });
-    test('passkey authentication uses the dedicated endpoints', () async {
-      final seen = <http.Request>[];
-      final c = ApiClient(
-        baseUrl: 'http://h',
-        client: MockClient((req) async {
-          seen.add(req);
-          if (req.url.path.endsWith('/options')) {
-            return _json({
-              'ceremony_id': 'ceremony-2',
-              'options': {'challenge': 'challenge-2'}
-            });
-          }
-          return _json({
-            'access_token': 'signed-in',
-            'user': {'id': 'u'}
-          });
-        }),
-      );
-
-      await c.passkeyAuthenticateOptions('dapper');
-      final result = await c.passkeyAuthenticateFinish(
-          'ceremony-2', {'id': 'credential-2'});
-      expect(result.accessToken, 'signed-in');
-      expect(seen[0].url.path, '/v1/auth/passkeys/authenticate/options');
-      expect(seen[1].url.path, '/v1/auth/passkeys/authenticate/finish');
-    });
   });
 
   group('FallbackApi', () {

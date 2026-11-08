@@ -52,7 +52,6 @@ import type {
   NearIntentPreviewBody,
   NearStatus,
   PatchWatchlistBody,
-  PasskeyOptions,
   ShadowResults,
   ShadowStrategyBody,
   ShadowStrategyCreated,
@@ -255,44 +254,6 @@ export function createApiClient(options: ClientOptions = {}) {
       });
       setToken(s.access_token);
       return s;
-    },
-    passkeyRegisterOptions: <T = Record<string, unknown>>(username: string, displayName: string) =>
-      request<PasskeyOptions<T>>({
-        method: "POST",
-        path: "/auth/passkeys/register/options",
-        body: { username, display_name: displayName },
-        guard: guardAny as Guard<PasskeyOptions<T>>,
-        allowDemo: false,
-      }),
-    async passkeyRegisterFinish<T>(ceremonyId: string, credential: T): Promise<AuthSession> {
-      const session = await request<AuthSession>({
-        method: "POST",
-        path: "/auth/passkeys/register/finish",
-        body: { ceremony_id: ceremonyId, credential },
-        guard: guardAuth as Guard<AuthSession>,
-        allowDemo: false,
-      });
-      setToken(session.access_token);
-      return session;
-    },
-    passkeyAuthenticateOptions: <T = Record<string, unknown>>(username: string) =>
-      request<PasskeyOptions<T>>({
-        method: "POST",
-        path: "/auth/passkeys/authenticate/options",
-        body: { username },
-        guard: guardAny as Guard<PasskeyOptions<T>>,
-        allowDemo: false,
-      }),
-    async passkeyAuthenticateFinish<T>(ceremonyId: string, credential: T): Promise<AuthSession> {
-      const session = await request<AuthSession>({
-        method: "POST",
-        path: "/auth/passkeys/authenticate/finish",
-        body: { ceremony_id: ceremonyId, credential },
-        guard: guardAuth as Guard<AuthSession>,
-        allowDemo: false,
-      });
-      setToken(session.access_token);
-      return session;
     },
     async logout(): Promise<void> {
       try {
@@ -537,7 +498,7 @@ export function describeError(err: unknown): { title: string; message: string; r
       case "timeout":
         return { title: "TRACE is slow to respond", message: err.message, requestId: null };
       case "unauthorized":
-        return { title: "Sign in required", message: "Sign in with a passkey to use this part of TRACE.", requestId: err.requestId };
+        return { title: "Sign in required", message: "Sign in with Google to use this part of TRACE.", requestId: err.requestId };
       case "invalid_response":
         return { title: "Unexpected response", message: err.message, requestId: err.requestId };
       default:

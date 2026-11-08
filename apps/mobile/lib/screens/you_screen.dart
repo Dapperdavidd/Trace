@@ -44,10 +44,10 @@ class YouScreen extends ConsumerWidget {
             const Icon(Icons.chevron_right),
           ])),
           _walletCard(context, ref, wallet),
-          TraceCard(
+          const TraceCard(
               child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: const [
+                  children: [
                 _Metric('3', 'Coins watched'),
                 _Metric('2', 'Wallets followed'),
                 _Metric('5', 'Shadow tests'),
@@ -56,8 +56,12 @@ class YouScreen extends ConsumerWidget {
               'Limits, mandates, and permissions', '/near'),
           _item(context, Icons.notifications_none, 'Alerts',
               'Price, wallet and risk notifications', '/alerts'),
-          _item(context, Icons.shield_outlined, 'Security',
-              'Passkey, devices and account control', '/account-sessions'),
+          _item(
+              context,
+              Icons.shield_outlined,
+              'Security',
+              'Google sign-in, devices and account control',
+              '/account-sessions'),
           _item(context, Icons.extension_outlined, 'Connected agents',
               'Read and propose permissions only', '/near'),
           _item(context, Icons.tune, 'Preferences',
@@ -123,13 +127,15 @@ class YouScreen extends ConsumerWidget {
     try {
       final w =
           await ref.read(walletProvider.notifier).create(NearNet.testnet, name);
-      if (context.mounted)
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Created ${w.accountId} on NEAR testnet.')));
+      }
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Could not create the NEAR account: $e')));
+      }
     }
   }
 

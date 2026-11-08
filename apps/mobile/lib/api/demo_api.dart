@@ -86,42 +86,6 @@ class DemoApi implements TraceApi {
       );
 
   @override
-  Future<Map<String, dynamic>> passkeyRegisterOptions(
-          String username, String displayName) async =>
-      throw const ApiException(
-        kind: ApiFailureKind.http,
-        code: 'demo_mode',
-        message: 'Passkey registration is not available in demo mode.',
-      );
-
-  @override
-  Future<AuthResult> passkeyRegisterFinish(
-          String ceremonyId, Map<String, dynamic> credential) async =>
-      throw const ApiException(
-        kind: ApiFailureKind.http,
-        code: 'demo_mode',
-        message: 'Passkey registration is not available in demo mode.',
-      );
-
-  @override
-  Future<Map<String, dynamic>> passkeyAuthenticateOptions(
-          String username) async =>
-      throw const ApiException(
-        kind: ApiFailureKind.http,
-        code: 'demo_mode',
-        message: 'Passkey sign-in is not available in demo mode.',
-      );
-
-  @override
-  Future<AuthResult> passkeyAuthenticateFinish(
-          String ceremonyId, Map<String, dynamic> credential) async =>
-      throw const ApiException(
-        kind: ApiFailureKind.http,
-        code: 'demo_mode',
-        message: 'Passkey sign-in is not available in demo mode.',
-      );
-
-  @override
   Future<void> logout() async {}
 
   @override

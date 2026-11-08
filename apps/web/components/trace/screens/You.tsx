@@ -37,7 +37,7 @@ function SignInCard({ next, why }: { next: string; why: string }) {
         {why}
       </p>
       <button className="bfill" type="button" onClick={() => router.push(`/welcome/?next=${encodeURIComponent(next)}`)}>
-        Sign in with a passkey
+        Sign in with Google
       </button>
     </div>
   );
@@ -65,7 +65,7 @@ export function MeScreen() {
     <div className="scr s-me">
       <Hd
         title="Profile"
-        crumb={token ? "Signed in with a passkey" : "Browsing as a guest"}
+        crumb={token ? "Signed in with Google" : "Browsing as a guest"}
         back
         right={
           <button
@@ -91,7 +91,7 @@ export function MeScreen() {
                   <div className="nm" style={{ fontSize: 20 }}>
                     {name}
                   </div>
-                  <div className="sub">{me.data?.email ?? "Passkey account"}</div>
+                  <div className="sub">{me.data?.email ?? "Google account"}</div>
                   <span className="tag g" style={{ justifySelf: "start" }}>
                     Free plan
                   </span>
@@ -117,7 +117,7 @@ export function MeScreen() {
               </div>
             </div>
           ) : (
-            <SignInCard next="/app/me/" why="Create an account with a passkey to follow wallets, get alerts and sign copy limits on NEAR." />
+            <SignInCard next="/app/me/" why="Sign in with Google to follow wallets, get alerts and sign copy limits on NEAR." />
           )}
           <div className="pn">
             <div className="pn-h">
@@ -152,7 +152,7 @@ export function MeScreen() {
             <div>
               <MRow href="/app/following/" icon="star" t="Following and watchlist" sub={`${follows} wallets · ${coins} ${coins === 1 ? "coin" : "coins"}`} />
               <MRow href="/app/notifs/" icon="bell" t="Notifications" sub={token ? `${onCount} kinds of alerts on` : "Sign in to choose alerts"} />
-              <MRow href="/app/security/" icon="lock" t="Security and devices" sub="Passkey, devices, connected agents" extra={token ? <span className="tag g">Passkey</span> : <span className="tag w">Sign in</span>} />
+              <MRow href="/app/security/" icon="lock" t="Security and devices" sub="Google account, devices, connected agents" extra={token ? <span className="tag g">Google</span> : <span className="tag w">Sign in</span>} />
               <MRow href="/app/near/" icon="key" t="NEAR agent" sub="Copy limits you sign on NEAR" />
               <MRow href="/app/prefs/" icon="globe" t="Preferences" sub={`${prefs.cur} · ${prefs.lang}`} />
             </div>
@@ -179,10 +179,10 @@ export function MeScreen() {
                   }}
                   icon="out"
                   t="Sign out"
-                  sub="Your passkey stays on this device"
+                  sub="Your local wallet keys stay on this device"
                 />
               ) : (
-                <MRow href="/welcome/" icon="user" t="Sign in" sub="Use a passkey. No password." />
+                <MRow href="/welcome/" icon="user" t="Sign in" sub="Continue securely with Google." />
               )}
             </div>
           </div>
@@ -324,8 +324,8 @@ export function SecurityScreen() {
             <div className="secok">
               <Ic id="key" />
               <div className="grow">
-                <b>Signed in with a passkey</b>
-                <p>Your face, fingerprint or device PIN unlocks trace. There is no password to steal, and trace only stores a public key.</p>
+                <b>Signed in with Google</b>
+                <p>Google verifies your identity. Your NEAR wallet keys and signing permissions remain separate and under your control.</p>
               </div>
             </div>
           ) : (
@@ -335,9 +335,9 @@ export function SecurityScreen() {
               </span>
               <div className="grow" style={{ display: "grid", gap: 8 }}>
                 <b>You are not signed in</b>
-                <p>Create a passkey to keep your follows, alerts and copy limits. It takes about 20 seconds.</p>
+                <p>Sign in with Google to keep your follows, alerts and copy limits across devices.</p>
                 <button className="bfill sm" style={{ justifySelf: "start" }} type="button" onClick={() => router.push("/welcome/?next=/app/security/")}>
-                  Create a passkey
+                  Sign in with Google
                 </button>
               </div>
             </div>
@@ -345,7 +345,7 @@ export function SecurityScreen() {
           <div className="pn">
             <div className="grow2">
               <div>
-                <b style={{ fontWeight: 500 }}>Passkey sign-in</b>
+                <b style={{ fontWeight: 500 }}>Google sign-in</b>
                 <div className="sub" style={{ whiteSpace: "normal" }}>
                   Needed to open your account on a new device
                 </div>

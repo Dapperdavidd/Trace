@@ -60,12 +60,12 @@ labelled **Live**.
 
 ## Routes
 
-`/` landing, `/welcome/` onboarding and passkey sign-in, and the app at `/app/<screen>/`:
+`/` landing, `/welcome/` onboarding and Google sign-in, and the app at `/app/<screen>/`:
 `today`, `briefing`, `discover`, `token`, `compare`, `ask`, `wallets`, `profile`, `shadow`, `copy`, `swap`,
 `wallet`, `near`, `me`, `notifs`, `security`, `following`, `prefs`. Coins and wallets are passed as query
 parameters (`?chain=&address=` for live, `?sym=` or `?w=` for examples), so the whole site is a static export.
 
-`copy` runs the NEAR mandate flow: passkey account, shadow test, connect NEAR wallet, prepare the draft,
+`copy` runs the NEAR mandate flow: Google account, shadow test, connect NEAR wallet, prepare the draft,
 sign it in the wallet, verify the anchor. `swap` requests dry NEAR Intents quotes under a signed mandate.
 
 ## Not live yet

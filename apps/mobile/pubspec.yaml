@@ -15,7 +15,6 @@ dependencies:
   http: ^1.2.2
   flutter_secure_storage: ^9.2.2
   google_sign_in: ^6.2.1
-  passkeys: ^2.24.0
   ed25519_edwards: ^0.3.2
   crypto: ^3.0.8
   url_launcher: ^6.3.3
@@ -29,6 +28,8 @@ flutter:
   config:
     enable-swift-package-manager: false
   uses-material-design: true
+  assets:
+    - assets/trace-ribbon-logo.png
   fonts:
     - family: Geist
       fonts:

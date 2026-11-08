@@ -50,25 +50,6 @@ class FallbackApi implements TraceApi {
       remote.googleSignIn(idToken);
 
   @override
-  Future<Map<String, dynamic>> passkeyRegisterOptions(
-          String username, String displayName) =>
-      remote.passkeyRegisterOptions(username, displayName);
-
-  @override
-  Future<AuthResult> passkeyRegisterFinish(
-          String ceremonyId, Map<String, dynamic> credential) =>
-      remote.passkeyRegisterFinish(ceremonyId, credential);
-
-  @override
-  Future<Map<String, dynamic>> passkeyAuthenticateOptions(String username) =>
-      remote.passkeyAuthenticateOptions(username);
-
-  @override
-  Future<AuthResult> passkeyAuthenticateFinish(
-          String ceremonyId, Map<String, dynamic> credential) =>
-      remote.passkeyAuthenticateFinish(ceremonyId, credential);
-
-  @override
   Future<void> logout() async {
     if (forceDemo) return;
     try {

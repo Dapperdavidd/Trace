@@ -505,7 +505,7 @@ export function CopyScreen() {
         </div>
         <div className="steps" aria-label="Copy setup steps">
           {[
-            ["Sign in", token ? "Passkey account ready" : "A passkey keeps your account"],
+            ["Sign in", token ? "Google account ready" : "Google keeps your account connected"],
             ["Shadow test", shadow ? `Tested with $${shadow.budget} pretend money` : "Prove it with pretend money"],
             ["Testnet wallet", testnet ? testnet.accountId : "Created in one tap, funded by the NEAR faucet"],
             ["Mandate", done ? "Signed and verified on NEAR" : created ? "Draft ready. Your wallet signs next" : "Amount, daily cap, slippage, expiry"],

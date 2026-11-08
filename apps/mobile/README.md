@@ -8,11 +8,10 @@ Visual language: Emerald Green on Charcoal Black (see `lib/core/tokens.dart`).
 Design source: the 14-screen mobile mockup. API source of truth:
 `docs/api-contract.md` (base path `/v1`).
 
-Passkeys are the primary account sign-in. The client calls TRACE's WebAuthn
-endpoints and native Android/iOS credential APIs. Physical-device use requires
-the final RP domain to publish Digital Asset Links for the Android application
-ID and an Apple App Site Association `webcredentials` entry for the iOS App ID.
-Those identifiers must match the signed release apps.
+Google is the primary account sign-in. The client calls TRACE's Google auth
+endpoint and native Android/iOS Google credential APIs. Physical-device use
+requires OAuth clients whose Android package, signing certificate and iOS bundle
+identifier match the signed release apps.
 
 ## First run
 

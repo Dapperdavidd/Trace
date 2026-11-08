@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       <p className="lab">Last updated 7 November 2026</p>
       <p>trace is a research product. It never asks for private keys, never holds funds and never signs transactions. Your own NEAR wallet signs every copy mandate.</p>
       <h2>Account data</h2>
-      <p>When you create an account with a passkey, trace stores your username, display name, the passkey&apos;s public key and opaque session records. It also stores the watchlists, alert preferences, alerts, paper-only Shadow tests, NEAR mandate drafts and agent connections you create.</p>
+      <p>When you sign in with Google, trace stores the account identifier, name, email address and opaque session records returned by the sign-in flow. It also stores the watchlists, alert preferences, alerts, paper-only Shadow tests, NEAR mandate drafts and agent connections you create.</p>
       <h2>Blockchain and market data</h2>
       <p>Wallet addresses and transactions on public blockchains are public. trace processes them to provide research, alerts and simulations. trace cannot remove public blockchain records from their networks.</p>
       <h2>Example and unavailable data</h2>
