@@ -84,7 +84,8 @@ class NearKey {
   }
 
   factory NearKey.parse(String s) {
-    final raw = s.trim().startsWith('ed25519:') ? s.trim().substring(8) : s.trim();
+    final raw =
+        s.trim().startsWith('ed25519:') ? s.trim().substring(8) : s.trim();
     final bytes = base58Decode(raw);
     if (bytes.length == 64) return NearKey(bytes);
     if (bytes.length == 32) {
@@ -188,8 +189,9 @@ String yoctoToNear(BigInt y, {int dp = 4}) {
       .padLeft(24, '0')
       .substring(0, dp)
       .replaceFirst(RegExp(r'0+$'), '');
-  final w = whole.toString().replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  final w = whole
+      .toString()
+      .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
   return frac.isEmpty ? w : '$w.$frac';
 }
 
@@ -290,7 +292,7 @@ String testnetName(String hint) {
   var s = hint.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
   if (s.length > 16) s = s.substring(0, 16);
   if (s.length < 2) s = 'trace';
-  return '$s-${_rand(5)}.testnet';
+  return '$s.testnet';
 }
 
 Future<void> faucetCreate(String accountId, String publicKey,
@@ -303,7 +305,8 @@ Future<void> faucetCreate(String accountId, String publicKey,
               {'newAccountId': accountId, 'newAccountPublicKey': publicKey}))
       .timeout(const Duration(seconds: 60));
   if (res.statusCode == 429) {
-    throw NearRpcException('The NEAR faucet is busy. Try again in a few minutes.');
+    throw NearRpcException(
+        'The NEAR faucet is busy. Try again in a few minutes.');
   }
   if (res.statusCode >= 300) {
     throw NearRpcException('The NEAR faucet refused the request.');
@@ -350,7 +353,8 @@ Future<List<NearActivity>> fetchActivity(NearNet net, String accountId,
   final data = (jsonDecode(res.body) as Map)['data'] as List? ?? [];
   return data.map((raw) {
     final t = (raw as Map).cast<String, dynamic>();
-    final signer = (t['signer_account_id'] ?? t['predecessor_account_id'] ?? '').toString();
+    final signer = (t['signer_account_id'] ?? t['predecessor_account_id'] ?? '')
+        .toString();
     final receiver = (t['receiver_account_id'] ?? '').toString();
     final incoming = receiver == accountId && signer != accountId;
     final actions = (t['actions'] as List? ?? []).cast<Map>();
@@ -360,8 +364,12 @@ Future<List<NearActivity>> fetchActivity(NearNet net, String accountId,
         : first['action'] == 'FUNCTION_CALL'
             ? (first['method'] ?? 'Contract call').toString()
             : first['action'].toString().replaceAll('_', ' ').toLowerCase();
-    final deposit = ((t['actions_agg'] as Map?)?['deposit'] ?? '0').toString().split('.').first;
-    final ts = BigInt.tryParse((t['block_timestamp'] ?? '0').toString()) ?? BigInt.zero;
+    final deposit = ((t['actions_agg'] as Map?)?['deposit'] ?? '0')
+        .toString()
+        .split('.')
+        .first;
+    final ts = BigInt.tryParse((t['block_timestamp'] ?? '0').toString()) ??
+        BigInt.zero;
     return NearActivity(
       (t['transaction_hash'] ?? '').toString(),
       DateTime.fromMillisecondsSinceEpoch((ts ~/ BigInt.from(1000000)).toInt()),
@@ -380,8 +388,8 @@ Future<double?> nearUsdPrice({http.Client? client}) async {
     final res = await c
         .get(Uri.parse('https://coins.llama.fi/prices/current/coingecko:near'))
         .timeout(const Duration(seconds: 15));
-    final p = (((jsonDecode(res.body) as Map)['coins'] as Map?)?['coingecko:near']
-        as Map?)?['price'];
+    final p = (((jsonDecode(res.body) as Map)['coins']
+        as Map?)?['coingecko:near'] as Map?)?['price'];
     return p is num ? p.toDouble() : null;
   } catch (_) {
     return null;
